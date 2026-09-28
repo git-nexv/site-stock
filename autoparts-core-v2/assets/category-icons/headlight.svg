@@ -1,0 +1,5 @@
+<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style="--c:#ff3b4e">
+<rect width="300" height="220" fill="#fff2f3"/>
+<ellipse cx="150" cy="120" rx="90" ry="55" fill="none" stroke="var(--c)" stroke-width="10"/><path d="M90 100 L210 100 M90 120 L210 120 M90 140 L210 140" stroke="var(--c)" stroke-width="8"/>
+<text x="150" y="205" font-family="Tahoma, sans-serif" font-size="16" fill="#a8232f" text-anchor="middle">چراغ جلو</text>
+</svg>

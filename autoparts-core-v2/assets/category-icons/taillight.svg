@@ -1,0 +1,5 @@
+<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style="--c:#ff3b4e">
+<rect width="300" height="220" fill="#fff2f3"/>
+<path d="M70 70 L220 90 L220 150 L70 170 Z" fill="var(--c)" opacity="0.85"/><path d="M90 90 L200 100 M90 130 L200 140" stroke="#fff" stroke-width="6"/>
+<text x="150" y="205" font-family="Tahoma, sans-serif" font-size="16" fill="#a8232f" text-anchor="middle">چراغ عقب</text>
+</svg>

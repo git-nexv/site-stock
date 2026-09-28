@@ -1,0 +1,5 @@
+<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style="--c:#ff3b4e">
+<rect width="300" height="220" fill="#fff2f3"/>
+<rect x="120" y="60" width="18" height="50" fill="var(--c)"/><ellipse cx="180" cy="110" rx="60" ry="40" fill="var(--c)"/><ellipse cx="180" cy="110" rx="42" ry="26" fill="#fff" opacity="0.5"/>
+<text x="150" y="205" font-family="Tahoma, sans-serif" font-size="16" fill="#a8232f" text-anchor="middle">آینه بغل</text>
+</svg>
