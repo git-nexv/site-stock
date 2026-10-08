@@ -2677,3 +2677,6 @@ function ap_hero_slides() {
     }
     return [];
 }
+
+/* به‌روزرسانی خودکار قالب از گیت‌هاب (updater.php) */
+require_once __DIR__ . '/updater.php';
