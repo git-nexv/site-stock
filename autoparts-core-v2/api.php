@@ -515,9 +515,9 @@ function public_user($u) {
    سایت به‌صورت خودکار ساخته می‌شه) اجازه‌ی اکشن‌های مدیریتی رو داره. قبلاً این
    بررسی فقط با requesterId ای بود که از سمت مرورگر فرستاده می‌شد و هرکسی می‌تونست
    جعلش کنه؛ حالا سمتِ سرور و غیرقابل‌جعله. */
-function ap_require_admin() {
+function ap_require_admin($cap = 'manage_options') {
     ap_boot_wp();
-    if (!(function_exists('current_user_can') && current_user_can('manage_options'))) {
+    if (!(function_exists('current_user_can') && (current_user_can('manage_options') || current_user_can($cap)))) {
         json_fail('دسترسی غیرمجاز.', 403);
     }
 }
@@ -555,37 +555,8 @@ foreach ($db['users'] as &$u) {
 }
 unset($u);
 
-/* اطمینان از این‌که شماره‌ی مدیرِ فروشگاه همیشه دسترسی ادمین (پیشخوان) داشته باشه.
-   (همون شماره‌ای که در functions.php به‌عنوان AP_OWNER_PHONE هم تعریف شده.) */
-$ADMIN_PHONE = '09109973428';
-$OLD_ADMIN_PHONE = '09999658195';
-$adminFound = false;
-foreach ($db['users'] as &$u) {
-    if (($u['phone'] ?? '') === $ADMIN_PHONE) {
-        $adminFound = true;
-        if (empty($u['is_admin'])) { $u['is_admin'] = true; $db_dirty = true; }
-    } elseif ($OLD_ADMIN_PHONE !== '' && ($u['phone'] ?? '') === $OLD_ADMIN_PHONE && !empty($u['is_admin'])) {
-        $u['is_admin'] = false;
-        $db_dirty = true;
-    }
-}
-unset($u);
-if (!$adminFound) {
-    $db['users'][] = [
-        'id' => $db['next_user_id'],
-        'firstName' => 'مدیر',
-        'lastName' => 'سایت',
-        'phone' => $ADMIN_PHONE,
-        'email' => null,
-        'google_id' => null,
-        'password_hash' => null,
-        'is_admin' => true,
-        'created_at' => date('c'),
-    ];
-    $db['next_user_id']++;
-    $db_dirty = true;
-}
-unset($adminFound);
+/* ادمین‌ها (مالک و زیرمجموعه‌ها) از پیشخوان ← مدیریت ادمین‌ها تعیین می‌شن و staff.php
+   فهرستشون رو با فیلد wp_user_id توی همین دیتابیس همگام نگه می‌داره. */
 if ($db_dirty) { save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db, true); }
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -716,31 +687,20 @@ switch ($action) {
                 if ($u['phone'] === $phoneDigits) { $found = $u; break; }
             }
         }
-        /* شماره‌ی مدیر: رمز با حساب وردپرسِ «kaveh» چک می‌شه (رمزی توی قالب ذخیره نمی‌شه). */
-        $adminOk = false;
-        $isAdminPhone = $found && ($found['phone'] ?? '') === $ADMIN_PHONE;
-        if ($isAdminPhone) {
+        /* ادمین‌ها: رمز با حساب وردپرسِ خودشون چک می‌شه و سشن وردپرس هم براشون باز می‌شه.
+           کاربرِ عادی اصلاً وردپرس رو لود نمی‌کنه. */
+        $staffId = $found ? (int) ($found['wp_user_id'] ?? 0) : 0;
+        if ($staffId) {
             ap_boot_wp();
-            if (function_exists('wp_authenticate')) {
-                $wpUser = wp_authenticate('kaveh', $password);
-                $adminOk = $wpUser && !is_wp_error($wpUser);
-            }
-        }
-        if ($isAdminPhone ? !$adminOk : (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash']))) {
+            $wpUser = function_exists('get_user_by') ? get_user_by('id', $staffId) : null;
+            $ok = $wpUser && wp_check_password($password, $wpUser->user_pass, $wpUser->ID)
+                && (user_can($wpUser, 'manage_options') || in_array('ap_staff', (array) $wpUser->roles, true));
+            if (!$ok) json_fail('شماره موبایل/ایمیل یا رمز عبور اشتباه است.', 401);
+            wp_clear_auth_cookie();
+            wp_set_current_user($wpUser->ID);
+            wp_set_auth_cookie($wpUser->ID, true);
+        } elseif (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash'])) {
             json_fail('شماره موبایل/ایمیل یا رمز عبور اشتباه است.', 401);
-        }
-        /* فقط برای مدیر لازمه سشنِ وردپرس ساخته بشه؛ کاربرِ عادی اصلاً وردپرس رو
-           لود نمی‌کنه. اگه مدیر از قبل کوکیِ ورودِ وردپرس داره، این مرحله هم لازم
-           نیست — لود کردنِ کاملِ وردپرس سنگین‌ترین بخشِ همین درخواست بود. */
-        if (!empty($found['is_admin'])) {
-            $hasWpCookie = false;
-            foreach (array_keys($_COOKIE) as $ck) {
-                if (strpos($ck, 'wordpress_logged_in') === 0) { $hasWpCookie = true; break; }
-            }
-            if (!$hasWpCookie) {
-                ap_boot_wp();
-                if (function_exists('ap_bridge_wp_session')) { ap_bridge_wp_session($found['phone']); }
-            }
         }
         echo json_encode(['success' => true, 'user' => public_user($found)], JSON_UNESCAPED_UNICODE);
         break;
@@ -1044,7 +1004,7 @@ switch ($action) {
 
     /* ---------- پیشخوان مدیریت: فهرست سفارش‌ها (فقط ادمین) ---------- */
     case 'list_orders': {
-        ap_require_admin();
+        ap_require_admin('ap_manage_orders');
         $orders = array_reverse($db['orders']);
         echo json_encode(['success' => true, 'orders' => $orders], JSON_UNESCAPED_UNICODE);
         break;
@@ -1055,7 +1015,7 @@ switch ($action) {
        ادمین از پیشخوان روش کلیک می‌کنه، توی تب جدید باز می‌شه، و از همون‌جا Ctrl+P یا
        دکمه‌ی چاپِ خودِ صفحه رو می‌زنه (خروجی چاپگر یا PDF، برای چسبوندن روی کارتن). */
     case 'invoice': {
-        if (!(function_exists('current_user_can') && current_user_can('manage_options'))) { http_response_code(403); header('Content-Type: text/plain; charset=utf-8'); echo 'دسترسی غیرمجاز.'; break; }
+        if (!(function_exists('current_user_can') && (current_user_can('manage_options') || current_user_can('ap_manage_orders')))) { http_response_code(403); header('Content-Type: text/plain; charset=utf-8'); echo 'دسترسی غیرمجاز.'; break; }
 
         $orderId = (int) ($_GET['order_id'] ?? 0);
         $order = null;
@@ -1230,7 +1190,7 @@ switch ($action) {
 
     /* ---------- پیشخوان مدیریت: تغییر وضعیت سفارش (فقط ادمین) ---------- */
     case 'update_order_status': {
-        ap_require_admin();
+        ap_require_admin('ap_manage_orders');
 
         $orderId = (int) ($input['orderId'] ?? 0);
         $status  = (string) ($input['status'] ?? '');
@@ -1250,7 +1210,7 @@ switch ($action) {
 
     /* ---------- حذفِ کاملِ یک سفارش (فقط مدیر) ---------- */
     case 'delete_order': {
-        ap_require_admin();
+        ap_require_admin('ap_manage_orders');
         $orderId = (int) ($input['orderId'] ?? 0);
         $before = count($db['orders']);
         $removedReceipt = null;

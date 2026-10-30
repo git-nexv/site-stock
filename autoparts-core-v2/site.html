@@ -3680,7 +3680,7 @@ authForm.addEventListener('submit', e=>{
       renderAuthHeader();
       showToast(authMode==='signup' ? 'ثبت‌نام با موفقیت انجام شد 🎉' : 'خوش آمدید!');
       /* مدیر بعد از ورود مستقیم به پیشخوان وردپرس می‌ره. */
-      if(authMode==='login' && data.user && data.user.is_admin && window.AP_ADMIN_URL){ location.href = window.AP_ADMIN_URL; }
+      if(authMode==='login' && data.user && (data.user.is_staff || data.user.is_admin) && window.AP_ADMIN_URL){ location.href = window.AP_ADMIN_URL; }
     }else{
       showToast(data.error || 'خطایی رخ داد، دوباره تلاش کنید.');
     }

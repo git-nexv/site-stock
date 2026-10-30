@@ -51,36 +51,8 @@ add_action('admin_bar_menu', function ($wp_admin_bar) {
     ]);
 }, 80);
 
-/* شماره‌ای که با ورود از فرم سایت (نه پیشخوان)، به‌صورت خودکار هم یک سشن واقعی
-   وردپرس (با نقش مدیر کل) براش ساخته/باز می‌شه تا نوار پیشخوان رو ببینه. */
+/* شماره‌ی پیش‌فرضِ مالک سایت؛ بعدش از پیشخوان ← مدیریت ادمین‌ها قابل تغییره (staff.php). */
 define('AP_OWNER_PHONE', '09109973428');
-
-function ap_bridge_wp_session($phone) {
-    if ($phone !== AP_OWNER_PHONE) return;
-
-    /* حساب مدیر وردپرس: kaveh */
-    $wp_user = get_user_by('login', 'kaveh');
-    if (!$wp_user) {
-        $existing_email_user = get_user_by('email', 'owner@ap.local');
-        if ($existing_email_user) {
-            $wp_user = $existing_email_user;
-        } else {
-            $new_id = wp_insert_user([
-                'user_login'   => 'kaveh',
-                'user_pass'    => wp_generate_password(24, true, true),
-                'user_email'   => 'owner@ap.local',
-                'display_name' => 'مدیر فروشگاه',
-                'role'         => 'administrator',
-            ]);
-            if (!is_wp_error($new_id)) { $wp_user = get_user_by('id', $new_id); }
-        }
-    }
-    if ($wp_user && !is_wp_error($wp_user)) {
-        wp_clear_auth_cookie();
-        wp_set_current_user($wp_user->ID);
-        wp_set_auth_cookie($wp_user->ID, true);
-    }
-}
 
 function ap_theme_setup() {
     add_theme_support('title-tag');
@@ -2689,3 +2661,6 @@ add_action('init', function () {
     set_theme_mod('ap_contact_whatsapp', '09109973428');
     update_option('ap_phone_migrated_v1', 1);
 });
+
+/* مدیریت ادمین‌ها و دسترسی‌ها (staff.php) */
+require_once __DIR__ . '/staff.php';
