@@ -53,19 +53,20 @@ add_action('admin_bar_menu', function ($wp_admin_bar) {
 
 /* شماره‌ای که با ورود از فرم سایت (نه پیشخوان)، به‌صورت خودکار هم یک سشن واقعی
    وردپرس (با نقش مدیر کل) براش ساخته/باز می‌شه تا نوار پیشخوان رو ببینه. */
-define('AP_OWNER_PHONE', '09999658195');
+define('AP_OWNER_PHONE', '09109973428');
 
 function ap_bridge_wp_session($phone) {
     if ($phone !== AP_OWNER_PHONE) return;
 
-    $wp_user = get_user_by('login', 'ap-owner');
+    /* حساب مدیر وردپرس: kaveh */
+    $wp_user = get_user_by('login', 'kaveh');
     if (!$wp_user) {
         $existing_email_user = get_user_by('email', 'owner@ap.local');
         if ($existing_email_user) {
             $wp_user = $existing_email_user;
         } else {
             $new_id = wp_insert_user([
-                'user_login'   => 'ap-owner',
+                'user_login'   => 'kaveh',
                 'user_pass'    => wp_generate_password(24, true, true),
                 'user_email'   => 'owner@ap.local',
                 'display_name' => 'مدیر فروشگاه',
@@ -2280,7 +2281,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_contact_phone', [
-        'default'           => '09921055149',
+        'default'           => '09109973428',
         'sanitize_callback' => 'sanitize_text_field',
     ]);
     $wp_customize->add_control('ap_contact_phone', [
@@ -2291,7 +2292,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_contact_whatsapp', [
-        'default'           => '09921055149',
+        'default'           => '09109973428',
         'sanitize_callback' => 'sanitize_text_field',
     ]);
     $wp_customize->add_control('ap_contact_whatsapp', [
@@ -2680,3 +2681,11 @@ function ap_hero_slides() {
 
 /* به‌روزرسانی خودکار قالب از گیت‌هاب (updater.php) */
 require_once __DIR__ . '/updater.php';
+
+/* یک‌بار: شماره‌ی تماس و واتساپ سایت به شماره‌ی جدید عوض بشه (حتی اگه قبلاً از سفارشی‌سازی ذخیره شده بود). */
+add_action('init', function () {
+    if (get_option('ap_phone_migrated_v1')) return;
+    set_theme_mod('ap_contact_phone', '09109973428');
+    set_theme_mod('ap_contact_whatsapp', '09109973428');
+    update_option('ap_phone_migrated_v1', 1);
+});

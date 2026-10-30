@@ -422,10 +422,10 @@ function default_db() {
                 'id' => 1,
                 'firstName' => 'مدیر',
                 'lastName' => 'سایت',
-                'phone' => '09999658195',
+                'phone' => '09109973428',
                 'email' => null,
                 'google_id' => null,
-                'password_hash' => password_hash('123456789', PASSWORD_DEFAULT),
+                'password_hash' => null,
                 'is_admin' => true,
                 'addresses' => [],
                 'created_at' => date('c'),
@@ -557,8 +557,8 @@ unset($u);
 
 /* اطمینان از این‌که شماره‌ی مدیرِ فروشگاه همیشه دسترسی ادمین (پیشخوان) داشته باشه.
    (همون شماره‌ای که در functions.php به‌عنوان AP_OWNER_PHONE هم تعریف شده.) */
-$ADMIN_PHONE = '09999658195';
-$OLD_ADMIN_PHONE = '';
+$ADMIN_PHONE = '09109973428';
+$OLD_ADMIN_PHONE = '09999658195';
 $adminFound = false;
 foreach ($db['users'] as &$u) {
     if (($u['phone'] ?? '') === $ADMIN_PHONE) {
@@ -578,7 +578,7 @@ if (!$adminFound) {
         'phone' => $ADMIN_PHONE,
         'email' => null,
         'google_id' => null,
-        'password_hash' => password_hash('123456789', PASSWORD_DEFAULT),
+        'password_hash' => null,
         'is_admin' => true,
         'created_at' => date('c'),
     ];
@@ -716,7 +716,17 @@ switch ($action) {
                 if ($u['phone'] === $phoneDigits) { $found = $u; break; }
             }
         }
-        if (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash'])) {
+        /* شماره‌ی مدیر: رمز با حساب وردپرسِ «kaveh» چک می‌شه (رمزی توی قالب ذخیره نمی‌شه). */
+        $adminOk = false;
+        $isAdminPhone = $found && ($found['phone'] ?? '') === $ADMIN_PHONE;
+        if ($isAdminPhone) {
+            ap_boot_wp();
+            if (function_exists('wp_authenticate')) {
+                $wpUser = wp_authenticate('kaveh', $password);
+                $adminOk = $wpUser && !is_wp_error($wpUser);
+            }
+        }
+        if ($isAdminPhone ? !$adminOk : (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash']))) {
             json_fail('شماره موبایل/ایمیل یا رمز عبور اشتباه است.', 401);
         }
         /* فقط برای مدیر لازمه سشنِ وردپرس ساخته بشه؛ کاربرِ عادی اصلاً وردپرس رو
