@@ -2696,3 +2696,22 @@ add_action('admin_head', function () {
 add_action('login_head', function () {
     if (!has_site_icon()) echo '<link rel="icon" href="' . esc_url(ap_logo_url('logo-32.png')) . '">';
 });
+
+/* یک‌بار: لوگوی قالب توی کتابخانه‌ی رسانه‌ی وردپرس آپلود و به‌عنوان «آیکون سایت» و «لوگوی سایت»
+   ثبت می‌شه؛ این همون آیکونیه که گوگل کنار نتیجه‌ی جستجو نشون می‌ده. */
+add_action('admin_init', function () {
+    if (get_option('ap_logo_installed_v1') || !current_user_can('manage_options')) return;
+    $src = get_template_directory() . '/assets/logo.png';
+    if (!file_exists($src)) return;
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    $tmp = wp_tempnam('nexv-logo.png');
+    copy($src, $tmp);
+    $id = media_handle_sideload(['name' => 'nexv-logo.png', 'tmp_name' => $tmp], 0, 'لوگوی NEXV');
+    if (is_wp_error($id)) { @unlink($tmp); return; }
+    update_option('site_icon', $id);
+    set_theme_mod('custom_logo', $id);
+    update_option('ap_logo_installed_v1', 1);
+});
+add_action('after_setup_theme', function () { add_theme_support('custom-logo'); });
