@@ -2645,10 +2645,13 @@ function ap_hero_slides() {
        نبود، خودِ سایت پوسترهای آیکونیِ دسته‌ها رو نشون می‌ده. */
     $dir = get_template_directory() . '/hero/';
     $u   = get_template_directory_uri() . '/hero/';
-    if (file_exists($dir . 'hero-car.jpg')) {
-        return [['src' => $u . 'hero-car.jpg', 'name' => 'قطعات یدکی خودرو', 'bg' => '#f5f4f7', 'wide' => true]];
+    $out = [];
+    for ($i = 1; $i <= 4; $i++) {
+        if (file_exists($dir . "car-$i.jpg")) {
+            $out[] = ['src' => $u . "car-$i.jpg", 'name' => '', 'bg' => '#ffffff', 'wide' => true, 'fit' => true];
+        }
     }
-    return [];
+    return $out;
 }
 
 /* به‌روزرسانی خودکار قالب از گیت‌هاب (updater.php) */

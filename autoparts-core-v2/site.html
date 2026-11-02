@@ -1353,6 +1353,9 @@ img.hx-dev.on{filter:none;}
   transform:scale(var(--iscale, 1)); transform-origin:50% 100%;
 }
 .hx-slide.wide .hx-floor{display:none;}
+/* عکس‌های پیش‌فرضِ خودرو: ماشین وسطِ قاب با حاشیه‌ی یکسان، بدون محوشدگی و اسم */
+.hx-slide.fit .hx-prod img{object-position:center; padding:4%; box-sizing:border-box;}
+.hx-slide.fit .hx-prod::after, .hx-slide.fit .hx-name{display:none;}
 .hx-slide.wide .hx-prod::after{ /* محوشدگیِ نرمِ سفید در پایین تا اسمِ مدل همیشه خونا باشه */
   content:""; position:absolute; left:0; right:0; bottom:0; height:34%; z-index:3; pointer-events:none;
   background:linear-gradient(to top, var(--pbg, #fff) 4%, color-mix(in srgb, var(--pbg, #fff) 55%, transparent) 42%, transparent 100%);
@@ -5056,14 +5059,14 @@ if(stage){
   };
   const fromDash = Array.isArray(window.AP_HERO_SLIDES) ? window.AP_HERO_SLIDES.filter(x => x && x.src) : [];
   // تا وقتی مدیر عکسی نگذاشته، پوستر با نام دسته‌ها و آیکون ساده نمایش داده میشه
-  const slidesData = fromDash.length ? fromDash.map(x => ({ name: x.name || '', src: x.src, bg: x.bg || '', wide: !!x.wide, scale: x.scale || 1 }))
+  const slidesData = fromDash.length ? fromDash.map(x => ({ name: x.name || '', src: x.src, bg: x.bg || '', wide: !!x.wide, fit: !!x.fit, scale: x.scale || 1 }))
     : [{name:'سپر', icon:'bumper'}, {name:'چراغ', icon:'light'}, {name:'رادیاتور', icon:'radiator'}, {name:'موتور', icon:'engine'}];
   const escT = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const slidesEl = [];
   if(poster){
     slidesData.forEach((d, k)=>{
       const el = document.createElement('div');
-      el.className = 'hx-slide' + (d.wide ? ' wide' : '') + (k === 0 ? ' on' : '');
+      el.className = 'hx-slide' + (d.wide ? ' wide' : '') + (d.fit ? ' fit' : '') + (k === 0 ? ' on' : '');
       if(d.bg) el.dataset.bg = d.bg;
       if(d.scale && d.scale !== 1) el.style.setProperty('--iscale', d.scale);
       el.setAttribute('aria-label', d.name);
