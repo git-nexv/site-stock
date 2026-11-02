@@ -147,46 +147,26 @@ add_action('admin_post_ap_upd_save', function () {
     check_admin_referer('ap_upd_save');
     $token = isset($_POST['ap_upd_token']) ? trim(sanitize_text_field(wp_unslash($_POST['ap_upd_token']))) : '';
     if ($token !== '') update_option('ap_upd_token', $token, false);
-    if (!empty($_POST['ap_upd_now'])) ap_upd_run(true);
-    wp_safe_redirect(admin_url('themes.php?page=ap-updater'));
+    ap_upd_run(true);
+    wp_safe_redirect(admin_url('admin.php?page=ap-updater'));
     exit;
 });
 
 function ap_upd_page() {
-    $st    = get_option('ap_upd_status', []);
-    $sha   = (string) get_option('ap_upd_sha', '');
-    $has   = get_option('ap_upd_token', '') !== '';
-    $next  = wp_next_scheduled('ap_upd_check');
+    $st  = get_option('ap_upd_status', []);
+    $has = get_option('ap_upd_token', '') !== '';
     ?>
     <div class="wrap">
-        <h1>به‌روزرسانی خودکار قالب</h1>
-        <p>هر ۵ دقیقه شاخه‌ی <code><?php echo esc_html(AP_UPD_BRANCH); ?></code> مخزن
-            <code><?php echo esc_html(AP_UPD_REPO); ?></code> چک می‌شه و اگه تغییری بود، روی سایت ریخته می‌شه.</p>
-        <table class="form-table">
-            <tr><th>آخرین نسخه‌ی نصب‌شده</th><td><code><?php echo $sha ? esc_html(substr($sha, 0, 7)) : '—'; ?></code></td></tr>
-            <tr><th>آخرین وضعیت</th><td><?php
-                if ($st) {
-                    echo '<span style="color:' . ($st['ok'] ? '#008a20' : '#d63638') . '">' . esc_html($st['msg']) . '</span> ';
-                    echo '<small>(' . esc_html(human_time_diff($st['time'])) . ' پیش)</small>';
-                } else { echo '—'; }
-            ?></td></tr>
-            <tr><th>بررسی بعدی</th><td><?php echo $next ? esc_html(human_time_diff($next)) . ' دیگه' : '—'; ?></td></tr>
-        </table>
+        <h1>به‌روزرسانی سایت</h1>
+        <?php if ($st): ?>
+            <div class="notice notice-<?php echo $st['ok'] ? 'success' : 'error'; ?>"><p><?php echo esc_html($st['msg']); ?></p></div>
+        <?php endif; ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('ap_upd_save'); ?>
             <input type="hidden" name="action" value="ap_upd_save">
-            <table class="form-table">
-                <tr>
-                    <th><label for="ap_upd_token">توکن گیت‌هاب</label></th>
-                    <td>
-                        <input type="password" id="ap_upd_token" name="ap_upd_token" class="regular-text" dir="ltr" autocomplete="off"
-                               placeholder="<?php echo $has ? 'ذخیره شده — برای تغییر، توکن جدید بزن' : 'github_pat_...'; ?>">
-                        <p class="description">توکن Fine-grained با دسترسی فقط به همین مخزن و مجوز Contents: Read-only.</p>
-                    </td>
-                </tr>
-            </table>
-            <?php submit_button('ذخیره', 'primary', 'submit', false); ?>
-            <?php submit_button('ذخیره و به‌روزرسانی همین الان', 'secondary', 'ap_upd_now', false); ?>
+            <p><input type="password" name="ap_upd_token" class="regular-text" dir="ltr" autocomplete="off"
+                      placeholder="<?php echo $has ? 'توکن ذخیره شده' : 'توکن گیت‌هاب'; ?>"></p>
+            <?php submit_button('به‌روزرسانی', 'primary', 'submit', false); ?>
         </form>
     </div>
     <?php
