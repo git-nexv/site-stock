@@ -191,3 +191,26 @@ function ap_upd_page() {
     </div>
     <?php
 }
+
+/* دکمه‌ی «به‌روزرسانی از گیت‌هاب»: توی منوی قطعات یدکی و نوار بالای پیشخوان؛
+   با یک کلیک همین الان آخرین نسخه از گیت‌هاب گرفته و روی سایت ریخته می‌شه. */
+add_action('admin_menu', function () {
+    add_submenu_page('ap-dashboard', 'به‌روزرسانی سایت', 'به‌روزرسانی سایت', 'manage_options', 'ap-updater', 'ap_upd_page');
+}, 11);
+
+add_action('admin_bar_menu', function ($bar) {
+    if (!current_user_can('manage_options')) return;
+    $bar->add_node([
+        'id'    => 'ap-update-now',
+        'title' => '⟳ به‌روزرسانی سایت',
+        'href'  => wp_nonce_url(admin_url('admin-post.php?action=ap_upd_now'), 'ap_upd_now'),
+    ]);
+}, 90);
+
+add_action('admin_post_ap_upd_now', function () {
+    if (!current_user_can('manage_options')) wp_die('دسترسی ندارید.');
+    check_admin_referer('ap_upd_now');
+    ap_upd_run(true);
+    wp_safe_redirect(admin_url('admin.php?page=ap-updater'));
+    exit;
+});
