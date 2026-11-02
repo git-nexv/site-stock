@@ -2664,3 +2664,32 @@ add_action('init', function () {
 
 /* مدیریت ادمین‌ها و دسترسی‌ها (staff.php) */
 require_once __DIR__ . '/staff.php';
+
+/* ---------- لوگوی سایت در وردپرس: صفحه‌ی ورود، نوار مدیریت و فاویکون پیشخوان ---------- */
+function ap_logo_url($file = 'logo.png') {
+    return get_template_directory_uri() . '/assets/' . $file;
+}
+add_action('login_enqueue_scripts', function () {
+    echo '<style>#login h1 a{background-image:url(' . esc_url(ap_logo_url()) . ') !important;background-size:contain !important;width:96px !important;height:96px !important;border-radius:22px;}</style>';
+});
+add_filter('login_headerurl', function () { return home_url('/'); });
+add_filter('login_headertext', function () { return get_bloginfo('name'); });
+
+function ap_adminbar_logo_css() {
+    if (!is_admin_bar_showing()) return;
+    echo '<style>#wpadminbar #wp-admin-bar-wp-logo > .ab-item .ab-icon:before{content:"" !important;}'
+        . '#wpadminbar #wp-admin-bar-wp-logo > .ab-item .ab-icon{background:url(' . esc_url(ap_logo_url('logo-32.png')) . ') center/20px no-repeat !important;width:20px;}</style>';
+}
+add_action('admin_head', 'ap_adminbar_logo_css');
+add_action('wp_head', 'ap_adminbar_logo_css');
+/* منوی لوگوی وردپرس (درباره وردپرس و ...) به لینک سایت تبدیل می‌شه */
+add_action('admin_bar_menu', function ($bar) {
+    foreach (['about', 'wporg', 'documentation', 'learn', 'support-forums', 'feedback', 'contribute'] as $n) $bar->remove_node($n);
+    $bar->add_node(['id' => 'wp-logo', 'href' => home_url('/'), 'meta' => ['title' => get_bloginfo('name')]]);
+}, 20);
+add_action('admin_head', function () {
+    if (!has_site_icon()) echo '<link rel="icon" href="' . esc_url(ap_logo_url('logo-32.png')) . '">';
+});
+add_action('login_head', function () {
+    if (!has_site_icon()) echo '<link rel="icon" href="' . esc_url(ap_logo_url('logo-32.png')) . '">';
+});

@@ -204,7 +204,7 @@ if (function_exists('is_page') && is_page('terms')) {
         <style>
             body{font-family:'Vazirmatn',Tahoma,sans-serif; background:#f7f6fb; margin:0; padding:40px 16px 60px; color:#201f2b;}
             .terms-box{max-width:760px; margin:0 auto; background:#fff; border-radius:24px; padding:38px 30px 30px; box-shadow:0 20px 50px rgba(0,0,0,.08);}
-            .terms-logo{width:52px; height:52px; border-radius:15px; margin:0 auto 16px; background:linear-gradient(135deg,#ff3b4e,#ff7b86);}
+            .terms-logo{width:52px; height:52px; border-radius:15px; margin:0 auto 16px; background:url(<?php echo esc_url(get_template_directory_uri() . '/assets/logo.png'); ?>) center/cover no-repeat;}
             .terms-box h1{font-size:23px; margin:0 0 6px; text-align:center;}
             .terms-box .tagline{color:#7a7788; font-size:13px; margin:0 0 30px; text-align:center;}
             .rule{padding:20px 0; border-top:1px solid #eee;}
@@ -280,7 +280,7 @@ if (function_exists('is_page') && is_page('about')) {
         <style>
             body{font-family:'Vazirmatn',Tahoma,sans-serif; background:#f7f6fb; margin:0; padding:40px 16px; color:#201f2b;}
             .about-box{max-width:520px; margin:0 auto; background:#fff; border-radius:20px; padding:36px 28px; box-shadow:0 20px 50px rgba(0,0,0,.08); text-align:center;}
-            .about-logo{width:56px; height:56px; border-radius:16px; margin:0 auto 18px; background:linear-gradient(135deg,#ff3b4e,#ff7b86);}
+            .about-logo{width:56px; height:56px; border-radius:16px; margin:0 auto 18px; background:url(<?php echo esc_url(get_template_directory_uri() . '/assets/logo.png'); ?>) center/cover no-repeat;}
             .about-box h1{font-size:22px; margin-bottom:6px;}
             .about-box .tagline{color:#7a7788; font-size:13.5px; margin-bottom:26px;}
             .about-row{display:flex; align-items:flex-start; gap:10px; text-align:right; padding:14px 0; border-top:1px solid #eee;}
@@ -364,6 +364,7 @@ $html    = file_get_contents(__DIR__ . '/site.html');
 $ap_site_name = get_bloginfo('name');
 if (trim((string) $ap_site_name) === '') { $ap_site_name = 'قطعات یدکی'; }
 $html = str_replace('{{SITE_NAME}}', esc_html($ap_site_name), $html);
+$html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/assets/logo.png'), $html);
 $api_url = esc_url(get_template_directory_uri() . '/api.php');
 $home_url = esc_url_raw(home_url('/'));
 
@@ -630,6 +631,13 @@ if (function_exists('has_site_icon') && has_site_icon()) {
     if ($icon180) $inject .= '<link rel="apple-touch-icon" href="' . esc_url($icon180 . $ver) . '">';
     if ($icon32) $inject .= '<link rel="shortcut icon" href="' . esc_url($icon32 . $ver) . '">';
 }
+else {
+    /* بدون آیکون انتخاب‌شده، لوگوی خود قالب فاویکون می‌شه. */
+    $lg = get_template_directory_uri() . '/assets/';
+    $inject .= '<link rel="icon" href="' . esc_url($lg . 'logo-32.png') . '" sizes="32x32">'
+        . '<link rel="icon" href="' . esc_url($lg . 'logo.png') . '" sizes="512x512">'
+        . '<link rel="apple-touch-icon" href="' . esc_url($lg . 'logo-180.png') . '">';
+}
 
 $html = str_replace('<head>', "<head>\n" . $inject, $html);
 
@@ -677,6 +685,7 @@ if (function_exists('is_admin_bar_showing') && is_admin_bar_showing()) {
                 body.admin-bar .filter-screen, body.admin-bar .overlay, body.admin-bar .drawer{top:46px;}
             }
         </style>'
+        . (function_exists('ap_adminbar_logo_css') ? (function () { ob_start(); ap_adminbar_logo_css(); return ob_get_clean(); })() : '')
         . $bar_markup
         . '<script src="' . esc_url(includes_url('js/hoverintent-js.min.js') . '?ver=' . $wp_ver) . '"></script>'
         . '<script src="' . esc_url(includes_url('js/admin-bar.min.js') . '?ver=' . $wp_ver) . '"></script>';
