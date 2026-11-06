@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای اضافه‌کردن برند جدید: به فهرست اضافه کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '3');
+define('AP_VEHICLE_SEED_VERSION', '4');
 
 function ap_vehicle_seed_data() {
     return [
@@ -18,15 +18,34 @@ function ap_vehicle_seed_data() {
             ['ام‌وی‌ام X22', 'mvm-x22'], ['ام‌وی‌ام X33', 'mvm-x33'], ['ام‌وی‌ام X55', 'mvm-x55'], ['ام‌وی‌ام ۳۱۵', 'mvm-315'],
         ]],
         ['FOWNIX (فونیکس)', 'fownix', [
-            ['تیگو ۷ پرو', 'tiggo-7-pro'], ['تیگو ۸ پرو مکس', 'tiggo-8-pro-max'],
-            ['آریزو ۶ GT', 'arrizo-6-gt'], ['FX', 'fx'],
+            ['Arrizo 6 GT (آریزو ۶ جی‌تی)', 'arrizo-6-gt'],
+            ['FX (اف‌ایکس)', 'fx'],
+            ['Tiggo 7 Pro (تیگو ۷ پرو)', 'tiggo-7-pro'],
+            ['Tiggo 7 Pro Max (تیگو ۷ پرو مکس)', 'tiggo-7-pro-max'],
+            ['Tiggo 8 Pro (تیگو ۸ پرو)', 'tiggo-8-pro'],
+            ['Tiggo 8 Pro Max (تیگو ۸ پرو مکس)', 'tiggo-8-pro-max'],
         ]],
         ['JAC (جک)', 'jac', [
-            ['S3', 's3'], ['S5', 's5'], ['J4', 'j4'], ['J7', 'j7'],
-            ['KMC T8', 'kmc-t8'], ['KMC K7', 'kmc-k7'], ['KMC J7', 'kmc-j7'],
+            ['J4 (جی ۴)', 'j4'],
+            ['J5 (جی ۵)', 'j5'],
+            ['J7 (جی ۷)', 'j7'],
+            ['S3 (اس ۳)', 's3'],
+            ['S5 (اس ۵)', 's5'],
+            ['S7 (اس ۷)', 's7'],
+            ['KMC K7 (کی‌ام‌سی کی ۷)', 'kmc-k7'],
+            ['KMC T8 (کی‌ام‌سی تی ۸)', 'kmc-t8'],
+            ['KMC T9 (کی‌ام‌سی تی ۹)', 'kmc-t9'],
+            ['KMC X5 (کی‌ام‌سی ایکس ۵)', 'kmc-x5'],
         ]],
         ['CHANGAN (چانگان)', 'changan', [
-            ['CS35', 'cs35'], ['CS55', 'cs55'], ['UNI-T', 'uni-t'], ['UNI-K', 'uni-k'],
+            ['CS35 (سی‌اس ۳۵)', 'cs35'],
+            ['CS35 Plus (سی‌اس ۳۵ پلاس)', 'cs35-plus'],
+            ['CS55 (سی‌اس ۵۵)', 'cs55'],
+            ['CS55 Plus (سی‌اس ۵۵ پلاس)', 'cs55-plus'],
+            ['Eado (ایدو)', 'eado'],
+            ['UNI-K (یونی کی)', 'uni-k'],
+            ['UNI-T (یونی تی)', 'uni-t'],
+            ['UNI-V (یونی وی)', 'uni-v'],
         ]],
         ['BRILLIANCE (برلیانس)', 'brilliance', [
             ['H220', 'h220'], ['H230', 'h230'], ['H320', 'h320'], ['H330', 'h330'], ['V5', 'v5'],
@@ -80,12 +99,19 @@ add_action('admin_init', function () {
         if (!is_wp_error($all)) foreach ($all as $tid) wp_delete_term($tid, 'ap_vehicle');
     }
     $years = range(1398, 1405);
+    /* نسخه‌ی ۴: مدل‌های فونیکس، جک و چانگان از نو و به ترتیب ساخته می‌شن. */
+    $rebuild = version_compare((string) get_option('ap_vehicle_seed', '0'), '4', '<') ? ['fownix', 'jac', 'changan'] : [];
     foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
         $bid = ap_vehicle_seed_term($brand, $bslug, 0);
         if (!$bid) continue;
-        foreach ($models as [$model, $mslug]) {
+        if (in_array($bslug, $rebuild, true)) {
+            $kids = get_term_children($bid, 'ap_vehicle');
+            if (!is_wp_error($kids)) foreach ($kids as $k) wp_delete_term($k, 'ap_vehicle');
+        }
+        foreach ($models as $i => [$model, $mslug]) {
             $mid = ap_vehicle_seed_term($model, $mslug, $bid);
             if (!$mid) continue;
+            update_term_meta($mid, 'ap_order', $i + 1);
             foreach ($years as $y) ap_vehicle_seed_term((string) $y, (string) $y, $mid);
         }
     }
