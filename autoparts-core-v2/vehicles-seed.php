@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای اضافه‌کردن برند جدید: به فهرست اضافه کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '1');
+define('AP_VEHICLE_SEED_VERSION', '2');
 
 function ap_vehicle_seed_data() {
     return [
@@ -42,6 +42,18 @@ function ap_vehicle_seed_data() {
         ]],
         ['فیدلیتی', 'fidelity', [
             ['پرایم', 'prime'], ['الیت', 'elite'],
+        ]],
+        ['رسپکت', 'respect', [
+            ['رسپکت ۲', 'respect-2'],
+        ]],
+        ['دیگنیتی', 'dignity', [
+            ['پرستیژ', 'prestige'],
+        ]],
+        ['هاوال', 'haval', [
+            ['H6', 'h6'], ['H9', 'h9'], ['جولیون', 'jolion'], ['دارگو', 'dargo'],
+        ]],
+        ['لاماری', 'lamari', [
+            ['ایما', 'eama'],
         ]],
     ];
 }

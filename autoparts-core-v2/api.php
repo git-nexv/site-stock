@@ -156,6 +156,11 @@ function ap_wp_products() {
             foreach ($vterms as $vt) {
                 $vslugs[] = $vt->slug;
                 foreach (ap_term_ancestors_slugs($vt->term_id, 'ap_vehicle') as $vs) { $vslugs[] = $vs; }
+                /* محصولی که به یک مدل (بدون سال) وصل شده، برای همه‌ی سال‌های اون مدل هم نمایش داده می‌شه. */
+                $kids = get_term_children($vt->term_id, 'ap_vehicle');
+                if (!is_wp_error($kids)) {
+                    foreach ($kids as $kid) { $kt = get_term($kid, 'ap_vehicle'); if ($kt && !is_wp_error($kt)) $vslugs[] = $kt->slug; }
+                }
             }
         }
         $vslugs = array_values(array_unique($vslugs));
