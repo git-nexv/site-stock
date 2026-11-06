@@ -2715,3 +2715,6 @@ add_action('admin_init', function () {
     update_option('ap_logo_installed_v1', 1);
 });
 add_action('after_setup_theme', function () { add_theme_support('custom-logo'); });
+
+/* برند/مدل/سالِ خودروهای چینی رایج (vehicles-seed.php) */
+require_once __DIR__ . '/vehicles-seed.php';
