@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) { exit; }
 
 /**
  * مدیریت ادمین‌ها.
- * - مالک سایت (کاربر وردپرسِ kaveh با نقش مدیر کل) شماره و رمز خودش رو از
+ * - مالک سایت (کاربر وردپرس با نام کاربریِ شماره موبایل با نقش مدیر کل) شماره و رمز خودش رو از
  *   پیشخوان ← قطعات یدکی ← مدیریت ادمین‌ها عوض می‌کنه.
  * - ادمین‌های زیرمجموعه نقش ap_staff دارن و فقط بخش‌هایی که مالک براشون تیک زده رو می‌بینن.
  * - ورود همه‌شون از همون فرم سایت با شماره + رمزه؛ رمز با حساب وردپرسِ خودشون چک می‌شه.
@@ -11,7 +11,21 @@ if (!defined('ABSPATH')) { exit; }
  *   ادمین‌ها توی همون دیتابیس JSON فروشگاه (فیلد wp_user_id) همگام نگه داشته می‌شه.
  */
 
-define('AP_OWNER_LOGIN', 'kaveh');
+define('AP_OWNER_LOGIN', '09109973428');
+
+/* یک‌بار: نام کاربریِ وردپرسِ مالک از kaveh به شماره موبایلش عوض می‌شه،
+   تا توی wp-login.php هم با همون شماره وارد بشه (وردپرس از پیشخوان اجازه‌ی این تغییر رو نمی‌ده). */
+add_action('init', function () {
+    if (get_option('ap_owner_login_renamed')) return;
+    $old = get_user_by('login', 'kaveh');
+    if ($old && !username_exists(AP_OWNER_LOGIN)) {
+        global $wpdb;
+        $wpdb->update($wpdb->users, ['user_login' => AP_OWNER_LOGIN, 'user_nicename' => AP_OWNER_LOGIN], ['ID' => $old->ID]);
+        clean_user_cache($old->ID);
+        update_user_meta($old->ID, 'ap_phone', AP_OWNER_PHONE);
+    }
+    if (username_exists(AP_OWNER_LOGIN)) update_option('ap_owner_login_renamed', 1);
+}, 1);
 
 /* بخش‌هایی که به ادمین زیرمجموعه داده می‌شه ← توانایی‌های وردپرس */
 function ap_staff_perms() {
@@ -36,12 +50,12 @@ add_action('init', function () {
             update_user_meta($owner->ID, 'ap_phone', AP_OWNER_PHONE);
         }
         ap_staff_sync();
-        /* تا وقتی حساب kaveh ساخته نشده، دوباره امتحان می‌شه. */
+        /* تا وقتی حساب مالک ساخته نشده، دوباره امتحان می‌شه. */
         if ($owner) update_option('ap_staff_version', '1');
     }
 });
 
-/* ادمین‌ها: مالک (kaveh) + همه‌ی کاربرانِ نقش ap_staff */
+/* ادمین‌ها: مالک + همه‌ی کاربرانِ نقش ap_staff */
 function ap_staff_users() {
     $list = [];
     $owner = get_user_by('login', AP_OWNER_LOGIN);
