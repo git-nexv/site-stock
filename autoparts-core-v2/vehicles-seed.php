@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای اضافه‌کردن برند جدید: به فهرست اضافه کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '4');
+define('AP_VEHICLE_SEED_VERSION', '5');
 
 function ap_vehicle_seed_data() {
     return [
@@ -32,10 +32,16 @@ function ap_vehicle_seed_data() {
             ['S3 (اس ۳)', 's3'],
             ['S5 (اس ۵)', 's5'],
             ['S7 (اس ۷)', 's7'],
-            ['KMC K7 (کی‌ام‌سی کی ۷)', 'kmc-k7'],
-            ['KMC T8 (کی‌ام‌سی تی ۸)', 'kmc-t8'],
-            ['KMC T9 (کی‌ام‌سی تی ۹)', 'kmc-t9'],
-            ['KMC X5 (کی‌ام‌سی ایکس ۵)', 'kmc-x5'],
+        ]],
+        ['KMC (کی‌ام‌سی)', 'kmc', [
+            ['A5 (ای ۵)', 'a5'],
+            ['eJ7 (ای‌جی ۷)', 'ej7'],
+            ['J7 (جی ۷)', 'j7'],
+            ['K7 (کی ۷)', 'k7'],
+            ['SR3 (اس‌آر ۳)', 'sr3'],
+            ['T8 (تی ۸)', 't8'],
+            ['T9 (تی ۹)', 't9'],
+            ['X5 (ایکس ۵)', 'x5'],
         ]],
         ['CHANGAN (چانگان)', 'changan', [
             ['CS35 (سی‌اس ۳۵)', 'cs35'],
@@ -99,8 +105,10 @@ add_action('admin_init', function () {
         if (!is_wp_error($all)) foreach ($all as $tid) wp_delete_term($tid, 'ap_vehicle');
     }
     $years = range(1398, 1405);
-    /* نسخه‌ی ۴: مدل‌های فونیکس، جک و چانگان از نو و به ترتیب ساخته می‌شن. */
-    $rebuild = version_compare((string) get_option('ap_vehicle_seed', '0'), '4', '<') ? ['fownix', 'jac', 'changan'] : [];
+    /* نسخه‌ی ۴: مدل‌های فونیکس، جک و چانگان از نو ساخته می‌شن؛ نسخه‌ی ۵: KMC برند جدا شد. */
+    $prev = (string) get_option('ap_vehicle_seed', '0');
+    $rebuild = version_compare($prev, '4', '<') ? ['fownix', 'jac', 'changan', 'kmc']
+        : (version_compare($prev, '5', '<') ? ['jac', 'kmc'] : []);
     foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
         $bid = ap_vehicle_seed_term($brand, $bslug, 0);
         if (!$bid) continue;
