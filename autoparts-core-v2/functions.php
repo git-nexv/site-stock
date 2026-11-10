@@ -2382,7 +2382,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_instagram_url', [
-        'default'           => '',
+        'default' => 'https://www.instagram.com/auto.nexv.ir',
         'sanitize_callback' => 'esc_url_raw',
     ]);
     $wp_customize->add_control('ap_instagram_url', [
@@ -3955,3 +3955,10 @@ require_once __DIR__ . '/vehicles-seed.php';
 
 /* محصولات پایه برای همه‌ی مدل‌ها (parts-seed.php) */
 require_once __DIR__ . '/parts-seed.php';
+
+/* یک‌بار: صفحه‌ی اینستاگرامِ سایت (@auto.nexv.ir) توی نوارِ بالا و صفحه‌ی «درباره ما» */
+add_action('init', function () {
+    if (get_option('ap_instagram_set_v1')) return;
+    if (trim((string) get_theme_mod('ap_instagram_url', '')) === '') set_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
+    update_option('ap_instagram_set_v1', 1, false);
+});

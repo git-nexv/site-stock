@@ -264,7 +264,7 @@ if (function_exists('is_page') && is_page('terms')) {
 if (function_exists('is_page') && is_page('about')) {
     $phone = get_theme_mod('ap_contact_phone', '09109973428');
     $wa = get_theme_mod('ap_contact_whatsapp', '09109973428');
-    $ig = get_theme_mod('ap_instagram_url', '');
+    $ig = get_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
     $tel_href = 'tel:' . preg_replace('/[^0-9+]/', '', (string) $phone);
     $wa_href = 'https://wa.me/98' . ltrim(preg_replace('/[^0-9]/', '', (string) $wa), '0');
     ?>
@@ -393,7 +393,7 @@ $topbar_enabled = get_theme_mod('ap_topbar_enabled', true);
 $topbar_bg      = get_theme_mod('ap_topbar_bg', '#ff5563');
 $contact_phone  = get_theme_mod('ap_contact_phone', '09109973428');
 $contact_wa     = get_theme_mod('ap_contact_whatsapp', '09109973428');
-$instagram_url  = get_theme_mod('ap_instagram_url', '');
+$instagram_url  = get_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
 
 $topbar_html  = '';
 /* بخش ۱ هدر (نوار بنفش): همون‌جای قبلی می‌مونه، فقط ۱ میلی‌متر از بالا/چپ/راستِ لبه‌ی
