@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '7');
+define('AP_VEHICLE_SEED_VERSION', '8');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
@@ -84,10 +84,20 @@ function ap_vehicle_seed_data() {
         ]],
         ['BYD (بی‌وای‌دی)', 'byd', [
             ['Atto 3 (اتو ۳)', 'atto-3', 1403, 1405],
-            ['Dolphin (دلفین)', 'dolphin', 1403, 1405],
-            ['Han (هان)', 'han', 1403, 1405],
+            ['Dolphin (دلفین)', 'dolphin', 1403, 1405, ['fashion-ev']],
+            ['Han (هان)', 'han', 1403, 1405, ['phev-15']],
             ['Seal (سیل)', 'seal', 1403, 1405],
-            ['Song Plus (سانگ پلاس)', 'song-plus', 1403, 1405],
+            ['Seal 05 (سیل ۰۵)', 'seal-05', 1404, 1405],
+            ['Seal 06 (سیل ۰۶)', 'seal-06', 1404, 1405, ['phev-15']],
+            ['Sealion 06 (سی لاین ۰۶)', 'sealion-06', 1404, 1405, ['plus-170']],
+            ['Destroyer 05 (دیستروير ۰۵)', 'destroyer-05', 1403, 1405, ['phev-15']],
+            ['Qin Plus (چین پلاس)', 'qin-plus', 1403, 1405, ['phev-15-55km']],
+            ['Qin L (چین ال)', 'qin-l', 1404, 1405, ['phev-15']],
+            ['Song Plus (سانگ پلاس)', 'song-plus', 1403, 1405, ['turbo-15']],
+            ['Seagull (سیگال)', 'seagull', 1404, 1405, ['fly']],
+            ['F3 (اف ۳)', 'f3', 1389, 1392],
+            ['S6 (اس ۶)', 's6', 1392, 1395],
+            ['S7 (اس ۷)', 's7', 1394, 1397],
         ]],
         ['FIDELITY (فیدلیتی)', 'fidelity', [
             ['Elite (الیت)', 'elite', 1402, 1405],
@@ -132,7 +142,9 @@ function ap_vehicle_seed_term($name, $slug, $parent) {
 
 /* نام نمایشیِ گزینه‌ها: گیربکس و حجم موتور */
 function ap_vehicle_variant_name($slug) {
-    $map = ['manual' => 'دنده‌ای', 'automatic' => 'اتوماتیک'];
+    $map = ['manual' => 'دنده‌ای', 'automatic' => 'اتوماتیک',
+        'phev-15' => '1.5 لیتر پلاگین هیبرید', 'phev-15-55km' => 'پلاگین هیبرید 1.5 لیتر 55 کیلومتر',
+        'turbo-15' => '1.5 لیتر توربو', 'fashion-ev' => 'فشن تمام برقی', 'plus-170' => '170 پلاس', 'fly' => 'فلای'];
     return $map[$slug] ?? $slug;
 }
 

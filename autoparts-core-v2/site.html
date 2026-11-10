@@ -3326,6 +3326,7 @@ function cpLevelTitle(items){
   if(items.every(v => /^(13|14|19|20)\d\d$/.test(String(v.name).trim()))) return 'سال ساخت';
   if(items.some(v => /cc|سی\s*سی/i.test(v.name))) return 'حجم موتور';
   if(items.some(v => /دنده|اتومات|گیربکس/.test(v.name))) return 'گیربکس';
+  if(items.some(v => /لیتر|هیبرید|برقی|توربو/.test(v.name))) return 'پیشرانه';
   return 'تیپ';
 }
 function cpSetLevel(i, items){
