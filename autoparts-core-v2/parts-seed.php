@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) { exit; }
  * محصولی که از قبل با همون پیوند وجود داره دوباره ساخته نمی‌شه.
  */
 
-define('AP_PARTS_SEED_VERSION', '7');
+define('AP_PARTS_SEED_VERSION', '8');
 define('AP_PARTS_SEED_BATCH', 40);
 
 /* [اسلاگ قطعه, نام فارسی, اسلاگ دسته, نام دسته, آیکون, توضیح کوتاه, پاراگراف توضیح] */
@@ -154,9 +154,9 @@ function ap_parts_seed_cat($slug, $name) {
 
 /* خودروهای تمام‌برقی (بدون موتور بنزینی) */
 function ap_parts_is_ev($bslug, $mslug, $row = null) {
-    $ev = ['byd/atto-3', 'byd/dolphin', 'byd/seal', 'byd/seal-05', 'byd/seagull', 'kmc/ej7', 'changan/eado-ev460'];
+    $ev = ['byd/dolphin', 'byd/seagull', 'kmc/ej7', 'kmc/j7-ev-plus', 'changan/eado-ev460', 'fownix/fx-ev', 'mvm/mvm-arrizo-5-ev', 'honda/ens1'];
     if (in_array("$bslug/$mslug", $ev, true)) return true;
-    return is_array($row[4] ?? null) && in_array('fashion-ev', $row[4], true);
+    return is_array($row[4] ?? null) && (in_array('fashion-ev', $row[4], true) || isset($row[4]['fashion-ev']));
 }
 /* قطعه‌هایی که فقط در خودروهای دارای موتور احتراقی معنی دارن */
 function ap_parts_engine_only() {
@@ -187,6 +187,7 @@ function ap_parts_seed_model_term($bslug, $mslug) {
     if (is_wp_error($kids)) return 0;
     foreach ($kids as $k) {
         if ($k->slug === $mslug || $k->slug === $bslug . '-' . $mslug) return (int) $k->term_id;
+        if (strpos($k->slug, $bslug . '-' . $mslug . '-') === 0 || strpos($k->slug, $mslug . '-') === 0 && preg_match('/-\d+$/', $k->slug)) return (int) $k->term_id;   /* اسلاگِ پیشوند/پسوندخورده (کدهای مشترک بین برندها) */
     }
     return 0;
 }
@@ -511,3 +512,29 @@ add_action('init', function () {
     update_option('ap_mvm_move_v1', 1, false);
     delete_transient('ap_products_cache_v3');
 }, 15);
+
+/* =========================================================================
+ * محصولاتِ خودکارِ مدل‌هایی که از فهرست حذف شدن (مطابقِ دیوار): وقتی مدل حذف بشه، محصولِ
+ * خودکارش دیگه به هیچ خودرویی وصل نیست. فقط محصولاتی حذف می‌شن که خودکار ساخته شدن و
+ * هیچ‌وقت ویرایش نشدن (بدونِ قیمت، بدونِ عکس، بدونِ قیمتِ متغیر). بقیه دست نمی‌خورن.
+ * ========================================================================= */
+add_action('init', function () {
+    $tag = 'v' . AP_VEHICLE_SEED_VERSION;
+    if (get_option('ap_orphan_cleanup') === $tag || get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return;
+    if (get_transient('ap_orphan_lock')) return;
+    set_transient('ap_orphan_lock', 1, 60);
+    global $wpdb;
+    $last = (int) get_option('ap_orphan_last_' . $tag, 0);
+    $ids = $wpdb->get_col($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND ID > %d ORDER BY ID ASC LIMIT 200", $last));
+    if (!$ids) { update_option('ap_orphan_cleanup', $tag, false); delete_transient('ap_orphan_lock'); delete_transient('ap_products_cache_v3'); return; }
+    foreach ($ids as $id) {
+        $id = (int) $id; $last = $id;
+        if (strpos((string) get_post_field('post_content', $id), '<h3>سازگاری</h3>') === false) continue;
+        $terms = wp_get_object_terms($id, 'ap_vehicle', ['fields' => 'ids']);
+        if (!is_wp_error($terms) && $terms) continue;
+        if ((int) get_post_meta($id, '_ap_price', true) > 0 || get_post_meta($id, '_ap_variant_prices', true) || get_post_thumbnail_id($id) || get_post_meta($id, '_ap_gallery', true)) continue;
+        wp_delete_post($id, true);
+    }
+    update_option('ap_orphan_last_' . $tag, $last, false);
+    delete_transient('ap_orphan_lock');
+}, 35);
