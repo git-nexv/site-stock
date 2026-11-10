@@ -195,28 +195,58 @@ add_action('admin_notices', function () {
         $done, $total, esc_url(admin_url('admin.php?page=ap-dashboard')));
 });
 
-/* یک‌بار: عنوانِ محصولاتی که قبلاً با این فایل ساخته شدن دوزبانه می‌شه («فارسی | English»).
-   فقط عنوان عوض می‌شه (مستقیم در دیتابیس)؛ پیوند یکتا، قیمت و بقیه‌ی اطلاعات دست نمی‌خورن.
-   اگه عنوانِ یک محصول رو خودت از پیشخوان عوض کرده باشی، به اون دست زده نمی‌شه. */
-add_action('admin_init', function () {
-    if (!current_user_can('manage_options') || wp_doing_ajax()) return;
-    $st = get_option('ap_parts_title_en_v1', ['done' => 0, 'fin' => 0]);
-    if (!empty($st['fin'])) return;
-    global $wpdb;
-    $jobs = ap_parts_seed_jobs();
-    $end = min(count($jobs), (int) $st['done'] + 300);
-    for ($i = (int) $st['done']; $i < $end; $i++) {
-        [$brand, $bslug, $model, $mslug, , , $part] = $jobs[$i];
-        $slug = sanitize_title($bslug . '-' . $mslug . '-' . $part[0]);
-        $t = ap_parts_seed_title($brand, $model, $part[0], $part[1]);
-        $row = $wpdb->get_row($wpdb->prepare("SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_name = %s LIMIT 1", $slug));
-        if ($row && $row->post_title === $t['fa'] && $t['full'] !== $t['fa']) {
-            $wpdb->update($wpdb->posts, ['post_title' => $t['full']], ['ID' => (int) $row->ID]);
-            clean_post_cache((int) $row->ID);
-        }
+/* یک‌بار (نسخه‌ی ۲): همه‌ی محصولاتی که عنوانشون هنوز «|» نداره دوزبانه می‌شن («فارسی | English»).
+   نوعِ قطعه از ابتدای عنوانِ فارسی (لنت ترمز جلو، سپر عقب، ...) و خودرو از برند/مدلی که محصول
+   بهش وصله پیدا می‌شه؛ پس به شکلِ دقیقِ عنوانِ قبلی وابسته نیست. فقط عنوان عوض می‌شه
+   (مستقیم در دیتابیس) و پیوند یکتا و بقیه‌ی اطلاعات دست نمی‌خورن. دسته‌دسته روی هر بازدید
+   از سایت اجرا می‌شه تا بدونِ باز کردنِ پیشخوان هم تموم بشه. */
+function ap_parts_strip_fa($name) {
+    $en = trim(preg_replace('/\s*\(.+\)\s*/u', '', (string) $name));
+    if ($en !== '' && $en === strtoupper($en) && strlen($en) > 3) $en = ucwords(strtolower($en));
+    return $en;
+}
+function ap_parts_en_title_for($post_id, $title) {
+    $best = null; $bestLen = 0;
+    foreach (ap_parts_seed_list() as $part) {
+        $len = mb_strlen($part[1]);
+        if ($len > $bestLen && mb_strpos($title, $part[1]) === 0) { $best = $part; $bestLen = $len; }
     }
-    $st['done'] = $end;
-    if ($end >= count($jobs)) $st['fin'] = 1;
-    update_option('ap_parts_title_en_v1', $st, false);
-    delete_transient('ap_products_cache_v3');
-}, 25);
+    if (!$best) return '';
+    $partEn = ap_parts_seed_en()[$best[0]] ?? '';
+    $terms = get_the_terms($post_id, 'ap_vehicle');
+    if (!$terms || is_wp_error($terms)) return '';
+    /* عمیق‌ترین ترم ← زنجیره تا برند */
+    $deep = null; $depth = -1;
+    foreach ($terms as $t) { $d = count(get_ancestors($t->term_id, 'ap_vehicle')); if ($d > $depth) { $depth = $d; $deep = $t; } }
+    $chain = array_reverse(get_ancestors($deep->term_id, 'ap_vehicle'));
+    $chain[] = $deep->term_id;
+    $brand = get_term($chain[0], 'ap_vehicle');
+    $model = isset($chain[1]) ? get_term($chain[1], 'ap_vehicle') : null;
+    if (!$brand || is_wp_error($brand) || !$model || is_wp_error($model) || $partEn === '') return '';
+    $brandEn = ap_parts_strip_fa($brand->name);
+    $modelEn = ap_parts_strip_fa($model->name);
+    if ($brandEn === '' || $modelEn === '' || preg_match('/[^\x00-\x7f]/', $brandEn . $modelEn)) return '';
+    return trim((stripos($modelEn, $brandEn) === 0 ? '' : "$brandEn ") . "$modelEn $partEn");
+}
+add_action('init', function () {
+    if (get_option('ap_parts_title_en_v2') === 'done' || (defined('DOING_AJAX') && DOING_AJAX)) return;
+    if (get_transient('ap_parts_title_en_lock')) return;
+    set_transient('ap_parts_title_en_lock', 1, 60);
+    global $wpdb;
+    $last = (int) get_option('ap_parts_title_en_v2_last', 0);
+    $rows = $wpdb->get_results($wpdb->prepare("SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','private') AND ID > %d ORDER BY ID ASC LIMIT 150", $last));
+    if (!$rows) { update_option('ap_parts_title_en_v2', 'done', false); delete_transient('ap_parts_title_en_lock'); delete_transient('ap_products_cache_v3'); return; }
+    $changed = 0;
+    foreach ($rows as $r) {
+        $last = (int) $r->ID;
+        if (strpos($r->post_title, '|') !== false) continue;
+        $en = ap_parts_en_title_for((int) $r->ID, trim($r->post_title));
+        if ($en === '') continue;
+        $wpdb->update($wpdb->posts, ['post_title' => trim($r->post_title) . ' | ' . $en], ['ID' => (int) $r->ID]);
+        clean_post_cache((int) $r->ID);
+        $changed++;
+    }
+    update_option('ap_parts_title_en_v2_last', $last, false);
+    if ($changed) delete_transient('ap_products_cache_v3');
+    delete_transient('ap_parts_title_en_lock');
+}, 30);
