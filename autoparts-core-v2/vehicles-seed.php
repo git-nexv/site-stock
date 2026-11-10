@@ -9,22 +9,34 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '9');
+define('AP_VEHICLE_SEED_VERSION', '10');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
     return [
         ['CHERY (چری)', 'chery', [
-            ['Arrizo 5 (آریزو ۵)', 'arrizo-5', 1394, 1405],
-            ['Arrizo 6 (آریزو ۶)', 'arrizo-6', 1399, 1401],
+            ['Arrizo 5 (آریزو ۵)', 'arrizo-5', 1394, 1405, ['manual-luxury', 'auto-luxury', 'auto-excellent']],
+            ['Arrizo 5 Sport FL (آریزو ۵ اسپرت اف‌ال)', 'arrizo-5-sport', 1397, 1399],
+            ['Arrizo 5TE (آریزو ۵ تی‌ای)', 'arrizo-5te', 1401, 1405, ['base', 'excellent-turbo']],
+            ['Arrizo 5IE New (آریزو ۵ آی‌ای جدید)', 'arrizo-5ie', 1402, 1405, ['base', 'turbo']],
+            ['Arrizo 6 (آریزو ۶)', 'arrizo-6', 1399, 1401, ['base', 'excellent']],
             ['Arrizo 6 Pro (آریزو ۶ پرو)', 'arrizo-6-pro', 1400, 1403],
-            ['MVM 315 (ام‌وی‌ام ۳۱۵)', 'mvm-315', 1388, 1398],
-            ['MVM X22 (ام‌وی‌ام ایکس ۲۲)', 'mvm-x22', 1395, 1404],
-            ['MVM X33 (ام‌وی‌ام ایکس ۳۳)', 'mvm-x33', 1390, 1405],
-            ['MVM X55 (ام‌وی‌ام ایکس ۵۵)', 'mvm-x55', 1396, 1405],
-            ['Tiggo 5 (تیگو ۵)', 'tiggo-5', 1394, 1398],
+            ['Tiggo 5 (تیگو ۵)', 'tiggo-5', 1394, 1398, ['base', 'excellent', 'luxury', 'luxury-sport']],
+            ['Tiggo 5 IE (تیگو ۵ آی‌ای)', 'tiggo-5-ie', 1402, 1405],
+            ['Tiggo 5 IL (تیگو ۵ آی‌ال)', 'tiggo-5-il', 1402, 1405],
+            ['Tiggo 5 TE (تیگو ۵ تی‌ای)', 'tiggo-5-te', 1402, 1405, ['turbo']],
+            ['Tiggo 7 (تیگو ۷)', 'tiggo-7', 1397, 1401, ['base', 'excellent']],
+            ['Tiggo 7 IE (تیگو ۷ آی‌ای)', 'tiggo-7-ie', 1402, 1405],
             ['Tiggo 7 Pro (تیگو ۷ پرو)', 'tiggo-7-pro', 1400, 1405],
             ['Tiggo 8 Pro (تیگو ۸ پرو)', 'tiggo-8-pro', 1400, 1405],
+            ['A15 Viana (ویانا A15)', 'a15-viana', 1388, 1391],
+            ['Cowin (کویین)', 'cowin', 1388, 1391],
+        ]],
+        ['MVM (ام‌وی‌ام)', 'mvm', [
+            ['315 (۳۱۵)', 'mvm-315', 1388, 1398],
+            ['X22 (ایکس ۲۲)', 'mvm-x22', 1395, 1404],
+            ['X33 (ایکس ۳۳)', 'mvm-x33', 1390, 1405],
+            ['X55 (ایکس ۵۵)', 'mvm-x55', 1396, 1405],
         ]],
         ['FOWNIX (فونیکس)', 'fownix', [
             ['Arrizo 6 GT (آریزو ۶ جی‌تی)', 'arrizo-6-gt', 1402, 1405],
@@ -158,7 +170,9 @@ function ap_vehicle_variant_name($slug) {
         'phev-15' => '1.5 لیتر پلاگین هیبرید', 'phev-15-55km' => 'پلاگین هیبرید 1.5 لیتر 55 کیلومتر',
         'turbo-15' => '1.5 لیتر توربو', 'fashion-ev' => 'فشن تمام برقی', 'plus-170' => '170 پلاس', 'fly' => 'فلای',
         'imported' => 'وارداتی', 'montage' => 'مونتاژ', 'tip-2' => 'تیپ 2', 'tip-3' => 'تیپ 3',
-        'single-cab' => 'تک کابین', 'double-cab' => 'دو کابین', 'signature' => 'سیگنچر', 'sahara' => 'ساهارا'];
+        'single-cab' => 'تک کابین', 'double-cab' => 'دو کابین', 'signature' => 'سیگنچر', 'sahara' => 'ساهارا',
+        'base' => 'استاندارد', 'excellent' => 'اکسلنت', 'luxury' => 'لاکچری', 'luxury-sport' => 'لاکچری اسپرت', 'turbo' => 'توربو',
+        'excellent-turbo' => 'اکسلنت توربو', 'manual-luxury' => 'دنده‌ای لاکچری', 'auto-luxury' => 'اتوماتیک لاکچری', 'auto-excellent' => 'اتوماتیک اکسلنت'];
     return $map[$slug] ?? $slug;
 }
 
@@ -194,6 +208,22 @@ add_action('admin_init', function () {
     if (get_option('ap_vehicle_seed') === AP_VEHICLE_SEED_VERSION || !current_user_can('manage_options')) return;
     if (!taxonomy_exists('ap_vehicle')) return;
     @set_time_limit(300);
+
+    /* مدل‌هایی که جای برندشون عوض شده (مثلاً MVM که قبلاً زیرِ چری بود و برندِ خودشه) جابه‌جا می‌شن،
+       نه حذف و ساختِ دوباره؛ این‌طوری محصولاتی که بهشون وصلن جدا نمی‌شن. */
+    foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
+        $bid = ap_vehicle_seed_term($brand, $bslug, 0);
+        if (!$bid) continue;
+        foreach ($models as $row) {
+            $t = get_term_by('slug', $row[1], 'ap_vehicle');
+            if (!$t) continue;
+            $parentTerm = $t->parent ? get_term($t->parent, 'ap_vehicle') : null;
+            if ($parentTerm && !is_wp_error($parentTerm) && (int) $parentTerm->parent === 0 && (int) $t->parent !== $bid) {
+                wp_update_term($t->term_id, 'ap_vehicle', ['parent' => $bid, 'name' => $row[0]]);
+            }
+        }
+    }
+    clean_term_cache([], 'ap_vehicle');
 
     foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
         $bid = ap_vehicle_seed_term($brand, $bslug, 0);

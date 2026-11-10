@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) { exit; }
  * محصولی که از قبل با همون پیوند وجود داره دوباره ساخته نمی‌شه.
  */
 
-define('AP_PARTS_SEED_VERSION', '4');
+define('AP_PARTS_SEED_VERSION', '5');
 define('AP_PARTS_SEED_BATCH', 40);
 
 /* [اسلاگ قطعه, نام فارسی, اسلاگ دسته, نام دسته, آیکون, توضیح کوتاه, پاراگراف توضیح] */
@@ -111,6 +111,12 @@ function ap_parts_seed_list() {
     ];
 }
 
+/* پیوندِ محصول: برند-مدل-قطعه؛ اگه اسلاگِ مدل خودش با برند شروع بشه (mvm-x22) تکرار نمی‌شه */
+function ap_parts_seed_slug($bslug, $mslug, $pslug) {
+    $base = strpos($mslug, $bslug . '-') === 0 ? $mslug : $bslug . '-' . $mslug;
+    return sanitize_title($base . '-' . $pslug);
+}
+
 /* نامِ انگلیسیِ هر قطعه برای نیمه‌ی انگلیسیِ عنوان («فارسی | English»، مثل سایت اپل) */
 function ap_parts_seed_en() {
     return [
@@ -201,7 +207,7 @@ function ap_parts_seed_create($job) {
     [$brand, $bslug, $model, $mslug, $from, $to, $part] = $job;
     [$pslug, $pname, $cslug, $cname, $icon, $short, $para] = $part;
 
-    $slug = sanitize_title($bslug . '-' . $mslug . '-' . $pslug);
+    $slug = ap_parts_seed_slug($bslug, $mslug, $pslug);
     if (ap_parts_seed_exists($slug, ap_parts_seed_title($brand, $model, $pslug, $pname)['fa'])) return;
 
     /* «CHERY (چری)» ← «چری» و «MVM X22 (ام‌وی‌ام ایکس ۲۲)» ← «MVM X22» */
@@ -251,6 +257,7 @@ function ap_parts_seed_run($batch) {
     /* اول باید برند/مدل‌ها ساخته شده باشن و تکراری‌ها پاک شده باشن */
     if (get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return false;
     if (get_option('ap_dupe_cleanup_v1') !== 'done') return true;
+    if (!get_option('ap_mvm_move_v1')) return true;   /* اول محصولاتِ MVM به برندِ خودشون منتقل بشن، وگرنه تکراری ساخته می‌شن */
     $state = get_option('ap_parts_seed', ['v' => '', 'done' => 0]);
     if (($state['v'] ?? '') !== AP_PARTS_SEED_VERSION) $state = ['v' => AP_PARTS_SEED_VERSION, 'done' => 0];
     $jobs = ap_parts_seed_jobs();
@@ -479,3 +486,28 @@ add_action('init', function () {
     update_option('ap_title_mvm_fix_v1', 1, false);
     delete_transient('ap_products_cache_v3');
 }, 40);
+
+/* یک‌بار: محصولاتِ MVM که با برندِ «چری» ساخته شده بودن، به برندِ MVM منتقل می‌شن:
+   عنوان «... چری MVM X22 | Chery MVM X22 ...» ← «... ام‌وی‌ام X22 | MVM X22 ...»
+   و پیوند chery-mvm-x22-... ← mvm-x22-... (پیوندِ قبلی با ۳۰۱ ریدایرکت می‌شه). */
+add_action('init', function () {
+    if (get_option('ap_mvm_move_v1') || get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return;
+    global $wpdb;
+    $rows = $wpdb->get_results("SELECT ID, post_title, post_name FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_name LIKE 'chery-mvm-%'");
+    foreach ($rows as $r) {
+        $id = (int) $r->ID;
+        $title = str_replace(['چری MVM ', '| Chery MVM ', '| Chery Mvm '], ['ام‌وی‌ام ', '| MVM ', '| MVM '], $r->post_title);
+        $want = substr($r->post_name, strlen('chery-'));
+        $slug = wp_unique_post_slug($want, $id, 'publish', 'ap_product', 0);
+        $wpdb->update($wpdb->posts, ['post_title' => $title, 'post_name' => $slug], ['ID' => $id]);
+        add_post_meta($id, '_wp_old_slug', $r->post_name);
+        update_post_meta($id, '_ap_seed_key', $slug);
+        foreach (['_ap_spec', 'rank_math_title', 'rank_math_description', 'rank_math_focus_keyword'] as $k) {
+            $v = (string) get_post_meta($id, $k, true);
+            if ($v !== '') update_post_meta($id, $k, str_replace('چری MVM ', 'ام‌وی‌ام ', $v));
+        }
+        clean_post_cache($id);
+    }
+    update_option('ap_mvm_move_v1', 1, false);
+    delete_transient('ap_products_cache_v3');
+}, 15);
