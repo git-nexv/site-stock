@@ -255,7 +255,7 @@ function ap_parts_seed_run($batch) {
     $jobs = ap_parts_seed_jobs();
     if ($state['done'] >= count($jobs)) return false;
     if (get_transient('ap_parts_seed_lock')) return true;
-    set_transient('ap_parts_seed_lock', 1, 90);
+    set_transient('ap_parts_seed_lock', 1, 45);
     @set_time_limit(300);
     wp_defer_term_counting(true);
     $end = min(count($jobs), $state['done'] + $batch);
@@ -304,9 +304,12 @@ add_action('admin_init', function () {
 
 add_action('wp_ajax_ap_seed_progress', function () {
     if (!current_user_can('manage_options')) wp_send_json(null);
-    if (get_option('ap_dupe_cleanup_v1') === 'done') ap_parts_seed_run(AP_PARTS_SEED_BATCH);   /* هر بار پرسیدن، یک دسته هم ساخته بشه */
+    @ignore_user_abort(true);
+    /* پاک‌سازیِ تکراری‌ها هنوز تموم نشده؟ همون جلو بره */
+    if (get_option('ap_dupe_cleanup_v1') !== 'done') { do_action('ap_dupe_cleanup_step'); }
+    else ap_parts_seed_run(10);   /* دسته‌های کوچیک تا هیچ‌وقت به محدودیتِ زمانِ هاست نخوره */
     $state = get_option('ap_parts_seed', []);
-    wp_send_json(['done' => (int) ($state['done'] ?? 0), 'total' => count(ap_parts_seed_jobs())]);
+    wp_send_json(['done' => (int) ($state['done'] ?? 0), 'total' => count(ap_parts_seed_jobs()), 'cleanup' => get_option('ap_dupe_cleanup_v1') === 'done']);
 });
 
 add_action('admin_notices', function () {
@@ -316,8 +319,14 @@ add_action('admin_notices', function () {
     $done = (int) ($state['done'] ?? 0);
     if (($state['v'] ?? '') !== AP_PARTS_SEED_VERSION || $done >= $total) return;
     printf('<div class="notice notice-info" id="apSeedNotice"><p>در حال ساخت خودکارِ محصولات: <b id="apSeedDone">%d</b> از %d — کاری لازم نیست انجام بدید؛ در پس‌زمینه ادامه پیدا می‌کنه.</p></div>', $done, $total);
-    /* عددِ پیشرفت هر ۱۵ ثانیه خودش به‌روز می‌شه (بدونِ رفرشِ کلِ صفحه) */
-    echo '<script>(function(){var t=setInterval(function(){fetch(' . wp_json_encode(admin_url('admin-ajax.php?action=ap_seed_progress')) . ',{credentials:"same-origin"}).then(function(r){return r.json();}).then(function(d){var e=document.getElementById("apSeedDone");if(e&&d)e.textContent=d.done;if(d&&d.done>=d.total){clearInterval(t);var n=document.getElementById("apSeedNotice");if(n){n.className="notice notice-success";n.innerHTML="<p>ساخت محصولات تموم شد ✅</p>";}}}).catch(function(){});},15000);})();</script>';
+    /* زنجیره‌ای: هر جواب که رسید، فوراً دسته‌ی بعدی درخواست می‌شه؛ خطا = ۵ ثانیه بعد دوباره، و متنِ خطا نمایش داده می‌شه */
+    echo '<script>(function(){var url=' . wp_json_encode(admin_url('admin-ajax.php?action=ap_seed_progress')) . ';var fails=0;'
+        . 'function msg(t){var n=document.getElementById("apSeedErr");if(!n){n=document.createElement("p");n.id="apSeedErr";n.style.color="#b32d2e";var w=document.getElementById("apSeedNotice");if(w)w.appendChild(n);}n.textContent=t;}'
+        . 'function step(){fetch(url,{credentials:"same-origin"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(t){var d;try{d=JSON.parse(t);}catch(e){throw new Error("پاسخِ نامعتبر: "+t.slice(0,120));}'
+        . 'if(!d)throw new Error("دسترسی نیست");fails=0;msg("");var e=document.getElementById("apSeedDone");if(e)e.textContent=d.done;'
+        . 'if(d.done>=d.total){var n=document.getElementById("apSeedNotice");if(n){n.className="notice notice-success";n.innerHTML="<p>ساخت محصولات تموم شد ✅</p>";}return;}setTimeout(step,300);})'
+        . '.catch(function(err){fails++;msg("خطا در ادامه‌ی خودکار ("+err.message+")؛ "+(fails<20?"دوباره امتحان می‌شه…":"صفحه رو یک بار رفرش کنید."));if(fails<20)setTimeout(step,5000);});}'
+        . 'setTimeout(step,500);})();</script>';
 });
 
 /* یک‌بار (نسخه‌ی ۲): همه‌ی محصولاتی که عنوانشون هنوز «|» نداره دوزبانه می‌شن («فارسی | English»).
@@ -395,8 +404,8 @@ function ap_dupe_value($id) {
     if ((int) get_comments_number($id) > 0) $v += 1;
     return $v;
 }
-add_action('init', function () {
-    if (get_option('ap_dupe_cleanup_v1') === 'done' || (defined('DOING_AJAX') && DOING_AJAX)) return;
+function ap_dupe_cleanup_step_fn() {
+    if (get_option('ap_dupe_cleanup_v1') === 'done') return;
     if (get_transient('ap_dupe_cleanup_lock')) return;
     set_transient('ap_dupe_cleanup_lock', 1, 120);
     @set_time_limit(120);
@@ -446,7 +455,9 @@ add_action('init', function () {
     if ($left === 0 || ($deleted === 0 && $fixed === 0)) update_option('ap_dupe_cleanup_v1', 'done', false);
     delete_transient('ap_products_cache_v3');
     delete_transient('ap_dupe_cleanup_lock');
-}, 20);
+}
+add_action('init', function () { if (!(defined('DOING_AJAX') && DOING_AJAX)) ap_dupe_cleanup_step_fn(); }, 20);
+add_action('ap_dupe_cleanup_step', 'ap_dupe_cleanup_step_fn');
 add_action('admin_notices', function () {
     if (!current_user_can('manage_options')) return;
     $log = get_option('ap_dupe_cleanup_log');
