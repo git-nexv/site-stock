@@ -1792,6 +1792,158 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 .pd-fits b{padding:5px 11px; border-radius:999px; font-size:12px; font-weight:700;
   background:var(--accent-soft); color:var(--accent);}
 </style>
+<script>
+/* =====================================================================
+   زبانِ سایت (FA / EN) — دکمه‌ی گردِ کنارِ نوارِ بالا.
+   در حالت EN: جهتِ صفحه چپ‌به‌راست می‌شه، متن‌های رابط از فرهنگ‌لغتِ زیر ترجمه می‌شن،
+   عنوانِ محصولات از بخشِ انگلیسیِ خودشون («فارسی | English») گرفته می‌شه و نامِ دسته‌ها
+   کلمه‌به‌کلمه (با ترتیبِ انگلیسی) ترجمه می‌شه. متن‌هایی که ترجمه ندارن همون فارسی می‌مونن.
+   ===================================================================== */
+(function(){
+  let lang = 'fa';
+  try{ lang = localStorage.getItem('ap_lang') === 'en' ? 'en' : 'fa'; }catch(e){}
+  window.AP_LANG = lang;
+  window.apToggleLang = function(){
+    try{ localStorage.setItem('ap_lang', lang === 'en' ? 'fa' : 'en'); }catch(e){}
+    location.reload();
+  };
+  const setBtn = () => document.querySelectorAll('.ap-lang-btn').forEach(b => { b.textContent = lang === 'en' ? 'FA' : 'EN'; b.setAttribute('aria-label', lang === 'en' ? 'فارسی' : 'English'); });
+  if(lang !== 'en'){ document.addEventListener('DOMContentLoaded', setBtn); return; }
+  document.documentElement.setAttribute('lang', 'en');
+  document.documentElement.setAttribute('dir', 'ltr');
+
+  const D = {
+'خانه':'Home','همه':'All','فروشگاه':'Shop','محصولات':'Products','مقالات':'Articles','مقالات آموزشی':'Guides','همه‌ی مقالات':'All articles','مقالات مرتبط':'Related articles',
+'سبد خرید':'Cart','حساب کاربری':'Account','حساب من':'My account','ورود':'Sign in','ثبت‌نام':'Sign up','خروج از حساب کاربری':'Sign out','ورود به حساب کاربری':'Sign in to your account',
+'ساخت حساب کاربری':'Create account','ثبت‌نام کنید':'Sign up','ثبت‌نام رایگان':'Free sign-up','وارد شوید':'Sign in','ورود دوباره':'Sign in again','قبلاً ثبت‌نام کرده‌اید؟':'Already have an account?',
+'خوش آمدید!':'Welcome!','خوشحالیم که دوباره می‌بینیمتان.':'Good to see you again.','برای ادامه، حساب کاربری خود را بسازید.':'Create an account to continue.',
+'ورود / ثبت‌نام با گوگل':'Continue with Google','یا':'or','مرا به خاطر بسپار':'Remember me','رمز عبور را فراموش کرده‌اید؟':'Forgot your password?',
+'نام':'First name','نام خانوادگی':'Last name','شماره موبایل':'Mobile number','شماره موبایل یا ایمیل':'Mobile number or email','ایمیل':'Email','ایمیل (اختیاری)':'Email (optional)','رمز عبور':'Password',
+'رمزِ ورود (حداقل ۸ کاراکتر)':'Password (at least 8 characters)','حداقل ۶ کاراکتر':'At least 6 characters','مثلاً علی':'e.g. Ali','مثلاً محمدی':'e.g. Mohammadi',
+'جستجو':'Search','جستجوی محصولات...':'Search products...','فیلتر پیشرفته':'Advanced filter','حذف فیلتر':'Clear filter','پاک‌کردن':'Clear','اعمال فیلتر':'Apply filter',
+'افزودن به سبد':'Add to cart','افزودن به سبد خرید':'Add to cart','به سبد خرید افزوده شد':'Added to cart','سبد خرید شما خالی است':'Your cart is empty','سبد خرید شما خالی است.':'Your cart is empty.',
+'تومان':'Toman','<small>تومان</small>':'<small>Toman</small>','برای دریافت قیمت تماس بگیرید':'Call for price','تماس بگیرید':'Call us','حذف':'Remove','زیاد کردن':'Increase','کم کردن':'Decrease',
+'رنگ':'Color','حجم/ظرفیت':'Storage','ویژگی‌ها':'Features','معرفی کامل محصول':'Full description','محصولات مشابه':'Similar products','بازگشت به فروشگاه':'Back to shop','→ بازگشت':'← Back',
+'آخرین به‌روزرسانی قیمت:':'Price updated:','قیمت‌ها بر اساس نرخ روز به‌روزرسانی می‌شن':'Prices are updated daily','محصول اصل':'Genuine product','اصل و آکبند':'Genuine & sealed','گارانتی معتبر':'Valid warranty',
+'ارسال سریع':'Fast shipping','پرداخت امن':'Secure payment','پشتیبانی':'Support','ارسال به سراسر ایران':'Shipping across Iran','قطعات اورجینال':'Original parts','پرفروش':'Best seller',
+'پیشنهاد ویژه':'Special offer','پیشنهادهای ویژه برای شما':'Special picks for you','پیشنهادی':'Suggested','مشاهده محصولات':'View products','مشاهده‌ی پیشنهادها':'View offers','ویترین محصولات':'Featured products',
+'محصولات اپل را کشف کنید':'Discover Apple products','مطمئن نیستی کدوم قطعه؟':'Not sure which part?','مشاوره در واتساپ':'Ask on WhatsApp',
+'مدل دستگاهت رو بفرست؛ قطعه‌ی دقیق و سازگار رو رایگان برات پیدا می‌کنیم.':'Send us your device model and we will find the exact compatible part for free.',
+'در حال بارگذاری...':'Loading...','در حال بارگذاری محصولات…':'Loading products…','تلاش مجدد':'Retry','تلاش دوباره':'Try again','خطای ناشناخته':'Unknown error',
+'خطا در بارگذاری محصولات، لطفاً دوباره تلاش کنید.':'Could not load products, please try again.','اتصال به سرور ممکن نشد.':'Could not reach the server.','اتصال به سرور ممکن نشد. دوباره تلاش کنید.':'Could not reach the server. Please try again.',
+'تسویه‌ی سفارش':'Checkout','مبلغ قابل پرداخت':'Amount to pay','هزینه ارسال':'Shipping cost','روش ارسال':'Shipping method','پست پیشتاز':'Express post','تیپاکس':'Tipax','پیک (فقط تهران)':'Courier (Tehran only)','پس‌کرایه':'Pay on delivery',
+'ارسال به':'Ship to','شماره کارت':'Card number','کپی شماره کارت':'Copy card number','شماره کارت کپی شد.':'Card number copied.','ثبت سفارش':'Place order','ثبت سفارش ممکن نشد.':'Could not place the order.',
+'مبلغ زیر را به شماره کارت زیر واریز (کارت‌به‌کارت) کنید و سپس تصویر رسید را ارسال نمایید.':'Transfer the amount below to this card number, then upload a photo of the receipt.',
+'برای ادامه‌ی خرید، ابتدا وارد حساب کاربری خود شوید.':'Please sign in to continue your purchase.','برای ادامه‌ی خرید، آدرس ارسال را انتخاب کنید.':'Choose a shipping address to continue.','لطفاً ابتدا یک آدرس ارسال انتخاب کنید.':'Please choose a shipping address first.',
+'سفارش شما با موفقیت ثبت شد؛ به‌زودی با شما تماس گرفته می‌شود. 🎉':'Your order was placed; we will contact you soon. 🎉',
+'سفارشات من':'My orders','سفارش‌ها':'Orders','سفارش ثبت‌شده':'Order placed','هنوز سفارشی ثبت نکردید.':'You have no orders yet.','هنوز سفارشی ثبت نشده.':'No orders yet.','پیگیری سفارش‌های جاری و قبلی':'Track current and past orders',
+'در انتظار بررسی':'Pending review','تأیید شد':'Confirmed','در حال بسته‌بندی':'Packing','ارسال شده':'Shipped','تحویل به پستچی':'Handed to courier','رد شد':'Rejected','این سفارش رد شده است.':'This order was rejected.',
+'سفارش شما در انتظار بررسی است.':'Your order is pending review.','سفارش شما تأیید شد و به‌زودی بسته‌بندی می‌شود.':'Your order is confirmed and will be packed soon.','🧾 دانلود / چاپ فاکتور':'🧾 Download / print invoice',
+'اطلاعات شخصی':'Personal info','تکمیل اطلاعات شخصی':'Complete your personal info','ذخیره اطلاعات شخصی':'Save personal info','اطلاعات شخصی ذخیره شد ✅':'Personal info saved ✅','اطلاعات حساب خودتون رو مدیریت کنید.':'Manage your account details.',
+'نام، نام‌خانوادگی، شماره تماس و ایمیل':'Name, phone and email','آدرس‌ها':'Addresses','آدرس‌های من':'My addresses','افزودن، ویرایش یا حذف آدرس‌ها':'Add, edit or remove addresses','+ افزودن آدرس جدید':'+ Add new address',
+'هنوز آدرسی ثبت نکردید.':'You have no saved addresses.','آدرسی ثبت نکرده.':'No address saved.','ذخیره آدرس':'Save address','آدرس با موفقیت ذخیره شد ✅':'Address saved ✅','آدرس حذف شد.':'Address removed.','ویرایش':'Edit',
+'استان':'Province','شهر':'City','انتخاب استان':'Select province','انتخاب شهر':'Select city','منطقه / محله':'District','پلاک':'No.','واحد':'Unit','کدپستی':'Postal code','آدرس کامل':'Full address','آدرس':'Address','شماره تماس':'Phone number',
+'عنوان آدرس (مثلاً خانه، محل کار)':'Address label (e.g. Home, Work)','ابتدا استان را انتخاب کنید':'Select a province first','لطفاً استان را انتخاب کنید.':'Please select a province.','لطفاً شهر را از لیست انتخاب کنید.':'Please select a city from the list.',
+'کد پستی باید دقیقاً ۱۰ رقم باشد.':'Postal code must be exactly 10 digits.','شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.':'Mobile number must be 11 digits (09xxxxxxxxx).','رمز باید حداقل ۸ کاراکتر باشد.':'Password must be at least 8 characters.','نام و نام خانوادگی الزامی است.':'First and last name are required.',
+'ثبت‌نام با موفقیت انجام شد 🎉':'Signed up successfully 🎉','از حساب کاربری خارج شدید.':'You have signed out.','خطایی رخ داد، دوباره تلاش کنید.':'Something went wrong, please try again.',
+'✍️ ثبت نظر':'✍️ Write a review','هنوز نظری ثبت نشده؛ اولین نفری باشید که نظر می‌ده!':'No reviews yet — be the first!','برای ثبت نظر باید وارد حساب کاربری خود شوید.':'Sign in to write a review.',
+'درباره ما':'About us','قوانین و مقررات':'Terms & conditions','قوانین':'Terms','تماس با ما:':'Contact us:','تماس با ما: ':'Contact us: ','پیام در واتساپ':'WhatsApp us','اینستاگرام':'Instagram','تغییر حالت روشن و تاریک':'Toggle light/dark mode',
+'© ۱۴۰۵ NEXV — تمامی حقوق محفوظ است.':'© 2026 NEXV — All rights reserved.','عضو باشگاه مشتریان NEXV شوید':'Join the NEXV customer club',
+'با ثبت‌نام، از تخفیف‌های ویژه، پیش‌فروش محصولات جدید و ارسال رایگان بهره‌مند شوید.':'Sign up for special discounts, pre-orders and free shipping.',
+'ارسال به سراسر کشور، تحویل اکسپرس در تهران در همان روز.':'Nationwide shipping, same-day express delivery in Tehran.','تمامی کالاها با کد رهگیری اپل و پلمب اصلی ارسال می‌شوند.':'All items ship sealed with Apple tracking codes.',
+'درگاه پرداخت رمزنگاری‌شده و امکان پرداخت قسطی.':'Encrypted payment gateway with installment options.','پوشش گارانتی تعویض و تعمیر روی همه‌ی دستگاه‌ها.':'Replacement and repair warranty on all devices.',
+'از هر دسته، پرفروش‌ترین و جدیدترین مدل‌ها را انتخاب کنید.':'Pick the best-selling and newest models in every category.','پیشنهادهای محدودِ این هفته روی قطعاتِ اورجینال':'Limited offers this week on original parts',
+'تخفیف‌های ویژه‌ی قطعات اپل':'Special deals on Apple parts','تجربه‌ای روشن‌تر':'A brighter experience','از دنیای اپل':'From the Apple world','لوازم جانبی':'Accessories','قطعات':'Parts','خرید':'Buy','دستگاه':'Device',
+'زیردسته‌ای برای این دسته وجود نداره؛ از پایین می‌تونید فیلتر رو اعمال کنید.':'This category has no subcategories; apply the filter below.',
+'پیشخوان مدیریت':'Admin dashboard','پیشخوان مدیریت سفارش‌ها':'Order dashboard','سفارش‌ها و مشتری‌ها':'Orders & customers','مشتری‌ها':'Customers','ادمین‌ها':'Admins','اعلان‌ها':'Notifications','تغییر وضعیت':'Change status',
+'✅ تأیید سفارش':'✅ Confirm order','❌ رد سفارش':'❌ Reject order','تاریخ عضویت':'Joined','آخرین ورود:':'Last sign-in:','متوجه شدم':'Got it','بعداً':'Later','فعال‌سازی':'Enable','ذخیره‌ی تغییرات':'Save changes',
+'✦ نسل تازه‌ای از خرید اپل':'✦ A new way to buy Apple','تجربه‌ای':'A brighter','روشن‌تر':'experience','از':'From','دنیای':'the world of','ساعته':'hours','سریع':'Fast','٪ پیشنهاد ویژه':'% special offer','ال‌سی‌دی':'LCD','وبلاگ NEXV':'NEXV Blog',
+'از آیفون تا مک، از ایرپاد تا اپل واچ؛ همه‌ی محصولات اصل اپل با گارانتی معتبر، ارسال سریع و قیمت شفاف، در یک فروشگاه.':'From iPhone to Mac, AirPods to Apple Watch — every genuine Apple product with a valid warranty, fast shipping and clear prices, in one store.',
+'ارسالِ اعلان برای همه‌ی مشتری‌ها':'Send a notification to all customers','عنوانِ اعلان':'Notification title','متنِ اعلان':'Notification text','لینک (اختیاری — با زدن روی اعلان باز می‌شه)':'Link (optional — opens when tapped)','متنِ اعلان اینجا نمایش داده می‌شه.':'Notification text appears here.',
+'ارسال برای همه':'Send to all','🔔 همین دستگاه':'🔔 This device','اعلانِ سفارشِ جدید روی این گوشی':'New-order alerts on this phone','ارسال آزمایشی':'Send test','به‌نام':'Holder','📎 ارسال رسید پرداخت':'📎 Upload payment receipt','ثبت نهایی سفارش':'Place order',
+'مشتریان':'Customers','🔔 اعلانِ سفارشِ جدید':'🔔 New-order alerts','روی این گوشی، با هر سفارشِ جدید یک اعلان دریافت کنید.':'Get an alert on this phone for every new order.','سفارش‌های ثبت‌شده و رسیدهای پرداخت':'Placed orders and payment receipts','→ بازگشت به فهرست مشتریان':'← Back to customers',
+'شماره موبایل (برای ورود)':'Mobile number (for sign-in)','رمزِ جدید':'New password','تکرارِ رمزِ جدید':'Repeat new password','رمزِ فعلی (برای تأیید)':'Current password (to confirm)','ورود به پیشخوانِ وردپرس ←':'Open WordPress dashboard →','ادمین‌های زیرمجموعه':'Sub-admins','+ افزودن ادمین':'+ Add admin','ادمینِ جدید':'New admin',
+'به چه بخش‌هایی دسترسی داشته باشه؟':'Which sections can they access?','انصراف':'Cancel','ذخیره':'Save','پاک کردن':'Clear','محدوده قیمت (تومان)':'Price range (Toman)','جمع کل':'Total','ادامه فرایند خرید':'Continue to checkout','انجام شد':'Done','صفحه اصلی':'Home','دسته‌بندی':'Categories',
+'مثلاً: تخفیفِ ویژه‌ی آخر هفته':'e.g. Weekend special','متنی که روی گوشیِ مشتری‌ها نمایش داده می‌شه...':'Text shown on customers\' phones...','جستجو با شماره تماس...':'Search by phone...','خالی = بدون تغییر':'Empty = unchanged','تا':'To','جستجوی محصول...':'Search products...',
+'آذربایجان شرقی':'East Azerbaijan','آذربایجان غربی':'West Azerbaijan','اردبیل':'Ardabil','اصفهان':'Isfahan','البرز':'Alborz','ایلام':'Ilam','بوشهر':'Bushehr','تهران':'Tehran','چهارمحال و بختیاری':'Chaharmahal & Bakhtiari','خراسان جنوبی':'South Khorasan','خراسان رضوی':'Razavi Khorasan','خراسان شمالی':'North Khorasan',
+'خوزستان':'Khuzestan','زنجان':'Zanjan','سمنان':'Semnan','سیستان و بلوچستان':'Sistan & Baluchestan','فارس':'Fars','قزوین':'Qazvin','قم':'Qom','کردستان':'Kurdistan','کرمان':'Kerman','کرمانشاه':'Kermanshah','کهگیلویه و بویراحمد':'Kohgiluyeh & Boyer-Ahmad','گلستان':'Golestan','گیلان':'Gilan','لرستان':'Lorestan','مازندران':'Mazandaran','مرکزی':'Markazi','هرمزگان':'Hormozgan','همدان':'Hamadan','یزد':'Yazd',
+'✦ قطعه‌ی اصل، با گارانتی اصالت':'✦ Genuine parts, authenticity guaranteed','قطعه‌ی':'The right','درست':'part','برای':'for','خودروی':'your','شما':'car','قطعه‌ی اصل':'Genuine part',
+'قطعه را با خودروی خودتان پیدا کنید':'Find parts for your car','برند، مدل و سال ساخت را انتخاب کنید تا فقط قطعات سازگار نشان داده شوند.':'Choose brand, model and year to see only compatible parts.',
+'برند خودرو':'Car brand','انتخاب برند':'Select brand','اول برند را انتخاب کنید':'Select a brand first','مدل خودرو':'Car model','انتخاب مدل':'Select model','سال ساخت':'Year','انتخاب سال':'Select year','اول مدل را انتخاب کنید':'Select a model first','جستجوی قطعه':'Find parts',
+'هنوز برند و مدلی در پیشخوان ثبت نشده است؛ از پیشخوان ← قطعات یدکی ← برند / مدل / سال اضافه کنید.':'No brands or models yet; add them in the dashboard.',
+'تمامی قطعات با پلمب و بسته‌بندی اصلی کارخانه ارسال می‌شوند.':'All parts ship sealed in original factory packaging.','پوشش گارانتی سلامت و تعویض روی همه‌ی قطعات.':'Health and replacement warranty on all parts.',
+'تخفیف‌های ویژه‌ی قطعات یدکی':'Special deals on spare parts','قطعه‌ی خودروی خود را پیدا کنید':'Find the part for your car','از هر دسته، پرفروش‌ترین و پرتقاضاترین قطعات را انتخاب کنید.':'Pick the best-selling and most-wanted parts in every category.',
+'سازگار با:':'Fits:','کد فنی (OEM):':'OEM code:','قطعات یدکی':'Spare parts',
+'نمایش موارد سمت چپ':'Show items on the left','نمایش موارد سمت راست':'Show items on the right','اسلاید':'Slide'
+  };
+  /* کلمه‌ها برای نامِ دسته‌ها/متن‌های کوتاه */
+  const W = {'قطعات':'Parts','خرید':'Buy','لوازم':'','جانبی':'Accessories','آیفون':'iPhone','ایفون':'iPhone','آیپد':'iPad','ایپد':'iPad','اپل':'Apple','واچ':'Watch','مک‌بوک':'MacBook','آیمک':'iMac','ایرپاد':'AirPods',
+    'سری':'Series','پرو':'Pro','مکس':'Max','پلاس':'Plus','مینی':'mini','ایر':'Air','اولترا':'Ultra','نسل':'Gen','اینچ':'inch','میلی‌متر':'mm','باتری':'Battery','مادربرد':'Motherboard','دوربین':'Camera','جلو':'Front','پشت':'Rear',
+    'بدنه':'Housing','شاسی':'Frame','ال':'','سی':'','دی':'LCD','السیدی':'LCD','تاچ':'Touch','فلت':'Flex','اسپیکر':'Speaker','میکروفون':'Microphone','کابل':'Cable','شارژر':'Charger','گلس':'Glass','لنز':'Lens','قاب':'Case',
+    'لنت':'Brake Pads','ترمز':'Brake','سپر':'Bumper','چراغ':'Light','جلوپنجره':'Grille','کاپوت':'Hood','درب':'Door','موتور':'Engine','گلگیر':'Fender','آینه':'Mirror','اینه':'Mirror','بغل':'Side','رادیاتور':'Radiator','آب':'Water','کولر':'A/C',
+    'فیلتر':'Filter','روغن':'Oil','هوا':'Air','کابین':'Cabin','بنزین':'Fuel','تسمه':'Belt','تایم':'Timing','دینام':'Alternator','استارت':'Starter','شمع':'Spark Plug','کویل':'Coil','سنسور':'Sensor','واشر':'Gasket','سرسیلندر':'Cylinder Head',
+    'کمک':'Shock','فنر':'Absorber','کلاچ':'Clutch','گیربکس':'Gearbox','دیسک':'Disc','کاسه':'Drum','چرخ':'Wheel','طبق':'Control Arm','سیبک':'Ball Joint','بوش':'Bushing','پمپ':'Pump','انژکتور':'Injector','اگزوز':'Exhaust',
+    'برقی':'Electrical','موتوری':'Engine','جلوبندی':'Suspension','تعلیق':'Suspension','بدنه‌ای':'Body','داخلی':'Interior','خودرو':'Car','عقب':'Rear','راست':'Right','چپ':'Left','افتر':'After','مارکت':'market','یدکی':'Spare',
+    'پژو':'Peugeot','پراید':'Pride','سمند':'Samand','دنا':'Dena','رانا':'Rana','تیبا':'Tiba','ساینا':'Saina','شاهین':'Shahin','سورن':'Soren','تارا':'Tara','کیا':'Kia','هیوندای':'Hyundai','تویوتا':'Toyota','نیسان':'Nissan','رنو':'Renault',
+    'چری':'Chery','آریزو':'Arrizo','تیگو':'Tiggo','جک':'JAC','هاوال':'Haval','لیفان':'Lifan','برلیانس':'Brilliance','هایما':'Haima','چانگان':'Changan','فونیکس':'Fownix','جیلی':'Geely','سایپا':'Saipa','ایران':'Iran','مدل':'Model','سال':'Year',
+    'اورجینال':'Original','کپی':'Copy','و':'&','دستگاه':'Device','ساعت':'Watch','هوشمند':'Smart','گوشی':'Phone','تبلت':'Tablet','لپ‌تاپ':'Laptop','هدفون':'Headphones','سوکت':'Port','شارژ':'Charging'};
+  const ATTACH = new Set(['Pro','Max','Plus','mini','Air','Ultra','inch','mm','Gen','LCD']);
+  const fa2en = s => s.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٫/g, '.').replace(/،/g, ',').replace(/؛/g, ';').replace(/؟/g, '?');
+  const hasFa = s => /[؀-ۿ]/.test(s);
+  function words(t){
+    const toks = t.replace(/‌/g, '‌').split(/\s+/).filter(Boolean);
+    if(!toks.length || toks.length > 8) return null;
+    const groups = [];
+    for(const k of toks){
+      const n = fa2en(k);
+      let e;
+      if(/^[0-9.\/]+$/.test(n) || /^[A-Za-z0-9.\-]+$/.test(n)) e = n;
+      else if(k in W) e = W[k];
+      else return null;
+      if(e === '') continue;
+      if(groups.length && (ATTACH.has(e) || /^[0-9.\/]+$/.test(e))) groups[groups.length - 1] += ' ' + e;
+      else groups.push(e);
+    }
+    return groups.reverse().join(' ').replace(/\s+/g, ' ').trim();
+  }
+  function tr(raw){
+    const t = raw.trim();
+    if(!t || !hasFa(t)) return null;
+    if(D[t] != null) return raw.replace(t, D[t]);
+    for(const [re, f] of [[/^عضو باشگاه مشتریان (.+) شوید$/, n => 'Join the ' + n + ' customer club'], [/^وبلاگ (.+)$/, n => n + ' Blog'], [/^© ۱۴۰۵ (.+) — تمامی حقوق محفوظ است\.$/, n => '© 2026 ' + n + ' — All rights reserved.'], [/^به (.+) خوش آمدید$/, n => 'Welcome to ' + n], [/^فروشگاه (.+)$/, n => n + ' Store']]){
+      const mm = t.match(re); if(mm && !hasFa(mm[1])) return raw.replace(t, f(mm[1]));
+    }
+    const bar = t.split('|');                                    /* «فارسی | English» */
+    if(bar.length > 1){ const en = bar.slice(1).join('|').trim(); if(en && !hasFa(en)) return raw.replace(t, en); }
+    const w = words(t); if(w) return raw.replace(t, w);
+    let out = t, hit = false;                                     /* عبارت‌های شناخته‌شده داخلِ متن */
+    for(const k of KEYS){ if(out.includes(k)){ out = out.split(k).join(D[k]); hit = true; } }
+    if(!hit) return null;
+    out = out.replace(/[\u0600-\u06FF\u200c]+(?:\s+[\u0600-\u06FF\u200c]+)*/g, m => words(m) ?? m);   /* باقی‌مونده‌ها کلمه‌به‌کلمه */
+    return hasFa(out) ? null : raw.replace(t, fa2en(out));          /* نیمه‌فارسی نمونه */
+  }
+  const KEYS = Object.keys(D).filter(k => k.length >= 4).sort((a, b) => b.length - a.length);
+  const SKIP = new Set(['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','CODE']);
+  function walk(root){
+    const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentNode && !SKIP.has(n.parentNode.nodeName) && hasFa(n.nodeValue)) ? 1 : 2 });
+    const list = []; let n; while((n = it.nextNode())) list.push(n);
+    list.forEach(n => { const v = tr(n.nodeValue); if(v != null && v !== n.nodeValue) n.nodeValue = v; });
+    (root.querySelectorAll ? root.querySelectorAll('[placeholder],[title],[aria-label]') : []).forEach(el => {
+      ['placeholder','title','aria-label'].forEach(a => { const v = el.getAttribute(a); if(v && hasFa(v)){ const r = tr(v); if(r != null) el.setAttribute(a, r); } });
+    });
+  }
+  let pending = false;
+  const run = () => { pending = false; walk(document.body); if(document.title && hasFa(document.title)){ const r = tr(document.title); if(r) document.title = r; } };
+  document.addEventListener('DOMContentLoaded', () => {
+    setBtn(); run();
+    new MutationObserver(() => { if(!pending){ pending = true; requestAnimationFrame(run); } }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  });
+  /* پیام‌های کوتاه (alert/confirm) هم ترجمه بشن */
+  const _alert = window.alert, _confirm = window.confirm;
+  window.alert = m => _alert(tr(String(m)) || m);
+  window.confirm = m => _confirm(tr(String(m)) || m);
+})();
+</script>
 </head>
 
 <body>
