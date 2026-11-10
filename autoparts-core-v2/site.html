@@ -1632,7 +1632,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 .carpick-head .ic svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
 .carpick-head strong{display:block; font-size:15.5px; font-weight:800; letter-spacing:-.2px;}
 .carpick-head small{display:block; margin-top:2px; font-size:12.5px; color:var(--text-dim);}
-.carpick-row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:10px; align-items:end;}
+.carpick-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; align-items:end;}
 .carpick-field{display:flex; flex-direction:column; gap:6px; min-width:0;}
 .carpick-field > span{font-size:12px; font-weight:600; color:var(--text-dim); padding-inline-start:4px;}
 .carpick-field select{width:100%; height:48px; padding:0 14px; border-radius:14px; font-family:inherit; font-size:13.5px;
@@ -1762,7 +1762,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
       <label class="carpick-field"><span>مدل</span>
         <select id="cpModel" disabled><option value="">اول برند را انتخاب کنید</option></select>
       </label>
-      <label class="carpick-field"><span>سال ساخت</span>
+      <label class="carpick-field" id="cpYearField"><span>سال ساخت</span>
         <select id="cpYear" disabled><option value="">اول مدل را انتخاب کنید</option></select>
       </label>
       <button type="button" class="carpick-go" id="cpGo" disabled>جستجوی قطعه</button>
@@ -2831,13 +2831,62 @@ function cpSelectedOption(sel){
 /* عمیق‌ترین سطحی که مشتری انتخاب کرده، همون فیلترِ نهاییه: سال > مدل > برند.
    چون اسلاگِ همه‌ی والدها روی هر محصول ذخیره می‌شه، انتخابِ برند هم قطعاتِ
    همه‌ی مدل‌ها و سال‌های اون برند رو شامل می‌شه. */
+/* بعد از مدل، سطح‌های بعدی (گیربکس ← حجم موتور ← سال) پویا ساخته می‌شن؛
+   هر سطح فقط وقتی نمایش داده می‌شه که انتخابِ قبلی زیرمجموعه داشته باشه.
+   اولین سطح همون باکس «سال ساخت» توی صفحه‌ست و بقیه کنارش اضافه می‌شن. */
+const cpYearField = document.getElementById('cpYearField');
+let cpLevels = cpYear ? [cpYear] : [];
+function cpLevelTitle(items){
+  if(items.every(v => /^(13|14|19|20)\d\d$/.test(String(v.name).trim()))) return 'سال ساخت';
+  if(items.some(v => /cc|سی\s*سی/i.test(v.name))) return 'حجم موتور';
+  if(items.some(v => /دنده|اتومات|گیربکس/.test(v.name))) return 'گیربکس';
+  return 'تیپ';
+}
+function cpSetLevel(i, items){
+  const sel = cpLevels[i];
+  const title = items.length ? cpLevelTitle(items) : 'سال ساخت';
+  const span = sel.parentElement.querySelector('span');
+  if(span) span.textContent = title;
+  fillSelect(sel, items, items.length ? 'انتخاب ' + title : (i === 0 ? 'اول مدل را انتخاب کنید' : 'موردی ثبت نشده'));
+}
+function cpTrimLevels(keep){
+  while(cpLevels.length > Math.max(keep, 1)){
+    const sel = cpLevels.pop();
+    sel.parentElement.remove();
+  }
+}
+function cpAddLevel(){
+  const label = document.createElement('label');
+  label.className = 'carpick-field';
+  label.innerHTML = '<span></span><select disabled></select>';
+  const last = cpLevels[cpLevels.length - 1].parentElement;
+  last.after(label);
+  const sel = label.querySelector('select');
+  const idx = cpLevels.length;
+  sel.addEventListener('change', ()=> cpOnLevelChange(idx));
+  cpLevels.push(sel);
+  return sel;
+}
+function cpOnLevelChange(i){
+  cpTrimLevels(i + 1);
+  const opt = cpSelectedOption(cpLevels[i]);
+  const kids = opt ? vehicleChildren(Number(opt.value)) : [];
+  if(kids.length){ cpAddLevel(); cpSetLevel(i + 1, kids); }
+  cpSyncButton();
+}
+function cpResetLevels(){
+  cpTrimLevels(1);
+  if(cpYear) cpSetLevel(0, []);
+}
+/* عمیق‌ترین سطحی که مشتری انتخاب کرده، همون فیلترِ نهاییه. چون اسلاگِ همه‌ی والدها
+   روی هر محصول ذخیره می‌شه، انتخابِ برند هم قطعاتِ همه‌ی مدل‌های اون برند رو شامل می‌شه. */
 function cpDeepest(){
-  const y = cpSelectedOption(cpYear);
-  const m = cpSelectedOption(cpModel);
-  const b = cpSelectedOption(cpBrand);
-  const chosen = y || m || b;
-  if(!chosen) return null;
-  return { slug: chosen.dataset.slug, label: vehicleLabel([b, m, y].filter(Boolean).map(o => o.textContent)) };
+  const opts = [cpSelectedOption(cpBrand), cpSelectedOption(cpModel)];
+  cpLevels.forEach(sel => opts.push(cpSelectedOption(sel)));
+  const chosenList = opts.filter(Boolean);
+  if(!chosenList.length) return null;
+  const chosen = chosenList[chosenList.length - 1];
+  return { slug: chosen.dataset.slug, label: vehicleLabel(chosenList.map(o => o.textContent)) };
 }
 function cpSyncButton(){
   if(cpGo) cpGo.disabled = !cpDeepest();
@@ -2854,16 +2903,16 @@ cpBrand?.addEventListener('change', ()=>{
   const opt = cpSelectedOption(cpBrand);
   const models = opt ? vehicleChildren(Number(opt.value)) : [];
   fillSelect(cpModel, models, models.length ? 'انتخاب مدل' : 'مدلی ثبت نشده');
-  fillSelect(cpYear, [], 'اول مدل را انتخاب کنید');
+  cpResetLevels();
   cpSyncButton();
 });
 cpModel?.addEventListener('change', ()=>{
   const opt = cpSelectedOption(cpModel);
-  const years = opt ? vehicleChildren(Number(opt.value)) : [];
-  fillSelect(cpYear, years, years.length ? 'انتخاب سال ساخت' : 'سالی ثبت نشده');
+  cpTrimLevels(1);
+  cpSetLevel(0, opt ? vehicleChildren(Number(opt.value)) : []);
   cpSyncButton();
 });
-cpYear?.addEventListener('change', cpSyncButton);
+cpYear?.addEventListener('change', ()=> cpOnLevelChange(0));
 
 function cpRenderActive(){
   if(!cpActive) return;
@@ -2875,7 +2924,7 @@ function cpRenderActive(){
     selectedVehicle = null;
     cpBrand.selectedIndex = 0;
     fillSelect(cpModel, [], 'اول برند را انتخاب کنید');
-    fillSelect(cpYear, [], 'اول مدل را انتخاب کنید');
+    cpResetLevels();
     cpSyncButton();
     cpRenderActive();
     const activeChip = document.querySelector('#quickChips .chip.active');
@@ -2913,7 +2962,7 @@ function cpPreselectFromUrl(){
     chain.unshift(cur);
     cur = cur.parent ? VEHICLES.find(v => v.id === cur.parent) : null;
   }
-  const [brand, model, year] = chain;
+  const [brand, model, ...rest] = chain;
   if(brand){
     cpBrand.value = String(brand.id);
     cpBrand.dispatchEvent(new Event('change'));
@@ -2922,7 +2971,11 @@ function cpPreselectFromUrl(){
     cpModel.value = String(model.id);
     cpModel.dispatchEvent(new Event('change'));
   }
-  if(year){ cpYear.value = String(year.id); }
+  rest.forEach((node, i)=>{
+    if(!cpLevels[i]) return;
+    cpLevels[i].value = String(node.id);
+    cpLevels[i].dispatchEvent(new Event('change'));
+  });
   cpSyncButton();
   selectedVehicle = { slug, label: window.AP_VEHICLE_LABEL || vehicleLabel(chain.map(c=>c.name)) };
   cpRenderActive();

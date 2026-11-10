@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '6');
+define('AP_VEHICLE_SEED_VERSION', '7');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
@@ -63,11 +63,14 @@ function ap_vehicle_seed_data() {
             ['UNI-V (یونی وی)', 'uni-v', 1403, 1405],
         ]],
         ['BRILLIANCE (برلیانس)', 'brilliance', [
-            ['H220 (اچ ۲۲۰)', 'h220', 1395, 1399],
-            ['H230 (اچ ۲۳۰)', 'h230', 1395, 1399],
-            ['H320 (اچ ۳۲۰)', 'h320', 1394, 1399],
-            ['H330 (اچ ۳۳۰)', 'h330', 1394, 1399],
+            ['H220 (اچ ۲۲۰)', 'h220', 1395, 1399, ['manual', 'automatic']],
+            ['H230 (اچ ۲۳۰)', 'h230', 1395, 1399, ['manual', 'automatic']],
+            ['H320 (اچ ۳۲۰)', 'h320', 1394, 1399, ['manual' => ['1500cc', '1650cc'], 'automatic' => ['1500cc', '1650cc']]],
+            ['H330 (اچ ۳۳۰)', 'h330', 1394, 1399, ['manual' => ['1500cc', '1650cc'], 'automatic' => ['1500cc', '1650cc']]],
+            ['Cross (کراس)', 'cross', 1396, 1399, ['automatic' => ['1500cc', '1650cc']]],
             ['V5 (وی ۵)', 'v5', 1395, 1397],
+            ['V6 (وی ۶)', 'v6', 1396, 1397],
+            ['Van H2L (ون اچ۲ال)', 'van-h2l', 1396, 1399],
         ]],
         ['LIFAN (لیفان)', 'lifan', [
             ['820 (۸۲۰)', '820', 1396, 1398],
@@ -123,7 +126,42 @@ function ap_vehicle_seed_term($name, $slug, $parent) {
     }
     $res = wp_insert_term($name, 'ap_vehicle', ['slug' => $slug, 'parent' => $parent]);
     if (is_wp_error($res) && $alt) $res = wp_insert_term($name, 'ap_vehicle', ['slug' => $alt, 'parent' => $parent]);
+    if (is_wp_error($res)) $res = wp_insert_term($name, 'ap_vehicle', ['slug' => ($alt ?: $slug) . '-' . $parent, 'parent' => $parent]);
     return is_wp_error($res) ? 0 : (int) $res['term_id'];
+}
+
+/* نام نمایشیِ گزینه‌ها: گیربکس و حجم موتور */
+function ap_vehicle_variant_name($slug) {
+    $map = ['manual' => 'دنده‌ای', 'automatic' => 'اتوماتیک'];
+    return $map[$slug] ?? $slug;
+}
+
+/* زیرِ یک گره: یا مستقیم سال‌ها (spec خالی)، یا گزینه‌ها (گیربکس ← حجم موتور) و سال‌ها زیر آخرین سطح.
+   هر چیزی که با این ساختار نمی‌خونه (سال‌های خارج از بازه یا سال‌های قبلی زیر مدلی که حالا گزینه داره) حذف می‌شه. */
+function ap_vehicle_seed_leaves($parent, $spec, $from, $to) {
+    $keep = [];
+    if (empty($spec)) {
+        for ($y = $from; $y <= $to; $y++) $keep[] = ap_vehicle_seed_term((string) $y, (string) $y, $parent);
+    } else {
+        $i = 0;
+        foreach ($spec as $k => $v) {
+            $slug = is_int($k) ? $v : $k;
+            $sub  = is_int($k) ? null : $v;
+            $id = ap_vehicle_seed_term(ap_vehicle_variant_name($slug), $slug, $parent);
+            if (!$id) continue;
+            update_term_meta($id, 'ap_order', ++$i);
+            $keep[] = $id;
+            ap_vehicle_seed_leaves($id, $sub, $from, $to);
+        }
+    }
+    $now = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => $parent, 'hide_empty' => false, 'fields' => 'ids']);
+    if (!is_wp_error($now)) {
+        foreach (array_diff(array_map('intval', $now), array_map('intval', $keep)) as $old) {
+            $subs = get_term_children($old, 'ap_vehicle');
+            if (!is_wp_error($subs)) foreach ($subs as $x) wp_delete_term($x, 'ap_vehicle');
+            wp_delete_term($old, 'ap_vehicle');
+        }
+    }
 }
 
 add_action('admin_init', function () {
@@ -135,20 +173,13 @@ add_action('admin_init', function () {
         $bid = ap_vehicle_seed_term($brand, $bslug, 0);
         if (!$bid) continue;
         $keep = [];
-        foreach ($models as $i => [$model, $mslug, $from, $to]) {
+        foreach ($models as $i => $model_row) {
+            [$model, $mslug, $from, $to] = $model_row;
             $mid = ap_vehicle_seed_term($model, $mslug, $bid);
             if (!$mid) continue;
             $keep[] = $mid;
             update_term_meta($mid, 'ap_order', $i + 1);
-            /* سال‌های خارج از بازه‌ی تولید حذف و سال‌های جاافتاده اضافه می‌شن */
-            $years = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => $mid, 'hide_empty' => false]);
-            if (!is_wp_error($years)) {
-                foreach ($years as $y) {
-                    $n = (int) $y->name;
-                    if ($n < $from || $n > $to) wp_delete_term($y->term_id, 'ap_vehicle');
-                }
-            }
-            for ($y = $from; $y <= $to; $y++) ap_vehicle_seed_term((string) $y, (string) $y, $mid);
+            ap_vehicle_seed_leaves($mid, $model_row[4] ?? null, $from, $to);
         }
         /* مدل‌هایی که دیگه توی فهرست نیستن (مثل KMC قبلی زیر JAC) حذف می‌شن */
         $models_now = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => $bid, 'hide_empty' => false, 'fields' => 'ids']);
