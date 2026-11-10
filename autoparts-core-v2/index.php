@@ -30,6 +30,7 @@ if (function_exists('is_singular') && is_singular('ap_article')) {
         <script>(function(){try{var t=localStorage.getItem('ap_theme'); if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
         <style>html{background:#f7f6fb;}html[data-theme="dark"]{background:#08080d;}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?php echo function_exists('ap_favicon_tags') ? ap_favicon_tags() : ''; ?>
         <title><?php echo esc_html($atitle); ?> | وبلاگ <?php bloginfo('name'); ?></title>
         <meta name="description" content="<?php echo esc_attr(wp_trim_words(wp_strip_all_tags($acontent), 30)); ?>">
         <link rel="canonical" href="<?php echo esc_url(get_permalink($aid)); ?>">
@@ -52,18 +53,19 @@ if (function_exists('is_singular') && is_singular('ap_article')) {
             html[data-theme="dark"] .article-page .back{color:#9a97ad;}
             html[data-theme="dark"] .article-page .body-content{background:#15141c; color:#d5d3e0; box-shadow:0 14px 34px rgba(0,0,0,.5);}
             /* ورودِ نرمِ صفحه، هماهنگ با بقیه‌ی سایت */
-            @keyframes apEnter{from{opacity:.35; transform:translateY(6px);} to{opacity:1; transform:none;}}
+            @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
             body{animation:apEnter .38s cubic-bezier(.16,1,.3,1) both;}
             @media (prefers-reduced-motion: reduce){ body{animation:none;} }
         </style>
     </head>
     <body>
         <div class="article-page">
-            <a class="back" href="<?php echo esc_url(home_url('/#articles')); ?>">← بازگشت به مقالات</a>
+            <a class="back" onclick="try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){history.back();return false;}}catch(e){}" href="<?php echo esc_url(home_url('/#articles')); ?>">← بازگشت به مقالات</a>
             <?php if ($aimg): ?><img class="cover" src="<?php echo esc_url($aimg); ?>" alt="<?php echo esc_attr($atitle); ?>"><?php endif; ?>
             <h1><?php echo esc_html($atitle); ?></h1>
             <div class="body-content"><?php echo $acontent; ?></div>
         </div>
+        <?php echo ap_static_dock_html(); ?>
     </body>
     </html>
     <?php
@@ -83,6 +85,7 @@ if (function_exists('is_post_type_archive') && is_post_type_archive('ap_article'
         <script>(function(){try{var t=localStorage.getItem('ap_theme'); if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
         <style>html{background:#f7f6fb;}html[data-theme="dark"]{background:#08080d;}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?php echo function_exists('ap_favicon_tags') ? ap_favicon_tags() : ''; ?>
         <title>مقالات آموزشی | <?php bloginfo('name'); ?></title>
         <meta name="description" content="مجموعه مقالات آموزشی درباره قطعات یدکی، تعمیر و نگهداری خودرو.">
         <link rel="canonical" href="<?php echo esc_url(get_post_type_archive_link('ap_article')); ?>">
@@ -109,14 +112,14 @@ if (function_exists('is_post_type_archive') && is_post_type_archive('ap_article'
             html[data-theme="dark"] .blog-card{background:#15141c; box-shadow:0 12px 26px rgba(0,0,0,.5);}
             html[data-theme="dark"] .blog-card p{color:#9a97ad;}
             /* ورودِ نرمِ صفحه، هماهنگ با بقیه‌ی سایت */
-            @keyframes apEnter{from{opacity:.35; transform:translateY(6px);} to{opacity:1; transform:none;}}
+            @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
             body{animation:apEnter .38s cubic-bezier(.16,1,.3,1) both;}
             @media (prefers-reduced-motion: reduce){ body{animation:none;} }
         </style>
     </head>
     <body>
         <div class="blog-wrap">
-            <a class="back" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
+            <a class="back" onclick="try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){history.back();return false;}}catch(e){}" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
             <h1>مقالات آموزشی <?php bloginfo('name'); ?></h1>
             <div class="blog-grid">
                 <?php foreach ($arts as $a):
@@ -133,6 +136,7 @@ if (function_exists('is_post_type_archive') && is_post_type_archive('ap_article'
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php echo ap_static_dock_html(); ?>
     </body>
     </html>
     <?php
@@ -193,6 +197,7 @@ if (function_exists('is_page') && is_page('terms')) {
         <script>(function(){try{var t=localStorage.getItem('ap_theme'); if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
         <style>html{background:#f7f6fb;}html[data-theme="dark"]{background:#08080d;}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?php echo function_exists('ap_favicon_tags') ? ap_favicon_tags() : ''; ?>
         <title>قوانین و مقررات | <?php bloginfo('name'); ?></title>
         <meta name="description" content="قوانین خرید از فروشگاه؛ شرایط قیمت‌گذاری و لغو سفارش، پرداخت، ارسال، گارانتی و مرجوعی قطعات یدکی خودرو.">
         <link rel="canonical" href="<?php echo esc_url(get_permalink()); ?>">
@@ -204,7 +209,7 @@ if (function_exists('is_page') && is_page('terms')) {
         <style>
             body{font-family:'Vazirmatn',Tahoma,sans-serif; background:#f7f6fb; margin:0; padding:40px 16px 60px; color:#201f2b;}
             .terms-box{max-width:760px; margin:0 auto; background:#fff; border-radius:24px; padding:38px 30px 30px; box-shadow:0 20px 50px rgba(0,0,0,.08);}
-            .terms-logo{width:52px; height:52px; border-radius:15px; margin:0 auto 16px; background:url(<?php echo esc_url(get_template_directory_uri() . '/assets/logo.png'); ?>) center/cover no-repeat;}
+            .terms-logo{width:52px; height:52px; border-radius:15px; margin:0 auto 16px; display:block; object-fit:cover; box-shadow:0 10px 24px rgba(20,10,60,.18);}
             .terms-box h1{font-size:23px; margin:0 0 6px; text-align:center;}
             .terms-box .tagline{color:#7a7788; font-size:13px; margin:0 0 30px; text-align:center;}
             .rule{padding:20px 0; border-top:1px solid #eee;}
@@ -227,14 +232,14 @@ if (function_exists('is_page') && is_page('terms')) {
             html[data-theme="dark"] .rule h2 i{background:#33171c; color:#ffaeb6;}
             html[data-theme="dark"] .terms-note{background:#33171c; color:#ffc9ce;}
             html[data-theme="dark"] .terms-note a{color:#ffc9ce;}
-            @keyframes apEnter{from{opacity:.35; transform:translateY(6px);} to{opacity:1; transform:none;}}
+            @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
             body{animation:apEnter .38s cubic-bezier(.16,1,.3,1) both;}
             @media (prefers-reduced-motion: reduce){ body{animation:none;} }
         </style>
     </head>
     <body>
         <div class="terms-box">
-            <div class="terms-logo"></div>
+            <img class="terms-logo" src="<?php echo esc_url(ap_icon_url('icon-192.png')); ?>" alt="<?php echo esc_attr(get_bloginfo('name')); ?>" width="52" height="52">
             <h1>قوانین و مقررات</h1>
             <p class="tagline">شرایط خرید از فروشگاه <?php bloginfo('name'); ?> — لطفاً پیش از ثبت سفارش بخوانید</p>
             <?php $i = 0; foreach ($rules as $rule) : $i++; ?>
@@ -247,8 +252,9 @@ if (function_exists('is_page') && is_page('terms')) {
                 هر سؤالی درباره‌ی این قوانین داشتید، قبل از خرید با ما تماس بگیرید:
                 <a href="<?php echo esc_attr($tel_href); ?>" dir="ltr"><?php echo esc_html($phone); ?></a>
             </div>
-            <a class="terms-back" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
+            <a class="terms-back" onclick="try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){history.back();return false;}}catch(e){}" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
         </div>
+        <?php echo ap_static_dock_html(); ?>
     </body>
     </html>
     <?php
@@ -269,6 +275,7 @@ if (function_exists('is_page') && is_page('about')) {
         <script>(function(){try{var t=localStorage.getItem('ap_theme'); if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
         <style>html{background:#f7f6fb;}html[data-theme="dark"]{background:#08080d;}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?php echo function_exists('ap_favicon_tags') ? ap_favicon_tags() : ''; ?>
         <title>درباره ما | <?php bloginfo('name'); ?></title>
         <meta name="description" content="اطلاعات تماس و آدرس فروشگاه؛ فروشگاه تخصصی قطعات یدکی خودرو، اورجینال و آفتر مارکت.">
         <link rel="canonical" href="<?php echo esc_url(get_permalink()); ?>">
@@ -280,7 +287,7 @@ if (function_exists('is_page') && is_page('about')) {
         <style>
             body{font-family:'Vazirmatn',Tahoma,sans-serif; background:#f7f6fb; margin:0; padding:40px 16px; color:#201f2b;}
             .about-box{max-width:520px; margin:0 auto; background:#fff; border-radius:20px; padding:36px 28px; box-shadow:0 20px 50px rgba(0,0,0,.08); text-align:center;}
-            .about-logo{width:56px; height:56px; border-radius:16px; margin:0 auto 18px; background:url(<?php echo esc_url(get_template_directory_uri() . '/assets/logo.png'); ?>) center/cover no-repeat;}
+            .about-logo{width:56px; height:56px; border-radius:16px; margin:0 auto 18px; display:block; object-fit:cover; box-shadow:0 10px 24px rgba(20,10,60,.18);}
             .about-box h1{font-size:22px; margin-bottom:6px;}
             .about-box .tagline{color:#7a7788; font-size:13.5px; margin-bottom:26px;}
             .about-row{display:flex; align-items:flex-start; gap:10px; text-align:right; padding:14px 0; border-top:1px solid #eee;}
@@ -297,14 +304,14 @@ if (function_exists('is_page') && is_page('about')) {
             .about-links a{padding:10px 18px; border-radius:10px; background:#fff1f2; color:#ff3b4e; font-size:13.5px; text-decoration:none; font-weight:700;}
             .about-back{display:inline-block; margin-top:22px; font-size:12.5px; color:#7a7788; text-decoration:none;}
             /* ورودِ نرمِ صفحه، هماهنگ با بقیه‌ی سایت */
-            @keyframes apEnter{from{opacity:.35; transform:translateY(6px);} to{opacity:1; transform:none;}}
+            @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
             body{animation:apEnter .38s cubic-bezier(.16,1,.3,1) both;}
             @media (prefers-reduced-motion: reduce){ body{animation:none;} }
         </style>
     </head>
     <body>
         <div class="about-box">
-            <div class="about-logo"></div>
+            <img class="about-logo" src="<?php echo esc_url(ap_icon_url('icon-192.png')); ?>" alt="<?php echo esc_attr(get_bloginfo('name')); ?>" width="56" height="56">
             <h1><?php bloginfo('name'); ?></h1>
             <p class="tagline">فروشگاه تخصصی قطعات یدکی خودرو</p>
 
@@ -326,8 +333,9 @@ if (function_exists('is_page') && is_page('about')) {
                 <?php if ($ig): ?><a href="<?php echo esc_url($ig); ?>" target="_blank" rel="noopener">اینستاگرام</a><?php endif; ?>
             </div>
 
-            <a class="about-back" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
+            <a class="about-back" onclick="try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){history.back();return false;}}catch(e){}" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
         </div>
+        <?php echo ap_static_dock_html(); ?>
     </body>
     </html>
     <?php
@@ -365,6 +373,14 @@ $ap_site_name = get_bloginfo('name');
 if (trim((string) $ap_site_name) === '') { $ap_site_name = 'قطعات یدکی'; }
 $html = str_replace('{{SITE_NAME}}', esc_html($ap_site_name), $html);
 $html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/assets/logo.png'), $html);
+/* آیکونِ تب و آیکونِ صفحه‌ی گوشی (همه‌ی اندازه‌ها؛ نگاه کن به ap_favicon_tags) */
+$ap_icon_tags = ap_favicon_tags();
+/* PWA: نصب روی صفحه‌ی اصلیِ گوشی (برای اعلانِ سفارشِ جدید روی آیفون لازمه) */
+$ap_icon_tags .= '<link rel="manifest" href="' . esc_url(get_template_directory_uri() . '/api.php?action=manifest') . '">'
+    . '<meta name="theme-color" content="#ff3b4e"><meta name="apple-mobile-web-app-capable" content="yes">'
+    . '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="' . esc_attr($ap_site_name) . '">'
+    . '<meta name="apple-mobile-web-app-status-bar-style" content="default">';
+$html = preg_replace('#</head>#i', $ap_icon_tags . '</head>', $html, 1);
 $api_url = esc_url(get_template_directory_uri() . '/api.php');
 $home_url = esc_url_raw(home_url('/'));
 
@@ -579,6 +595,9 @@ if (function_exists('is_singular') && is_singular('ap_product')) {
 
 $inject = "<script>\nwindow.AP_API_URL = " . json_encode($api_url) . ";\n";
 $inject .= "window.AP_HOME_URL = " . json_encode($home_url) . ";\n";
+/* کلیدِ عمومیِ اعلان‌ها (برای پرسیدنِ اجازه‌ی اعلان از بازدیدکننده‌ها) */
+$ap_vapid_pub = function_exists('ap_vapid') ? (ap_vapid()['public'] ?? '') : '';
+$inject .= "window.AP_PUSH_KEY = " . json_encode((string) $ap_vapid_pub) . ";\n";
 $inject .= "window.AP_SITE_NAME = " . json_encode($ap_site_name) . ";\n";
 if (!empty($vehicle_slug)) {
     $inject .= "window.AP_VEHICLE_SLUG = " . json_encode($vehicle_slug) . ";\n";
@@ -615,30 +634,101 @@ if ($cat_seo_desc !== '') {
 }
 $inject .= $topbar_style;
 
-/* ---------- فاویکون (آیکون تب مرورگر) ----------
-   وردپرس فاویکون رو فقط از طریق هوک wp_head() چاپ می‌کنه؛ چون این قالب
-   کاملاً سفارشیه و wp_head() رو صدا نمی‌زنه، با اینکه از پیشخوان ← شخصی‌سازی
-   ← «آیکون سایت» یک تصویر انتخاب بشه، هیچ‌وقت توی <head> درج نمی‌شد و برای
-   مشتری‌ها نمایش داده نمی‌شد. اینجا مستقیم خودمون تگ‌هاش رو می‌سازیم. */
-if (function_exists('has_site_icon') && has_site_icon()) {
-    $icon_id  = get_option('site_icon');
-    $ver      = $icon_id ? '?v=' . $icon_id : ''; // با عوض شدنِ آیکون، آدرس هم عوض می‌شه تا کش مرورگر گیر نکنه
-    $icon32   = get_site_icon_url(32);
-    $icon180  = get_site_icon_url(180);
-    $icon192  = get_site_icon_url(192);
-    if ($icon32) $inject .= '<link rel="icon" href="' . esc_url($icon32 . $ver) . '" sizes="32x32">';
-    if ($icon192) $inject .= '<link rel="icon" href="' . esc_url($icon192 . $ver) . '" sizes="192x192">';
-    if ($icon180) $inject .= '<link rel="apple-touch-icon" href="' . esc_url($icon180 . $ver) . '">';
-    if ($icon32) $inject .= '<link rel="shortcut icon" href="' . esc_url($icon32 . $ver) . '">';
+/* ---------- سئوی صفحه‌های اپلیکیشنِ اصلی (صفحه‌ی اصلی، محصول، دسته) ----------
+   این قالب wp_head() رو صدا نمی‌زنه، برای همین تا الان توضیحات متا، canonical، تگ‌های
+   شبکه‌های اجتماعی و اسکیمای Rank Math روی صفحه‌ی محصول‌ها اصلاً چاپ نمی‌شد و گوگل
+   فقط یه صفحه‌ی تقریباً خالی (که با جاوااسکریپت پر می‌شه) می‌دید. حالا خروجیِ سرِ صفحه‌ی
+   Rank Math مستقیم اضافه می‌شه، به‌علاوه‌ی اسکیمای محصول و نسخه‌ی HTMLِ محتوای صفحه. */
+$seo_head = '';
+if (has_action('rank_math/head')) { ob_start(); do_action('rank_math/head'); $seo_head = (string) ob_get_clean(); }
+$qid = function_exists('get_queried_object_id') ? get_queried_object_id() : 0;
+$is_prod = function_exists('is_singular') && is_singular('ap_product') && $qid;
+$is_cat  = function_exists('is_tax') && is_tax('ap_cat');
+$canon = $is_prod ? get_permalink($qid) : ($is_cat ? get_term_link(get_queried_object()) : (is_front_page() || is_home() ? home_url('/') : ''));
+if (is_wp_error($canon)) $canon = '';
+if (stripos($seo_head, 'rel="canonical"') === false && $canon) $seo_head .= '<link rel="canonical" href="' . esc_url($canon) . '">';
+if (stripos($seo_head, 'name="description"') === false) {
+    $desc = '';
+    if ($is_prod) $desc = (string) get_post_meta($qid, '_ap_short_desc', true) ?: wp_strip_all_tags(get_post_field('post_content', $qid));
+    elseif (!$is_cat) $desc = 'فروشگاه تخصصی قطعات یدکی خودرو؛ قطعات موتوری، بدنه، برقی و جلوبندی خودروهای چینی و داخلی، اورجینال و آفتر مارکت.';
+    if ($desc !== '') $seo_head .= '<meta name="description" content="' . esc_attr(wp_trim_words(wp_strip_all_tags($desc), 30, '...')) . '">';
+} else {
+    $inject = preg_replace('#<meta name="description"[^>]*>#', '', $inject); // تکراری نشه
 }
-else {
-    /* بدون آیکون انتخاب‌شده، لوگوی خود قالب فاویکون می‌شه. */
-    $lg = get_template_directory_uri() . '/assets/';
-    $inject .= '<link rel="icon" href="' . esc_url($lg . 'logo-32.png') . '" sizes="32x32">'
-        . '<link rel="icon" href="' . esc_url($lg . 'logo.png') . '" sizes="512x512">'
-        . '<link rel="apple-touch-icon" href="' . esc_url($lg . 'logo-180.png') . '">';
+$ssr = '';
+if ($is_prod) {
+    $p_title = get_the_title($qid);
+    $p_desc  = wp_strip_all_tags((string) get_post_meta($qid, '_ap_short_desc', true));
+    $p_imgs  = function_exists('ap_gallery_urls') ? array_values(array_filter(ap_gallery_urls($qid))) : [];
+    $p_vp    = function_exists('ap_variant_prices') ? array_values(ap_variant_prices($qid)) : [];
+    $p_base  = (int) get_post_meta($qid, '_ap_price', true);
+    $p_all   = array_filter(array_merge($p_vp, $p_base > 0 ? [$p_base] : []));
+    $schema  = ['@context' => 'https://schema.org', '@type' => 'Product', 'name' => $p_title, 'url' => get_permalink($qid),
+                'description' => $p_desc ?: wp_trim_words(wp_strip_all_tags(get_post_field('post_content', $qid)), 40, '...'),
+                ];
+    if ($p_imgs) $schema['image'] = $p_imgs;
+    if ($p_all) $schema['offers'] = ['@type' => 'AggregateOffer', 'priceCurrency' => 'IRR', 'lowPrice' => min($p_all) * 10, 'highPrice' => max($p_all) * 10,
+                                     'offerCount' => count($p_all), 'availability' => 'https://schema.org/InStock', 'url' => get_permalink($qid)];
+    if (stripos($seo_head, '"Product"') === false) $seo_head .= '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
+    /* نسخه‌ی HTMLِ محتوا برای خزنده‌ها؛ به‌محضِ اجرای جاوااسکریپت، نسخه‌ی کاملِ صفحه جاش رو می‌گیره */
+    $terms = get_the_terms($qid, 'ap_cat');
+    $crumbs = '';
+    if ($terms && !is_wp_error($terms)) {
+        foreach (array_reverse(get_ancestors($terms[0]->term_id, 'ap_cat')) as $aid) { $t = get_term($aid, 'ap_cat'); if ($t) $crumbs .= '<a href="' . esc_url(get_term_link($t)) . '">' . esc_html($t->name) . '</a> › '; }
+        $crumbs .= '<a href="' . esc_url(get_term_link($terms[0])) . '">' . esc_html($terms[0]->name) . '</a>';
+    }
+    $ssr = '<main id="apSsr"><nav>' . $crumbs . '</nav><h1>' . esc_html($p_title) . '</h1>'
+         . ($p_imgs ? '<img src="' . esc_url($p_imgs[0]) . '" alt="' . esc_attr($p_title) . '" width="600" height="600">' : '')
+         . ($p_desc ? '<p>' . esc_html($p_desc) . '</p>' : '')
+         . '<div>' . apply_filters('the_content', get_post_field('post_content', $qid)) . '</div></main>';
+} elseif ($is_cat) {
+    $term = get_queried_object();
+    $ids = get_posts(['post_type' => 'ap_product', 'post_status' => 'publish', 'numberposts' => 200, 'fields' => 'ids',
+                      'tax_query' => [['taxonomy' => 'ap_cat', 'terms' => (int) $term->term_id, 'include_children' => true]]]);
+    $kids = get_terms(['taxonomy' => 'ap_cat', 'parent' => (int) $term->term_id, 'hide_empty' => true]);
+    $ssr = '<main id="apSsr"><h1>' . esc_html($term->name) . '</h1><ul>';
+    if ($kids && !is_wp_error($kids)) foreach ($kids as $k) $ssr .= '<li><a href="' . esc_url(get_term_link($k)) . '">' . esc_html($k->name) . '</a></li>';
+    foreach ($ids as $pid) $ssr .= '<li><a href="' . esc_url(get_permalink($pid)) . '">' . esc_html(get_the_title($pid)) . '</a></li>';
+    $ssr .= '</ul></main>';
 }
-
+if ($ssr !== '') {
+    $ssr = '<style>#apSsr{max-width:900px;margin:30px auto;padding:0 16px;font-family:Vazirmatn,Tahoma,sans-serif}#apSsr img{max-width:100%;height:auto}</style>'
+         . $ssr . '<script>(function(){var e=document.getElementById("apSsr");if(e)e.remove();})();</script>';
+    $html = preg_replace_callback('#<body([^>]*)>#i', function ($m) use ($ssr) { return $m[0] . $ssr; }, $html, 1);
+}
+/* ---------- فوترِ لینک‌دار + اسکیمای WebSite/Organization برای زیرلینک‌های گوگل ---------- */
+$foot = '';
+$groups = [];
+$ap_tops = get_terms(['taxonomy' => 'ap_cat', 'parent' => 0, 'hide_empty' => true]);
+foreach ((is_array($ap_tops) ? $ap_tops : []) as $top) {
+    if (is_wp_error($top)) continue;
+    $kids = get_terms(['taxonomy' => 'ap_cat', 'parent' => $top->term_id, 'hide_empty' => true]);
+    $links = [];
+    if ($kids && !is_wp_error($kids)) foreach ($kids as $k) $links[] = [get_term_link($k), $k->name];
+    if (!$links) $links[] = [get_term_link($top), $top->name];
+    $groups[] = [$top->name, $links];
+}
+$groups[] = [$ap_site_name, [[get_post_type_archive_link('ap_article') ?: home_url('/blog/'), 'مقالات آموزشی'], [home_url('/about/'), 'درباره ما'], [home_url('/terms/'), 'قوانین و مقررات']]];
+foreach ($groups as $g) {
+    $foot .= '<div><h4>' . esc_html($g[0]) . '</h4><ul>';
+    foreach ($g[1] as $l) if (!is_wp_error($l[0])) $foot .= '<li><a href="' . esc_url($l[0]) . '">' . esc_html($l[1]) . '</a></li>';
+    $foot .= '</ul></div>';
+}
+$html = str_replace('<!--AP_FOOT_LINKS-->', '<nav class="foot-nav" aria-label="لینک‌های اصلی سایت">' . $foot . '</nav>', $html);
+if (function_exists('is_front_page') && is_front_page()) {
+    $site_schema = ['@context' => 'https://schema.org', '@graph' => [
+        ['@type' => 'WebSite', '@id' => home_url('/#website'), 'url' => home_url('/'), 'name' => $ap_site_name,
+         'inLanguage' => 'fa-IR', 'potentialAction' => ['@type' => 'SearchAction', 'target' => home_url('/?ap_search={search_term_string}'), 'query-input' => 'required name=search_term_string']],
+        ['@type' => 'Organization', '@id' => home_url('/#organization'), 'name' => $ap_site_name, 'url' => home_url('/'),
+         'logo' => function_exists('ap_logo_url') ? ap_logo_url() : '', 'telephone' => (string) get_theme_mod('ap_contact_phone', '09109973428')],
+    ]];
+    /* هرکدوم که Rank Math خودش چاپ نکرده باشه اضافه می‌شه (Organization با لوگو رو ابزارِ Rich Results گوگل تشخیص می‌ده) */
+    $graph = [];
+    if (stripos($seo_head, '"WebSite"') === false) $graph[] = $site_schema['@graph'][0];
+    if (stripos($seo_head, '"Organization"') === false || stripos($seo_head, '"logo"') === false) $graph[] = $site_schema['@graph'][1];
+    if ($graph) $seo_head .= '<script type="application/ld+json">' . wp_json_encode(['@context' => 'https://schema.org', '@graph' => $graph], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
+}
+$inject = $seo_head . $inject;
 $html = str_replace('<head>', "<head>\n" . $inject, $html);
 
 /* ---------- نوار مدیریت وردپرس (Admin Bar) ----------

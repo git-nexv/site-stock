@@ -1,6 +1,17 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
+/* بخشِ بکاپ از قالب حذف شد (به درخواستِ مدیر؛ افزونه‌ی جدا ساخته می‌شه). به‌روزرسانیِ قالب فایل‌های
+   قدیمی رو پاک نمی‌کنه، پس کدهای قبلیِ بکاپ یک‌بار از پوشه‌ی قالب حذف می‌شن. (فایل‌های بکاپی که قبلاً
+   ساخته شدن، داخلِ wp-content/uploads/ap-backups دست‌نخورده می‌مونن.) */
+add_action('admin_init', function () {
+    if (get_option('ap_backup_code_removed_v1') || !current_user_can('manage_options')) return;
+    $dir = get_template_directory();
+    foreach (['/ap-backup/ap-backup.php', '/backup.php'] as $f) { if (is_file($dir . $f)) @unlink($dir . $f); }
+    if (is_dir($dir . '/ap-backup')) @rmdir($dir . '/ap-backup');
+    update_option('ap_backup_code_removed_v1', time(), false);
+});
+
 /**
  * این پوسته به هیچ افزونه‌ای (از جمله ووکامرس) وابسته نیست.
  * صفحه‌ی اصلی (site.html) برای تمام آدرس‌های سایت بارگذاری می‌شه؛
@@ -51,8 +62,100 @@ add_action('admin_bar_menu', function ($wp_admin_bar) {
     ]);
 }, 80);
 
-/* شماره‌ی پیش‌فرضِ مالک سایت؛ بعدش از پیشخوان ← مدیریت ادمین‌ها قابل تغییره (staff.php). */
+/* شماره‌ی پیش‌فرضِ مالک سایت؛ بعدش از پنلِ سایت ← حسابِ کاربری ← ادمین‌ها قابل تغییره. */
 define('AP_OWNER_PHONE', '09109973428');
+/* حسابِ وردپرسیِ مدیرِ کل: نام کاربری = شماره‌ی مدیر */
+define('AP_OWNER_WP_LOGIN', '09109973428');
+
+/* $user: حسابِ NEXV (خروجیِ public_user در api.php). مدیرِ کل → حسابِ «ap-owner» با نقشِ
+   مدیر کل وردپرس؛ ادمینِ زیرمجموعه با دسترسیِ «محصولات» → حسابِ جدا با نقشِ «ویرایشگر»
+   (فقط محصولات/دسته‌ها/مقالات؛ نه تنظیمات، افزونه‌ها یا به‌روزرسانیِ قالب). بقیه سشنِ وردپرس نمی‌گیرن. */
+function ap_wp_user_for_admin($user, $create = false) {
+    if (!empty($user['is_owner'])) {
+        $login = get_option('ap_owner_wp_login') ?: AP_OWNER_WP_LOGIN;
+        $wp_user = get_user_by('login', $login) ?: get_user_by('login', 'ap-owner') ?: get_user_by('email', 'owner@nexv.local');
+        if (!$wp_user && $create) {
+            $new_id = wp_insert_user([
+                'user_login'   => $login,
+                'user_pass'    => wp_generate_password(24, true, true),
+                'user_email'   => 'owner@nexv.local',
+                'display_name' => 'مدیر سایت',
+                'role'         => 'administrator',
+            ]);
+            if (!is_wp_error($new_id)) { $wp_user = get_user_by('id', $new_id); }
+        }
+        return $wp_user ?: null;
+    }
+    if (empty($user['id'])) return null;
+    /* ادمین‌هایی که از سیستمِ قبلی (پیشخوان ← مدیریت ادمین‌ها) منتقل شدن، حسابِ وردپرسیِ خودشون رو دارن */
+    if (!empty($user['wp_user_id']) && ($wu = get_user_by('id', (int) $user['wp_user_id']))) return $wu;
+    $login = 'ap-admin-' . (int) $user['id'];
+    $wp_user = get_user_by('login', $login);
+    if (!$wp_user && $create) {
+        $new_id = wp_insert_user([
+            'user_login'   => $login,
+            'user_pass'    => wp_generate_password(24, true, true),
+            'user_email'   => 'admin-' . (int) $user['id'] . '@nexv.local',
+            'display_name' => trim(($user['firstName'] ?? '') . ' ' . ($user['lastName'] ?? '')) ?: $login,
+            'role'         => 'editor',
+        ]);
+        if (!is_wp_error($new_id)) { $wp_user = get_user_by('id', $new_id); }
+    }
+    return $wp_user ?: null;
+}
+function ap_admin_has_wp_access($user) {
+    return !empty($user['is_admin']) && (!empty($user['is_owner']) || in_array('products', (array) ($user['perms'] ?? []), true));
+}
+/* نقشِ وردپرسیِ ادمین‌های زیرمجموعه با دسترسی‌هاشون هماهنگ می‌شه (برداشتنِ دسترسی = خروج از پیشخوان) */
+function ap_wp_admin_sync($user) {
+    if (!empty($user['is_owner'])) return;
+    $wp_user = ap_wp_user_for_admin($user, ap_admin_has_wp_access($user));
+    if (!$wp_user) return;
+    if (ap_admin_has_wp_access($user)) {
+        if (!in_array('editor', (array) $wp_user->roles, true)) $wp_user->set_role('editor');
+    } else {
+        $wp_user->set_role('subscriber');
+        if (class_exists('WP_Session_Tokens')) WP_Session_Tokens::get_instance($wp_user->ID)->destroy_all();
+    }
+}
+/* بعد از تغییرِ رمز: بقیه‌ی سشن‌های وردپرسِ همین ادمین بسته می‌شن (سشنِ همین مرورگر می‌مونه) */
+function ap_wp_admin_logout_others($user) {
+    $wp_user = ap_wp_user_for_admin($user, false);
+    if (!$wp_user || !class_exists('WP_Session_Tokens')) return;
+    $mgr = WP_Session_Tokens::get_instance($wp_user->ID);
+    if (get_current_user_id() === (int) $wp_user->ID && function_exists('wp_get_session_token') && wp_get_session_token()) $mgr->destroy_others(wp_get_session_token());
+    else $mgr->destroy_all();
+}
+function ap_bridge_wp_session($phone, $user = null) {
+    if ($user === null) {
+        if ($phone !== AP_OWNER_PHONE) return;
+        $user = ['is_admin' => true, 'is_owner' => true];
+    }
+    if (!ap_admin_has_wp_access($user)) return;
+    ap_wp_admin_sync($user);
+    $wp_user = ap_wp_user_for_admin($user, true);
+    if ($wp_user && !is_wp_error($wp_user)) {
+        wp_clear_auth_cookie();
+        wp_set_current_user($wp_user->ID);
+        wp_set_auth_cookie($wp_user->ID, true);
+    }
+}
+/* وقتی مدیرِ کل از پنلِ سایت شماره یا رمزش رو عوض می‌کنه، حسابِ وردپرسش هم همون می‌شه */
+function ap_wp_owner_sync($user, $newPass = '') {
+    if (empty($user['is_owner'])) return;
+    $wp_user = ap_wp_user_for_admin($user, true);
+    if (!$wp_user) return;
+    global $wpdb;
+    $stay = get_current_user_id() === (int) $wp_user->ID;
+    $phone = preg_replace('/[^0-9]/', '', (string) ($user['phone'] ?? ''));
+    if ($phone !== '' && $phone !== $wp_user->user_login && !username_exists($phone)) {
+        $wpdb->update($wpdb->users, ['user_login' => $phone, 'user_nicename' => $phone], ['ID' => $wp_user->ID]);
+        update_option('ap_owner_wp_login', $phone, false);
+        clean_user_cache($wp_user->ID);
+    }
+    if ($newPass !== '') wp_set_password($newPass, $wp_user->ID);
+    if ($stay) { wp_clear_auth_cookie(); wp_set_current_user($wp_user->ID); wp_set_auth_cookie($wp_user->ID, true); }   // همین مرورگر وارد بمونه
+}
 
 function ap_theme_setup() {
     add_theme_support('title-tag');
@@ -296,7 +399,7 @@ add_filter('wp_insert_post_data', function ($data, $postarr) {
            وجودِ «%» یعنی هنوز انگلیسیِ خوانا نیست و باید نویسه‌گردانی بشه. */
         $alreadyAscii = $data['post_name'] !== '' && strpos($data['post_name'], '%') === false && $data['post_name'] === sanitize_title($data['post_name']) && !preg_match('/[^\x00-\x7f]/', $data['post_name']);
         if (!$alreadyAscii) {
-            $baseSlug = ap_transliterate_title_to_slug($data['post_title']);
+            $baseSlug = ap_slug_from_title($data['post_title']);
             $postId = isset($postarr['ID']) ? (int) $postarr['ID'] : 0;
             $data['post_name'] = wp_unique_post_slug($baseSlug, $postId, $data['post_status'], $data['post_type'], $data['post_parent'] ?? 0);
         }
@@ -528,7 +631,7 @@ function ap_import_export_page_html() {
             <div class="notice notice-success"><p>کشِ محصولات و دسته‌بندی‌ها پاک شد.</p></div>
         <?php endif; ?>
         <?php if (isset($_GET['slugsfixed'])): ?>
-            <div class="notice notice-success"><p>پیوند یکتای <?php echo (int) $_GET['slugsfixed']; ?> محصول/مقاله به انگلیسی تبدیل شد.</p></div>
+            <div class="notice notice-success"><p>پیوند یکتای <?php echo (int) $_GET['slugsfixed']; ?> دسته‌بندی/محصول/مقاله به انگلیسی تبدیل شد.</p></div>
         <?php endif; ?>
 
         <div class="ap-ie-grid">
@@ -958,7 +1061,7 @@ add_action('admin_post_ap_fix_slugs', function () {
     check_admin_referer('ap_fix_slugs');
     @set_time_limit(0);
 
-    $fixed = 0;
+    $fixed = ap_fix_all_category_slugs();
     foreach (['ap_product', 'ap_article'] as $pt) {
         $posts = get_posts(['post_type' => $pt, 'numberposts' => -1, 'post_status' => 'any']);
         foreach ($posts as $p) {
@@ -2182,7 +2285,11 @@ function ap_save_product_meta($post_id) {
                 if ($k !== '' && $v > 0) { $clean[$k] = $v; }
             }
         }
+        $vpOld = ap_variant_prices($post_id);
         update_post_meta($post_id, '_ap_variant_prices', $clean ? wp_json_encode($clean, JSON_UNESCAPED_UNICODE) : '');
+        if ($clean != $vpOld && ($clean || (int) get_post_meta($post_id, '_ap_price', true) > 0)) {
+            update_post_meta($post_id, '_ap_price_updated', (int) current_time('timestamp'));
+        }
     }
     if (isset($_POST['ap_gallery'])) {
         $ids = array_filter(array_map('intval', explode(',', $_POST['ap_gallery'])));
@@ -2300,6 +2407,53 @@ function ap_customize_register($wp_customize) {
    قبلاً فقط با نام جست‌وجو می‌شد و فایل‌هایی که ستونِ Parent (یا Categories) رو
    با اسلاگ پر کرده بودن، «والد پیدا نشد» می‌گرفتن و ردیف وارد نمی‌شد. */
 /* ------------------------------------------------------------------
+   قیمتِ جدا برای هر متغیر (ترکیبِ رنگ / حجم / گروه‌های سفارشی)
+   نقشه‌ی قیمت‌ها توی _ap_variant_prices به شکل JSON ذخیره می‌شه:
+     { "<کلیدِ ترکیب>": 4500000, ... }
+   کلیدِ ترکیب = مقدارها به ترتیبِ [رنگ، حجم، گروه‌ها به ترتیبِ خودشون]
+   که با «|~|» به هم چسبیدن. اگه محصول یکی از این بُعدها رو نداشته باشه،
+   جای اون رشته‌ی خالی می‌مونه تا جایگاه‌ها همیشه ثابت بمونن و سمتِ
+   مرورگر و سمتِ سرور دقیقاً یک کلید بسازن.
+------------------------------------------------------------------- */
+function ap_variant_key($values) {
+    $parts = array_map(function ($v) { return trim((string) $v); }, (array) $values);
+    return implode('|~|', $parts);
+}
+
+function ap_norm_variant_key($k) {
+    $parts = array_map(function ($v) {
+        $v = str_replace(['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹','٠','١','٢','٣','٤','٥','٦','٧','٨','٩'], ['0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9'], (string) $v);
+        $v = str_replace(["\xE2\x80\x8C", "\xE2\x80\x8E", "\xE2\x80\x8F", "\xC2\xA0", 'ي', 'ك'], [' ', ' ', ' ', ' ', 'ی', 'ک'], $v);
+        return mb_strtolower(trim(preg_replace('/\s+/u', ' ', $v)), 'UTF-8');
+    }, explode('|~|', (string) $k));
+    while ($parts && end($parts) === '') array_pop($parts);
+    return implode('|~|', $parts);
+}
+
+function ap_variant_prices($post_id) {
+    $raw = get_post_meta($post_id, '_ap_variant_prices', true);
+    if (!$raw) return [];
+    $decoded = json_decode((string) $raw, true);
+    if (!is_array($decoded)) return [];
+    $out = [];
+    foreach ($decoded as $k => $v) {
+        $v = (int) $v;
+        if ($v > 0) $out[(string) $k] = $v;
+    }
+    return $out;
+}
+
+/* قیمتِ نهاییِ یک ترکیب: اگه قیمتِ اختصاصی داشته باشه همون، وگرنه قیمتِ پایه. */
+function ap_price_for_variant($post_id, $values) {
+    $map = ap_variant_prices($post_id);
+    $key = ap_variant_key($values);
+    if (isset($map[$key])) return (int) $map[$key];
+    $n = ap_norm_variant_key($key);
+    foreach ($map as $k => $v) { if (ap_norm_variant_key($k) === $n) return (int) $v; }
+    return (int) get_post_meta($post_id, '_ap_price', true);
+}
+
+/* ------------------------------------------------------------------
    تاریخِ آخرین به‌روزرسانیِ قیمت
    هر جا قیمتِ یک محصول ذخیره می‌شه (پیشخوان یا درون‌ریزیِ CSV) از همین
    تابع رد می‌شه؛ اگه عددِ قیمت واقعاً عوض شده باشه، زمانِ همون لحظه توی
@@ -2361,8 +2515,12 @@ function ap_jalali_pretty($ts) {
 
 /* رشته‌ی آماده‌ی نمایش برای کنارِ قیمتِ یک محصول (خالی، اگه قیمت یا تاریخ نباشه). */
 function ap_price_updated_label($post_id) {
-    if ((int) get_post_meta($post_id, '_ap_price', true) <= 0) return '';
-    return ap_jalali_pretty(get_post_meta($post_id, '_ap_price_updated', true));
+    /* محصولی که فقط قیمتِ متغیرها رو داره (قیمتِ پایه صفره) هم تاریخ می‌گیره */
+    $hasVariant = (bool) ap_variant_prices($post_id);
+    if ((int) get_post_meta($post_id, '_ap_price', true) <= 0 && !$hasVariant) return '';
+    $ts = get_post_meta($post_id, '_ap_price_updated', true);
+    if ($ts === '' && $hasVariant) $ts = (int) get_post_modified_time('U', false, $post_id);
+    return ap_jalali_pretty($ts);
 }
 
 function ap_find_cat_in_parent($value, $parentId = 0, $allowGlobalName = true) {
@@ -2562,12 +2720,22 @@ function ap_find_cat_by_name_ctx($name, $parentId, $context) {
     return $best;
 }
 
+function ap_cat_child_by_name($name, $parentId) {
+    $needle = ap_norm_fa($name);
+    $kids = get_terms(['taxonomy' => 'ap_cat', 'parent' => (int) $parentId, 'hide_empty' => false]);
+    if (is_wp_error($kids)) return 0;
+    foreach ($kids as $k) { if (ap_norm_fa($k->name) === $needle) return (int) $k->term_id; }
+    return 0;
+}
 /* مسیرِ کاملِ دسته («آیفون > قطعات آیفون > آیفون 15» یا با اسلاگ) رو به آیدیِ برگ تبدیل می‌کنه. */
 function ap_resolve_cat_path($path) {
     $parts = array_filter(array_map('trim', explode('>', (string) $path)), 'strlen');
     $parentId = 0; $leafId = 0;
     foreach ($parts as $part) {
-        $id = ap_find_cat_in_parent($part, $parentId);
+        /* اول نامِ دقیق زیرِ همین والد؛ قبلاً اول اسلاگ (بدون توجه به والد) چک می‌شد و
+           مثلاً «سری 18» در مسیرِ «قطعات آیفون» به «سری 18»ی شاخه‌ی «خرید آیفون» می‌رسید. */
+        $id = ap_cat_child_by_name($part, $parentId);
+        if (!$id) $id = ap_find_cat_in_parent($part, $parentId);
         if (!$id) return 0;
         $parentId = $id; $leafId = $id;
     }
@@ -2665,8 +2833,1099 @@ add_action('init', function () {
     update_option('ap_phone_migrated_v1', 1);
 });
 
-/* مدیریت ادمین‌ها و دسترسی‌ها (staff.php) */
-require_once __DIR__ . '/staff.php';
+/* =========================================================================
+ * سایت‌مپ Rank Math: مقالات و دسته‌بندی‌ها هم حتماً داخل سایت‌مپ باشن،
+ * هر سایت‌مپ تا ۱۰۰۰ لینک، و عکس‌های گالریِ محصول هم برای Google Images.
+ * ========================================================================= */
+add_filter('rank_math/sitemap/exclude_post_type', function ($exclude, $type) {
+    return in_array($type, ['ap_product', 'ap_article'], true) ? false : $exclude;
+}, 20, 2);
+add_filter('rank_math/sitemap/exclude_taxonomy', function ($exclude, $type) {
+    return $type === 'ap_cat' ? false : $exclude;
+}, 20, 2);
+add_filter('rank_math/sitemap/entries_per_page', function () { return 1000; });
+add_filter('rank_math/sitemap/urlimages', function ($images, $post_id) {
+    if (get_post_type($post_id) !== 'ap_product' || !function_exists('ap_gallery_urls')) return $images;
+    $have = wp_list_pluck((array) $images, 'src');
+    $title = get_the_title($post_id);
+    foreach ((array) ap_gallery_urls($post_id) as $src) {
+        if ($src && !in_array($src, $have, true)) { $images[] = ['src' => $src, 'title' => $title, 'alt' => $title]; $have[] = $src; }
+    }
+    return $images;
+}, 20, 2);
+
+/* =========================================================================
+ * صفحه‌های کمکیِ سبد خرید/حساب: در گوگل ایندکس نشن و در سایت‌مپ نباشن؛
+ * «برگه نمونه»ی پیش‌فرض وردپرس هم به صفحه‌ی اصلی ریدایرکت (۳۰۱) می‌شه.
+ * ========================================================================= */
+function ap_utility_page_slugs() { return ['cart', 'checkout', 'my-account', 'shop']; }
+add_action('template_redirect', function () {
+    if (is_page(['برگه-نمونه', 'sample-page'])) { wp_safe_redirect(home_url('/'), 301); exit; }
+});
+add_filter('wp_robots', function ($robots) {
+    return $robots;
+}, 99);
+add_filter('rank_math/frontend/robots', function ($robots) {
+    return $robots;
+}, 99);
+add_filter('rank_math/sitemap/entry', function ($url, $type, $object) {
+    if ($type === 'post' && $object instanceof WP_Post && $object->post_type === 'page'
+        && in_array(urldecode($object->post_name), ['برگه-نمونه', 'sample-page'], true)) {
+        return false;
+    }
+    return $url;
+}, 20, 3);
+
+/* =========================================================================
+ * پیوند یکتای انگلیسی برای دسته‌بندی‌های محصول (ap_cat)
+ * هر دسته‌ای که ساخته/ویرایش بشه و اسلاگش فارسی باشه، از روی نامش انگلیسی می‌شه
+ * (مثلاً «قطعات آیفون» -> iphone-parts). اگه تکراری بود، اسلاگِ والد به آخرش اضافه می‌شه.
+ * اسلاگِ فارسیِ قبلی نگه داشته می‌شه تا لینک‌های قدیمی با ۳۰۱ به لینکِ جدید برن.
+ * ========================================================================= */
+function ap_slug_is_english($slug) {
+    return $slug !== '' && strpos($slug, '%') === false && !preg_match('/[^\x00-\x7f]/', $slug);
+}
+function ap_english_term_slug($term) {
+    $base = ap_transliterate_title_to_slug($term->name);
+    $slug = $base;
+    $taken = function ($s) use ($term) { $t = get_term_by('slug', $s, 'ap_cat'); return $t && (int) $t->term_id !== (int) $term->term_id; };
+    if ($taken($slug) && $term->parent) {
+        $parent = get_term($term->parent, 'ap_cat');
+        if ($parent && !is_wp_error($parent)) $slug = $base . '-' . (ap_slug_is_english($parent->slug) ? $parent->slug : ap_transliterate_title_to_slug($parent->name));
+    }
+    $i = 2; $try = $slug;
+    while ($taken($try)) { $try = $slug . '-' . $i++; }
+    return $try;
+}
+function ap_fix_category_slug($term_id) {
+    static $busy = false;
+    if ($busy) return false;
+    $term = get_term($term_id, 'ap_cat');
+    if (!$term || is_wp_error($term) || ap_slug_is_english($term->slug)) return false;
+    $busy = true;
+    add_term_meta($term->term_id, '_ap_old_slug', urldecode($term->slug));
+    $r = wp_update_term($term->term_id, 'ap_cat', ['slug' => ap_english_term_slug($term)]);
+    $busy = false;
+    return !is_wp_error($r);
+}
+add_action('created_ap_cat', 'ap_fix_category_slug', 20);
+add_action('edited_ap_cat', 'ap_fix_category_slug', 20);
+
+function ap_fix_all_category_slugs() {
+    $fixed = 0;
+    /* اول والدها، بعد فرزندها (ترتیب بر اساس عمق) تا اسلاگِ والد قبل از فرزند انگلیسی شده باشه */
+    $terms = get_terms(['taxonomy' => 'ap_cat', 'hide_empty' => false]);
+    if (is_wp_error($terms)) return 0;
+    usort($terms, function ($a, $b) { return count(get_ancestors($a->term_id, 'ap_cat')) - count(get_ancestors($b->term_id, 'ap_cat')); });
+    foreach ($terms as $t) { if (ap_fix_category_slug($t->term_id)) $fixed++; }
+    delete_transient('ap_categories_cache_v1');
+    delete_transient('ap_products_cache_v2');
+    flush_rewrite_rules();
+    return $fixed;
+}
+/* یک بار به‌صورت خودکار بعد از به‌روزرسانیِ قالب اجرا می‌شه */
+add_action('admin_init', function () {
+    if (get_option('ap_cat_slugs_en_v1') || !current_user_can('manage_options')) return;
+    @set_time_limit(0);
+    ap_fix_all_category_slugs();
+    update_option('ap_cat_slugs_en_v1', 1, false);
+});
+
+/* لینک‌های قدیمیِ فارسیِ دسته‌بندی -> ۳۰۱ به لینکِ انگلیسیِ جدید */
+add_action('template_redirect', function () {
+    if (!is_404()) return;
+    $path = trim(urldecode(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH)), '/');
+    if (!preg_match('#(?:^|/)product-cat/(.+)$#u', $path, $m)) return;
+    $parts = explode('/', trim($m[1], '/'));
+    $last = end($parts);
+    $found = get_terms(['taxonomy' => 'ap_cat', 'hide_empty' => false, 'number' => 1, 'meta_key' => '_ap_old_slug', 'meta_value' => $last]);
+    if (!$found || is_wp_error($found)) { $t = get_term_by('slug', sanitize_title($last), 'ap_cat'); $found = $t ? [$t] : []; }
+    if ($found) { $link = get_term_link($found[0]); if (!is_wp_error($link)) { wp_redirect($link, 301); exit; } }
+}, 1);
+
+/* =========================================================================
+ * لوگوی سایت (logo.png در پوشه‌ی قالب) — برای صفحه‌های مستقل و آیکونِ تب
+ * ========================================================================= */
+define('AP_ICON_VER', '20261101');
+/* آیکون‌های سایت در پوشه‌ی icons قالب (از نسخه‌ی ۴۰۹۶ پیکسلی، با کیفیتِ کامل کوچیک شدن) */
+function ap_icon_url($file) { return get_template_directory_uri() . '/icons/' . $file . '?v=' . AP_ICON_VER; }
+/* اگه بعداً از پیشخوان یک «نماد سایت» دیگه انتخاب بشه، همون استفاده می‌شه؛ وگرنه آیکون‌های قالب */
+function ap_use_theme_icons() {
+    return !(function_exists('has_site_icon') && has_site_icon()) || (int) get_option('site_icon') === (int) get_option('ap_site_icon_id');
+}
+function ap_favicon_tags() {
+    if (!ap_use_theme_icons()) {
+        $v = '?v=' . (int) get_option('site_icon');
+        return '<link rel="icon" href="' . esc_url(get_site_icon_url(32) . $v) . '" sizes="32x32">'
+             . '<link rel="icon" href="' . esc_url(get_site_icon_url(192) . $v) . '" sizes="192x192">'
+             . '<link rel="apple-touch-icon" href="' . esc_url(get_site_icon_url(180) . $v) . '">';
+    }
+    $t = '';
+    foreach ([16, 32, 48, 96, 192] as $px) {
+        $t .= '<link rel="icon" type="image/png" sizes="' . $px . 'x' . $px . '" href="' . esc_url(ap_icon_url('icon-' . $px . '.png')) . '">';
+    }
+    $t .= '<link rel="shortcut icon" href="' . esc_url(ap_icon_url('favicon.ico')) . '">';
+    $t .= '<link rel="apple-touch-icon" sizes="180x180" href="' . esc_url(ap_icon_url('apple-touch-icon.png')) . '">';
+    return $t;
+}
+/* «نماد سایت» وردپرس (آیکونِ تبِ پیشخوان، صفحه‌ی ورود، /favicon.ico) یک‌بار با آیکونِ جدید عوض می‌شه.
+   اندازه‌ها از قبل با کیفیتِ بالا ساخته شدن و مستقیم استفاده می‌شن (وردپرس دوباره کوچیکشون نمی‌کنه). */
+add_action('admin_init', function () {
+    if (get_option('ap_site_icon_v') === AP_ICON_VER || !current_user_can('manage_options')) return;
+    $src = get_template_directory() . '/icons';
+    if (!file_exists($src . '/icon-512.png')) return;
+    $up = wp_upload_dir();
+    if (!empty($up['error']) || !wp_mkdir_p($up['path'])) return;
+    $base = 'ap-site-icon-' . AP_ICON_VER;
+    $files = ['' => 'icon-512.png', '-32x32' => 'icon-32.png', '-180x180' => 'apple-touch-icon.png', '-192x192' => 'icon-192.png', '-270x270' => 'icon-270.png'];
+    foreach ($files as $suffix => $f) { if (!@copy($src . '/' . $f, trailingslashit($up['path']) . $base . $suffix . '.png')) return; }
+    $old_icon = (int) get_option('site_icon');
+    $id = wp_insert_attachment([
+        'post_title' => get_bloginfo('name') . ' — نماد سایت', 'post_mime_type' => 'image/png', 'post_status' => 'inherit',
+        'guid' => trailingslashit($up['url']) . $base . '.png',
+    ], trailingslashit($up['path']) . $base . '.png');
+    if (!$id || is_wp_error($id)) return;
+    $sizes = [];
+    foreach ([32, 180, 192, 270] as $px) $sizes['site_icon-' . $px] = ['file' => $base . '-' . $px . 'x' . $px . '.png', 'width' => $px, 'height' => $px, 'mime-type' => 'image/png'];
+    wp_update_attachment_metadata($id, ['width' => 512, 'height' => 512, 'file' => ltrim(trailingslashit($up['subdir']), '/') . $base . '.png', 'sizes' => $sizes, 'image_meta' => []]);
+    update_post_meta($id, '_wp_attachment_context', 'site-icon');
+    update_option('site_icon', $id);
+    update_option('ap_site_icon_id', $id, false);
+    update_option('ap_site_icon_v', AP_ICON_VER, false);
+    /* لوگوی سازمان در Rank Math (اسکیمای گوگل) اگه خالی یا همون آیکونِ قبلی بود، اون هم به‌روز می‌شه */
+    $rm = get_option('rank-math-options-titles');
+    if (is_array($rm)) {
+        $cur_url = (string) ($rm['knowledgegraph_logo'] ?? '');
+        $cur_id = (int) ($rm['knowledgegraph_logo_id'] ?? 0);
+        if ($cur_url === '' || ($old_icon && $cur_id === $old_icon) || preg_match('#/themes/[^/]+/logo\.png#', $cur_url)) {
+            $rm['knowledgegraph_logo'] = wp_get_attachment_url($id);
+            $rm['knowledgegraph_logo_id'] = $id;
+            update_option('rank-math-options-titles', $rm);
+        }
+    }
+});
+/* اگه در وردپرس «نماد سایت» تنظیم نشده، همین لوگو آیکونِ تب و گوگل می‌شه */
+add_action('wp_head', function () { if (!has_site_icon()) echo ap_favicon_tags(); }, 2);
+
+/* =========================================================================
+ * حذفِ نوشته‌ی پیش‌فرضِ «سلام دنیا!» وردپرس (یک‌بار) + ریدایرکتِ ۳۰۱ آدرسش
+ * ========================================================================= */
+add_action('admin_init', function () {
+    if (get_option('ap_hello_removed') || !current_user_can('manage_options')) return;
+    foreach (['hello-world', 'سلام-دنیا', rawurlencode('سلام-دنیا')] as $slug) {
+        $p = get_page_by_path($slug, OBJECT, 'post');
+        if ($p) wp_delete_post($p->ID, true);
+    }
+    global $wpdb;
+    $ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'post' AND post_title IN ('سلام دنیا!', 'Hello world!')");
+    foreach ($ids as $id) wp_delete_post((int) $id, true);
+    update_option('ap_hello_removed', 1, false);
+});
+add_action('template_redirect', function () {
+    $path = urldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+    if (preg_match('#/(سلام-دنیا|hello-world)/?$#u', $path)) { wp_redirect(home_url('/'), 301); exit; }
+}, 0);
+
+/* =========================================================================
+ * نوار داینامیکِ پایین برای صفحه‌های مستقل (وبلاگ، مقاله، قوانین، درباره ما)
+ * همون ظاهرِ نوارِ صفحه‌ی اصلی؛ دکمه‌ها به بخش‌های فروشگاه می‌برن.
+ * ========================================================================= */
+function ap_static_dock_parts() {
+    static $parts = null;
+    if ($parts !== null) return $parts;
+    $h = (string) @file_get_contents(get_template_directory() . '/site.html');
+    $cut = function ($from, $to, $incTo = false) use ($h) {
+        $a = strpos($h, $from); if ($a === false) return '';
+        $b = strpos($h, $to, $a + strlen($from)); if ($b === false) return '';
+        return substr($h, $a, $b - $a + ($incTo ? strlen($to) : 0));
+    };
+    $vars  = $cut(":root{\n  /* Liquid Glass", "\n}\n", true) . "\n" . $cut("[data-theme=\"dark\"]{\n  --bg:", "\n}\n", true);
+    $dockA = strpos($h, 'DYNAMIC DOCK — نوار پایینِ شناور');
+    $dockA = $dockA !== false ? strrpos(substr($h, 0, $dockA), '/*') : false;
+    $dockB = $dockA !== false ? strpos($h, 'HERO — طراحیِ جدید', $dockA) : false;
+    $dockB = $dockB !== false ? strrpos(substr($h, 0, $dockB), '/*') : false;
+    $dockCss = ($dockA !== false && $dockB !== false) ? substr($h, $dockA, $dockB - $dockA) : '';
+    $kf = '';
+    foreach (['dockJelly', 'bump'] as $k) {
+        if (preg_match('/@keyframes ' . $k . '\s*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/', $h, $m)) $kf .= $m[0] . "\n";
+    }
+    $html = $cut('<div class="ap-dock" id="apDock">', "\n<script>");
+    $js   = $cut('(function initNexvDock(){', "\n})();", true);
+    $parts = compact('vars', 'dockCss', 'kf', 'html', 'js');
+    return $parts;
+}
+function ap_static_dock_html($active = '') {
+    $home = home_url('/');
+    $d = ap_static_dock_parts();
+    ob_start(); ?>
+<style>
+<?php echo $d['vars']; ?>
+<?php echo $d['dockCss']; ?>
+<?php echo $d['kf']; ?>
+.ap-dock .search-results{display:none !important;}
+body{padding-bottom:calc(110px + env(safe-area-inset-bottom)) !important;}
+/* پس‌زمینه‌ی ثابت و متحرکِ صفحه‌ی اصلی؛ باکس‌ها به‌صورت شیشه‌ای روش اسکرول می‌شن */
+html, body{background:transparent !important;}
+html{background:#f3f1f9 !important;} html[data-theme="dark"]{background:#08080d !important;}
+#apBg{
+  position:fixed; inset:0;
+  /* کمی بلندتر از صفحه تا موقعِ جمع‌شدنِ نوار آدرسِ سافاری، لبه‌ی پایین دیده نشه */
+  bottom:-120px;
+  z-index:-1; pointer-events:none; overflow:hidden; contain:strict;
+  background:linear-gradient(165deg, #f5f3fc 0%, #f1f1f8 50%, #f3f1f9 100%);
+}
+html[data-theme="dark"] #apBg{background:linear-gradient(165deg, #0a0912 0%, #08080d 50%, #0a0a13 100%);}
+#apBg .blob{
+  position:absolute; border-radius:50%; will-change:transform;
+  background:radial-gradient(circle closest-side, var(--c) 0%, color-mix(in srgb, var(--c) 45%, transparent) 45%, transparent 100%);
+  animation:var(--anim) var(--dur) ease-in-out infinite alternate;
+}
+/* رنگ‌های گرم و ملایم: قرمز، مرجانی، هلویی و صورتیِ پودری (هماهنگ با صفحه‌ی اصلی) */
+#apBg .b1{--c:rgba(255,90,105,.26); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
+#apBg .b2{--c:rgba(255,130,120,.20); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
+#apBg .b3{--c:rgba(255,190,160,.24); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
+#apBg .b4{--c:rgba(255,175,95,.18); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
+#apBg .b5{--c:rgba(244,170,185,.16); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
+html[data-theme="dark"] #apBg .b1{--c:rgba(220,60,80,.24);}
+html[data-theme="dark"] #apBg .b2{--c:rgba(255,95,110,.14);}
+html[data-theme="dark"] #apBg .b3{--c:rgba(240,120,80,.15);}
+html[data-theme="dark"] #apBg .b4{--c:rgba(255,150,70,.13);}
+html[data-theme="dark"] #apBg .b5{--c:rgba(210,120,170,.07);}
+/* لایه‌ی نورِ نرم برای عمق و خوانایی متن */
+#apBg::after{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.35), transparent 60%);
+}
+html[data-theme="dark"] #apBg::after{background:radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.04), transparent 60%);}
+
+@keyframes apDance1{
+  0%  {transform:translate3d(0,0,0) scale(1);}
+  50% {transform:translate3d(14vw, 10vh,0) scale(1.12);}
+  100%{transform:translate3d(26vw,-4vh,0) scale(.94);}
+}
+@keyframes apDance2{
+  0%  {transform:translate3d(0,0,0) scale(1);}
+  50% {transform:translate3d(-18vw,14vh,0) scale(.9);}
+  100%{transform:translate3d(-8vw,32vh,0) scale(1.1);}
+}
+@keyframes apDance3{
+  0%  {transform:translate3d(0,0,0) scale(1.05);}
+  50% {transform:translate3d(-20vw,-16vh,0) scale(.92);}
+  100%{transform:translate3d(10vw,-30vh,0) scale(1.14);}
+}
+@keyframes apDance4{
+  0%  {transform:translate3d(0,0,0) scale(.95);}
+  50% {transform:translate3d(22vw,-20vh,0) scale(1.1);}
+  100%{transform:translate3d(36vw,-6vh,0) scale(1);}
+}
+@keyframes apDance5{
+  0%  {transform:translate3d(0,0,0) scale(1); opacity:.7;}
+  50% {transform:translate3d(-26vw,-22vh,0) scale(1.25); opacity:1;}
+  100%{transform:translate3d(-40vw,10vh,0) scale(.9); opacity:.75;}
+}
+@media (prefers-reduced-motion: reduce){ #apBg .blob{animation:none;} }
+.body-content, .blog-card, .terms-box, .about-box, .rp-card{
+  background:rgba(255,255,255,.62) !important; border:1px solid rgba(255,255,255,.7) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 14px 36px rgba(20,10,60,.08) !important;
+  -webkit-backdrop-filter:blur(16px) saturate(170%); backdrop-filter:blur(16px) saturate(170%);
+}
+/* کارت‌های ردیفِ افقی blur نمی‌گیرن (وگرنه یه نوارِ روشن پشتِ ردیف کشیده می‌شه) */
+.rp-card{-webkit-backdrop-filter:none !important; backdrop-filter:none !important; background:rgba(255,255,255,.72) !important;}
+html[data-theme="dark"] .body-content, html[data-theme="dark"] .blog-card, html[data-theme="dark"] .terms-box,
+html[data-theme="dark"] .about-box, html[data-theme="dark"] .rp-card{
+  background:rgba(30,30,40,.55) !important; border-color:rgba(255,255,255,.08) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 36px rgba(0,0,0,.45) !important;
+}
+</style>
+<div id="apBg" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="blob b5"></span></div>
+<span id="cartCount" style="display:none">0</span>
+<?php echo $d['html']; ?>
+<script>
+/* همون نوارِ صفحه‌ی اصلی؛ اینجا هر گزینه به بخشِ مربوطش در فروشگاه می‌ره */
+(function(){
+  var HOME = <?php echo wp_json_encode($home); ?>;
+  window.HOME_URL = HOME; window.SINGLE_VIEW_ID = 'static';
+  window.currentUser = function(){ return null; };
+  window.openAuth = window.openAccount = function(){ location.href = HOME + 'my-account/'; };
+  window.openDrawer = function(){ location.href = HOME + 'cart/'; };
+  window.renderAdvancedFilter = window.lockBodyScroll = window.renderSearchResults = function(){};
+  try{ var c = JSON.parse(localStorage.getItem('ap_cart') || '{}'), n = 0; for(var k in c) n += Number(c[k]) || 0;
+       document.getElementById('cartCount').textContent = n; }catch(e){}
+  document.addEventListener('keydown', function(e){
+    var i = document.getElementById('searchInput');
+    if(e.key === 'Enter' && document.activeElement === i && i.value.trim()){
+      location.href = HOME + '?ap_search=' + encodeURIComponent(i.value.trim());
+    }
+  });
+})();
+var HOME_URL = window.HOME_URL, SINGLE_VIEW_ID = window.SINGLE_VIEW_ID;
+<?php echo $d['js']; ?>
+</script>
+<?php
+    return ob_get_clean();
+}
+
+/* =========================================================================
+ * محصولاتِ مرتبط با یک مقاله (بر اساسِ کلمه‌های عنوانِ مقاله)
+ * ========================================================================= */
+function ap_related_products_for_text($text, $limit = 8) {
+    $n = ap_norm_fa($text);
+    $devices = ['آیفون' => 'آیفون', 'iphone' => 'آیفون', 'آیپد' => 'آیپد', 'ipad' => 'آیپد', 'اپلواچ' => 'اپلواچ', 'applewatch' => 'اپلواچ', 'ایرپاد' => 'ایرپاد', 'مکبوک' => 'مکبوک'];
+    $parts = ['باتری', 'السیدی', 'مادربرد', 'دوربین', 'بدنه', 'تاچ', 'اسپیکر', 'شارژر', 'کابل', 'قاب', 'گلس', 'فلت'];
+    $dev = ''; foreach ($devices as $k => $v) { if (mb_strpos($n, $k) !== false) { $dev = $v; break; } }
+    $foundParts = array_values(array_filter($parts, function ($p) use ($n) { return mb_strpos($n, $p) !== false; }));
+    preg_match_all('/\d+/', ap_norm_fa($text), $m);
+    $nums = array_unique($m[0]);
+    $products = get_posts(['post_type' => 'ap_product', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids']);
+    $scored = [];
+    foreach ($products as $pid) {
+        $t = ap_norm_fa(get_the_title($pid));
+        $s = 0;
+        if ($dev !== '' && mb_strpos($t, $dev) !== false) $s += 3;
+        foreach ($foundParts as $p) if (mb_strpos($t, $p) !== false) $s += 4;
+        foreach ($nums as $num) if (preg_match('/(?<!\d)' . $num . '(?!\d)/', $t)) $s += 2;
+        if ($s >= 3) $scored[$pid] = $s + (has_post_thumbnail($pid) ? 0.5 : 0);
+    }
+    arsort($scored);
+    return array_slice(array_keys($scored), 0, $limit);
+}
+function ap_related_products_html($ids, $title = 'محصولات مرتبط') {
+    if (!$ids) return '';
+    ob_start(); ?>
+<style>
+.rp-wrap{max-width:960px; margin:34px auto 0;}
+.rp-wrap h2{font-size:19px; margin:0 4px 14px; font-weight:800;}
+.rp-track{display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:24px 4px 64px; margin:-24px -4px -58px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+.rp-track::-webkit-scrollbar{display:none;}
+.rp-card{flex:0 0 200px; scroll-snap-align:start; background:#fff; border:1px solid rgba(255,255,255,.7); border-radius:22px; padding:14px; text-decoration:none; color:inherit;
+  display:flex; flex-direction:column; box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 12px 28px rgba(20,10,60,.08); transition:transform .3s ease;}
+.rp-card:hover{transform:translateY(-4px);}
+.rp-img{width:100%; aspect-ratio:1/1; border-radius:14px; overflow:hidden; display:grid; place-items:center; margin-bottom:12px;
+  background:linear-gradient(160deg,#ff3b4e 0%, rgba(255,59,78,.25) 120%);}
+.rp-img img{width:100%; height:100%; object-fit:cover; display:block;}
+.rp-img.has{background:#f1f0f6;}
+.rp-img svg{width:46px; height:46px; stroke:#fff;}
+.rp-card h3{font-size:14px; line-height:1.6; margin:0 0 8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:3.2em;}
+.rp-price{margin-top:auto; font-weight:800; font-size:14.5px;}
+.rp-price small{font-size:11px; color:#7a7788; font-weight:400; margin-right:3px;}
+.rp-price .call{font-size:12px; color:#ff3b4e;}
+html[data-theme="dark"] .rp-card{background:#15141c; border-color:rgba(255,255,255,.08); box-shadow:0 12px 28px rgba(0,0,0,.45);}
+html[data-theme="dark"] .rp-img.has{background:#1f1e29;}
+</style>
+<section class="rp-wrap">
+  <h2><?php echo esc_html($title); ?></h2>
+  <div class="rp-track">
+  <?php foreach ($ids as $pid):
+      $img = get_the_post_thumbnail_url($pid, 'medium');
+      if (!$img && function_exists('ap_gallery_urls')) { $g = ap_gallery_urls($pid); $img = $g[0] ?? ''; }
+      $price = (int) get_post_meta($pid, '_ap_price', true);
+      $vp = function_exists('ap_variant_prices') ? array_values(ap_variant_prices($pid)) : [];
+      $all = array_filter(array_merge($vp, $price > 0 ? [$price] : []));
+      $min = $all ? min($all) : 0;
+      $varies = $all && max($all) !== $min;
+  ?>
+    <a class="rp-card" href="<?php echo esc_url(get_permalink($pid)); ?>">
+      <div class="rp-img<?php echo $img ? ' has' : ''; ?>"><?php if ($img): ?><img src="<?php echo esc_url($img); ?>" alt="<?php echo esc_attr(get_the_title($pid)); ?>" loading="lazy"><?php else: ?><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg><?php endif; ?></div>
+      <h3><?php echo esc_html(get_the_title($pid)); ?></h3>
+      <div class="rp-price"><?php if ($min): echo ($varies ? 'از ' : '') . esc_html(number_format($min)) . '<small>تومان</small>'; else: ?><span class="call">برای دریافت قیمت تماس بگیرید</span><?php endif; ?></div>
+    </a>
+  <?php endforeach; ?>
+  </div>
+</section>
+<?php
+    return ob_get_clean();
+}
+
+/* =========================================================================
+ * پیوند یکتای انگلیسیِ محصولات و مقالات از روی بخشِ انگلیسیِ عنوان
+ * عنوان‌ها به شکلِ «فارسی | English» هستن؛ بخشِ بعد از «|» دقیق‌ترین منبع برای
+ * پیوندِ انگلیسیه (مثلاً «دوربین جلو آیفون ۵ | iPhone 5 Front Camera» → iphone-5-front-camera).
+ * اگه عنوان بخشِ انگلیسی نداشت، از جدولِ ترجمه‌ی فارسی-به-انگلیسی استفاده می‌شه.
+ * ========================================================================= */
+function ap_slug_from_title($title) {
+    $title = (string) $title;
+    if (strpos($title, '|') !== false) {
+        $en = trim(substr($title, strrpos($title, '|') + 1));
+        if (preg_match('/[A-Za-z]/', $en) && !preg_match('/[^\x00-\x7f]/', $en)) {
+            $en = str_replace('.', '-', $en);
+            $en = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $en));
+            $en = trim(preg_replace('/-+/', '-', $en), '-');
+            if ($en !== '') return $en;
+        }
+    }
+    return ap_transliterate_title_to_slug($title);
+}
+
+/* اصلاحِ یک‌باره‌ی پیوندِ همه‌ی محصولات (به درخواستِ مدیر سایت). پیوندِ قدیمی در
+   _wp_old_slug ذخیره می‌شه تا با ۳۰۱ به پیوندِ جدید بره و اعتبارِ گوگل حفظ بشه. */
+add_action('admin_init', function () {
+    if (get_option('ap_product_slugs_en_v2') || !current_user_can('manage_options')) return;
+    @set_time_limit(0);
+    global $wpdb;
+    $rows = $wpdb->get_results("SELECT ID, post_title, post_name, post_status FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','pending','private','future') ORDER BY ID ASC");
+    $changed = 0; $same = 0; $examples = [];
+    foreach ($rows as $r) {
+        $want = ap_slug_from_title($r->post_title);
+        if ($want === '' ) continue;
+        $cur = urldecode($r->post_name);
+        if ($cur === $want) { $same++; continue; }
+        $new = wp_unique_post_slug($want, (int) $r->ID, 'publish', 'ap_product', 0);
+        if ($new === $cur) { $same++; continue; }
+        $wpdb->update($wpdb->posts, ['post_name' => $new], ['ID' => (int) $r->ID]);
+        if ($r->post_name !== '' && $r->post_status === 'publish') add_post_meta((int) $r->ID, '_wp_old_slug', $r->post_name);
+        clean_post_cache((int) $r->ID);
+        $changed++;
+        if (count($examples) < 6) $examples[] = $cur . ' → ' . $new;
+    }
+    delete_transient('ap_products_cache_v2');
+    flush_rewrite_rules();
+    update_option('ap_product_slugs_en_v2', 1, false);
+    set_transient('ap_slug_fix_report', ['changed' => $changed, 'same' => $same, 'examples' => $examples], DAY_IN_SECONDS);
+});
+add_action('admin_notices', function () {
+    $r = get_transient('ap_slug_fix_report');
+    if (!$r || !current_user_can('manage_options')) return;
+    delete_transient('ap_slug_fix_report');
+    echo '<div class="notice notice-success is-dismissible"><p><strong>پیوند یکتای محصولات:</strong> ' . (int) $r['changed'] . ' محصول اصلاح شد، ' . (int) $r['same'] . ' محصول از قبل درست بود. لینک‌های قدیمی با ۳۰۱ به لینکِ جدید می‌رن.</p>';
+    if ($r['examples']) { echo '<ul style="direction:ltr;text-align:left;list-style:disc;padding-left:20px">'; foreach ($r['examples'] as $e) echo '<li><code>' . esc_html($e) . '</code></li>'; echo '</ul>'; }
+    echo '</div>';
+});
+
+/* ریدایرکتِ ۳۰۱ لینک‌های قدیمیِ محصول (پشتیبانِ ریدایرکتِ خودِ وردپرس) */
+add_action('template_redirect', function () {
+    if (!is_404()) return;
+    $path = urldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+    if (!preg_match('#/product/([^/]+)/?$#u', $path, $m)) return;
+    global $wpdb;
+    $old = $m[1];
+    $id = $wpdb->get_var($wpdb->prepare(
+        "SELECT p.ID FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id WHERE m.meta_key = '_wp_old_slug' AND (m.meta_value = %s OR m.meta_value = %s) AND p.post_type = 'ap_product' AND p.post_status = 'publish' LIMIT 1",
+        $old, strtolower(rawurlencode($old))
+    ));
+    if ($id) { wp_redirect(get_permalink((int) $id), 301); exit; }
+}, 2);
+
+/* =========================================================================
+ * سئو: اصلاحِ گزارش‌های Search Console
+ * ========================================================================= */
+/* ۱) http → https (گوگل http://nexv.ir/ رو به‌عنوان صفحه‌ی تکراری دیده بود) */
+add_action('template_redirect', function () {
+    if (is_ssl() || strpos(home_url('/'), 'https://') !== 0 || (defined('WP_CLI') && WP_CLI)) return;
+    /* پشتِ CDN (آروان، کلودفلر و ...) اتصالِ کاربر https هست حتی اگه سرور http ببینه؛ حلقه نسازه */
+    $xf = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') . (string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '') . (string) ($_SERVER['HTTP_CF_VISITOR'] ?? ''));
+    if (strpos($xf, 'https') !== false || strpos($xf, 'on') !== false) return;
+    wp_redirect('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], 301);
+    exit;
+}, -10);
+
+/* ۲) جستجوی پیش‌فرضِ وردپرس (?s=...) در این قالب صفحه‌ی جدایی نداره؛ آدرسِ
+   جستجوی اسکیمای Rank Math به جستجوی خودِ فروشگاه اشاره کنه و صفحه‌های جستجو ایندکس نشن. */
+add_filter('rank_math/json_ld/search_url', function () { return home_url('/?ap_search={search_term_string}'); });
+add_action('template_redirect', function () {
+    if (isset($_GET['s']) && !is_admin()) {
+        $q = trim(wp_unslash((string) $_GET['s']));
+        wp_redirect(($q === '' || strpos($q, '{') !== false) ? home_url('/') : add_query_arg('ap_search', rawurlencode($q), home_url('/')), 301);
+        exit;
+    }
+}, 1);
+add_filter('rank_math/frontend/robots', function ($r) {
+    if (isset($_GET['ap_search']) || isset($_GET['ap_tag'])) { $r['index'] = 'noindex'; $r['follow'] = 'follow'; }
+    return $r;
+}, 99);
+
+/* ۳) مقاله‌هایی که قبلاً آدرسِ فارسی داشتن: اگه مقاله‌ای با همون عنوان و آدرسِ انگلیسی هست، ۳۰۱ به اون */
+add_action('template_redirect', function () {
+    $path = urldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+    if (!preg_match('#/article/([^/]+)/?$#u', $path, $m) || !preg_match('/[^\x00-\x7f]/', $m[1])) return;
+    $needle = ap_norm_fa(str_replace('-', ' ', $m[1]));
+    foreach (get_posts(['post_type' => 'ap_article', 'post_status' => 'publish', 'numberposts' => -1]) as $a) {
+        if (ap_slug_is_english(urldecode($a->post_name)) && ap_norm_fa($a->post_title) === $needle) {
+            wp_redirect(get_permalink($a), 301); exit;
+        }
+    }
+    if (is_404()) { wp_redirect(get_post_type_archive_link('ap_article') ?: home_url('/'), 301); exit; }
+}, 3);
+
+/* ۴) گزارشِ محصولاتِ تکراری (دو محصول با عنوانِ یکسان → آدرس‌های ...-2) در پیشخوان */
+add_action('admin_notices', function () {
+    if (!current_user_can('manage_options')) return;
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || !in_array($screen->id, ['dashboard', 'edit-ap_product', 'toplevel_page_ap-dashboard'], true)) return;
+    global $wpdb;
+    $rows = $wpdb->get_results("SELECT post_title, GROUP_CONCAT(ID ORDER BY ID) ids, COUNT(*) c FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','private','pending') GROUP BY post_title HAVING c > 1 LIMIT 50");
+    if (!$rows) return;
+    echo '<div class="notice notice-warning"><p><strong>محصولاتِ تکراری (' . count($rows) . ' عنوان):</strong> این محصولات دو بار در سایت هستن و آدرسِ یکی‌شون با «-2» تموم می‌شه. نسخه‌ی اضافه رو (معمولاً شماره‌ی بزرگ‌تر) حذف کنید.</p><ul style="list-style:disc;padding-right:20px">';
+    foreach ($rows as $r) {
+        $links = array_map(function ($id) { return '<a href="' . esc_url(get_edit_post_link((int) $id)) . '">#' . (int) $id . '</a>'; }, explode(',', $r->ids));
+        echo '<li>' . esc_html($r->post_title) . ' — ' . implode('، ', $links) . '</li>';
+    }
+    echo '</ul></div>';
+});
+
+/* =========================================================================
+ * سایت‌مپِ برگه‌ها: سبد/تسویه/حساب/فروشگاه noindex و بیرون از سایت‌مپ؛ «برگه نمونه» حذف
+ * (Rank Math هر برگه‌ای که noindex باشه رو خودش از سایت‌مپ برمی‌داره)
+ * ========================================================================= */
+add_action('admin_init', function () {
+    if (get_option('ap_pages_cleanup_v1') || !current_user_can('manage_options')) return;
+    foreach (ap_utility_page_slugs() as $slug) {
+        $p = get_page_by_path($slug, OBJECT, 'page');
+        if ($p) update_post_meta($p->ID, 'rank_math_robots', ['noindex', 'follow']);
+    }
+    global $wpdb;
+    $ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'page' AND (post_name IN ('sample-page', '" . esc_sql(rawurlencode('برگه-نمونه')) . "', '" . esc_sql(strtolower(rawurlencode('برگه-نمونه'))) . "', 'برگه-نمونه') OR post_title IN ('برگه نمونه', 'Sample Page'))");
+    foreach ($ids as $id) wp_delete_post((int) $id, true);
+    update_option('ap_pages_cleanup_v1', 1, false);
+});
+add_filter('rank_math/sitemap/exclude_post', function ($exclude, $post) {
+    if ($post && isset($post->post_type) && $post->post_type === 'page' && in_array(urldecode($post->post_name), ['برگه-نمونه', 'sample-page'], true)) return true;
+    return $exclude;
+}, 20, 2);
+
+/* سایت‌مپِ برگه‌ها (نسخه‌ی ۲): شناسه‌ی برگه‌های کمکی به تنظیمِ «Exclude Posts» خودِ Rank Math
+   اضافه می‌شه (همون فیلدی که در تنظیمات نقشه سایت ← عمومی هست)، برگه‌ی نمونه حذف می‌شه
+   و کشِ سایت‌مپِ Rank Math پاک می‌شه تا تغییر همون لحظه دیده بشه. */
+function ap_flush_rank_math_sitemap() {
+    if (class_exists('\RankMath\Sitemap\Cache')) { try { \RankMath\Sitemap\Cache::invalidate_storage(); } catch (\Throwable $e) {} }
+    global $wpdb;
+    $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_rank\_math\_sitemap%' OR option_name LIKE '\_transient\_timeout\_rank\_math\_sitemap%' OR option_name LIKE '%rank_math%sitemap%cache%'");
+}
+add_action('admin_init', function () {
+    if (get_option('ap_pages_cleanup_v2') || !current_user_can('manage_options')) return;
+    global $wpdb;
+    $samples = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'page' AND (post_title IN ('برگه نمونه', 'Sample Page') OR post_name = 'sample-page' OR post_name LIKE '%25d8%25a8%25d8%25b1%25da%25af%25d9%2587-%' OR post_name LIKE '%D8%A8%D8%B1%DA%AF%D9%87-%')");
+    foreach ($samples as $id) wp_delete_post((int) $id, true);
+    $ids = [];
+    foreach (ap_utility_page_slugs() as $slug) {
+        $p = get_page_by_path($slug, OBJECT, 'page');
+        if ($p) { $ids[] = (int) $p->ID; update_post_meta($p->ID, 'rank_math_robots', ['noindex', 'follow']); }
+    }
+    $opt = get_option('rank-math-options-sitemap', []);
+    if (is_array($opt) && $ids) {
+        $cur = array_filter(array_map('intval', preg_split('/\s*,\s*/', (string) ($opt['exclude_posts'] ?? ''))));
+        $opt['exclude_posts'] = implode(',', array_values(array_unique(array_merge($cur, $ids))));
+        update_option('rank-math-options-sitemap', $opt);
+    }
+    ap_flush_rank_math_sitemap();
+    update_option('ap_pages_cleanup_v2', 1, false);
+}, 40);
+
+/* بازگردانی (به درخواستِ مدیر سایت): سبد خرید، فروشگاه، تسویه حساب و حساب کاربری
+   دوباره قابلِ ایندکس و داخلِ سایت‌مپ هستن؛ فقط «برگه نمونه» حذف شده می‌مونه. */
+add_action('admin_init', function () {
+    if (get_option('ap_pages_restore_v1') || !current_user_can('manage_options')) return;
+    $ids = [];
+    foreach (ap_utility_page_slugs() as $slug) {
+        $p = get_page_by_path($slug, OBJECT, 'page');
+        if ($p) {
+            $ids[] = (int) $p->ID;
+            delete_post_meta($p->ID, 'rank_math_robots');
+            if ($p->post_status !== 'publish') wp_update_post(['ID' => $p->ID, 'post_status' => 'publish']);
+        }
+    }
+    $opt = get_option('rank-math-options-sitemap', []);
+    if (is_array($opt) && isset($opt['exclude_posts'])) {
+        $cur = array_filter(array_map('intval', preg_split('/\\s*,\\s*/', (string) $opt['exclude_posts'])));
+        $opt['exclude_posts'] = implode(',', array_values(array_diff($cur, $ids)));
+        update_option('rank-math-options-sitemap', $opt);
+    }
+    ap_flush_rank_math_sitemap();
+    update_option('ap_pages_restore_v1', 1, false);
+}, 50);
+
+/* =========================================================================
+ * «تسویه حساب» همون «سبد خرید»ه و «فروشگاه» همون صفحه‌ی اصلی (به درخواستِ مدیر سایت):
+ * برگه‌هاشون حذف و آدرس‌هاشون ۳۰۱ می‌شن: /checkout/ → /cart/ ، /shop/ → صفحه‌ی اصلی
+ * ========================================================================= */
+add_action('template_redirect', function () {
+    $path = trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+    $base = trim((string) parse_url(home_url('/'), PHP_URL_PATH), '/');
+    if ($base !== '' && strpos($path, $base) === 0) $path = trim(substr($path, strlen($base)), '/');
+    if ($path === 'checkout') { wp_redirect(home_url('/cart/'), 301); exit; }
+    if ($path === 'shop')     { wp_redirect(home_url('/'), 301); exit; }
+}, 0);
+add_action('admin_init', function () {
+    if (get_option('ap_pages_merge_v1') || !current_user_can('manage_options')) return;
+    foreach (['checkout', 'shop'] as $slug) {
+        $p = get_page_by_path($slug, OBJECT, 'page');
+        if ($p) wp_delete_post($p->ID, true);
+    }
+    ap_flush_rank_math_sitemap();
+    update_option('ap_pages_merge_v1', 1, false);
+}, 60);
+
+/* عکسِ کارتِ محصول در اندازه‌ی medium_large (برای لیست‌ها؛ صفحه‌ی محصول همون عکسِ بزرگ رو داره) */
+function ap_card_thumb_url($post_id) {
+    $raw = trim((string) get_post_meta($post_id, '_ap_gallery', true));
+    if ($raw !== '') {
+        $first = rawurldecode(trim(explode(',', $raw)[0]));
+        if (ctype_digit($first)) return wp_get_attachment_image_url((int) $first, 'medium_large') ?: '';
+        return '';
+    }
+    $tid = get_post_thumbnail_id($post_id);
+    return $tid ? (wp_get_attachment_image_url($tid, 'medium_large') ?: '') : '';
+}
+
+/* =========================================================================
+ * سفارش‌ها در پیشخوانِ وردپرس (NEXV ← سفارش‌ها) + اطلاع‌رسانیِ سفارشِ جدید
+ * این صفحه مستقیم از همون فایلِ سفارش‌های سایت می‌خونه؛ یعنی حتی اگه پنلِ داخلِ
+ * سایت به هر دلیلی باز نشه، مدیر همیشه سفارش‌ها رو اینجا می‌بینه.
+ * ========================================================================= */
+function ap_orders_db_path() {
+    $u = wp_upload_dir();
+    $cands = [];
+    if (!empty($u['basedir'])) $cands[] = $u['basedir'] . '/ap-data/db.json';
+    $cands[] = WP_CONTENT_DIR . '/uploads/ap-data/db.json';
+    $cands[] = get_template_directory() . '/data/db.json';
+    foreach ($cands as $c) { if (file_exists($c)) return $c; }
+    return $cands[0];
+}
+function ap_orders_read() {
+    $f = ap_orders_db_path();
+    $d = file_exists($f) ? json_decode((string) file_get_contents($f), true) : null;
+    return is_array($d) ? $d : null;
+}
+function ap_order_status_labels() {
+    return ['pending' => 'در انتظار بررسی', 'confirmed' => 'تأیید شد', 'rejected' => 'رد شد', 'packing' => 'در حال بسته‌بندی', 'courier' => 'تحویل به پیک/پست', 'shipped' => 'ارسال شد'];
+}
+
+/* اطلاع‌رسانیِ سفارشِ جدید: ایمیل به مدیر + شمارنده‌ی «سفارشِ جدید» روی منوی NEXV */
+function ap_notify_new_order($order, $detached = true) {
+    update_option('ap_unseen_orders', (int) get_option('ap_unseen_orders', 0) + 1, false);
+    /* اعلان روی گوشیِ مدیر (اگه دستگاهی ثبت شده باشه) */
+    if (function_exists('ap_push_order_notify')) { try { ap_push_order_notify($order); } catch (\Throwable $e) {} }
+    $to = get_option('admin_email');
+    /* ایمیل فقط وقتی فرستاده می‌شه که جوابِ مشتری از قبل کامل فرستاده شده باشه (معطلش نکنه) */
+    if (!$detached || !$to || strpos($to, '@nexv.local') !== false) return;
+    $lines = [];
+    foreach ((array) ($order['items'] ?? []) as $it) $lines[] = '- ' . ($it['title'] ?? '') . ' × ' . (int) ($it['qty'] ?? 1) . ' — ' . number_format((int) ($it['price'] ?? 0)) . ' تومان';
+    $body = "سفارش جدید #" . $order['id'] . "\n\nمشتری: " . ($order['customerName'] ?? '') . "\nتلفن: " . ($order['phone'] ?? '')
+          . "\n\n" . implode("\n", $lines) . "\n\nجمع کل: " . number_format((int) ($order['grandTotal'] ?? 0)) . " تومان\n\nرسید: " . ($order['receiptUrl'] ?? '')
+          . "\n\nمشاهده در پیشخوان: " . admin_url('admin.php?page=ap-orders');
+    @wp_mail($to, get_bloginfo('name') . ' — سفارش جدید #' . $order['id'], $body);
+}
+
+add_action('admin_post_ap_order_status', function () {
+    if (!current_user_can('manage_options')) wp_die('دسترسی غیرمجاز.');
+    check_admin_referer('ap_order_status');
+    $id = (int) ($_POST['order_id'] ?? 0);
+    $st = sanitize_key($_POST['status'] ?? '');
+    if (!isset(ap_order_status_labels()[$st])) wp_die('وضعیت نامعتبر.');
+    $f = ap_orders_db_path();
+    $fp = fopen($f, 'c+');
+    if ($fp && flock($fp, LOCK_EX)) {
+        $d = json_decode(stream_get_contents($fp), true);
+        if (is_array($d)) {
+            $changed = null;
+            foreach ($d['orders'] as &$o) {
+                if ((int) $o['id'] === $id) {
+                    $o['status'] = $st;
+                    $o['statusHistory'] = array_merge((array) ($o['statusHistory'] ?? []), [['status' => $st, 'at' => date('c')]]);
+                    $changed = $o; break;
+                }
+            }
+            unset($o);
+            if ($changed) { ap_archive_order_wp($changed, 'status:' . $st); ap_mirror_order_to_wp($changed); }
+            $json = json_encode($d, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            ftruncate($fp, 0); rewind($fp); fwrite($fp, $json); fflush($fp);
+            @file_put_contents(dirname($f) . '/backups/latest.json', $json);
+        }
+        flock($fp, LOCK_UN);
+    }
+    if ($fp) fclose($fp);
+    wp_redirect(admin_url('admin.php?page=ap-orders&updated=' . $id . '#order-' . $id));
+    exit;
+});
+
+
+/* =========================================================================
+ * سفارش‌ها — منوی جداگانه در پیشخوان، سه نسخه‌ی مستقل، بکاپ و خروجی
+ * ۱) فایلِ اصلیِ سایت (db.json)  ۲) آرشیوِ دائمیِ هر سفارش (orders-archive/)
+ * ۳) دیتابیسِ وردپرس (نوع‌پستِ مخفیِ ap_order، با همون تاریخِ ثبت)
+ * لیستِ این صفحه از هر سه منبع ساخته می‌شه؛ اگه یکی آسیب ببینه، بقیه سفارش رو نگه داشتن.
+ * ========================================================================= */
+add_action('init', function () {
+    register_post_type('ap_order', ['public' => false, 'show_ui' => false, 'exclude_from_search' => true, 'publicly_queryable' => false, 'rewrite' => false, 'query_var' => false, 'label' => 'سفارش‌ها']);
+});
+function ap_orders_archive_dir() { return dirname(ap_orders_db_path()) . '/orders-archive'; }
+function ap_order_key($o) { return (int) ($o['id'] ?? 0) . '|' . (string) ($o['created_at'] ?? ''); }
+function ap_archive_order_wp($order, $event = 'save') {
+    $dir = ap_orders_archive_dir();
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    $file = $dir . '/order-' . (int) $order['id'] . '.json';
+    if (file_exists($file)) {
+        $prev = json_decode((string) @file_get_contents($file), true);
+        if (is_array($prev) && !empty($prev['created_at']) && !empty($order['created_at']) && $prev['created_at'] !== $order['created_at']) {
+            $file = $dir . '/order-' . (int) $order['id'] . '-' . preg_replace('/\D/', '', $order['created_at']) . '.json';
+        }
+    }
+    $json = wp_json_encode($order, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (@file_put_contents($file . '.tmp', $json, LOCK_EX) !== false) @rename($file . '.tmp', $file);
+    @file_put_contents($dir . '/orders-log.jsonl', wp_json_encode(['event' => $event, 'at' => date('c'), 'order' => $order], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+}
+function ap_mirror_order_to_wp($order) {
+    if (empty($order['id'])) return;
+    $key = ap_order_key($order);
+    $found = get_posts(['post_type' => 'ap_order', 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids', 'meta_key' => '_ap_order_key', 'meta_value' => $key]);
+    $ts = strtotime((string) ($order['created_at'] ?? '')) ?: time();
+    $arr = [
+        'post_type' => 'ap_order', 'post_status' => 'private',
+        'post_title' => 'سفارش #' . (int) $order['id'] . ' — ' . ($order['customerName'] ?? ''),
+        'post_content' => wp_slash(wp_json_encode($order, JSON_UNESCAPED_UNICODE)),
+        'post_date' => wp_date('Y-m-d H:i:s', $ts), 'post_date_gmt' => gmdate('Y-m-d H:i:s', $ts),
+    ];
+    if ($found) { $arr['ID'] = $found[0]; wp_update_post($arr); $pid = $found[0]; }
+    else { $pid = wp_insert_post($arr); if ($pid && !is_wp_error($pid)) update_post_meta($pid, '_ap_order_key', $key); }
+    if (!empty($pid) && !is_wp_error($pid)) { update_post_meta($pid, '_ap_order_id', (int) $order['id']); update_post_meta($pid, '_ap_order_status', (string) ($order['status'] ?? '')); }
+}
+/* همه‌ی سفارش‌ها از هر سه منبع، بدون تکرار؛ جدیدترین اول */
+function ap_all_orders() {
+    $by = [];
+    $add = function ($o, $src) use (&$by) {
+        if (!is_array($o) || empty($o['id'])) return;
+        $k = ap_order_key($o);
+        if (!isset($by[$k])) { $by[$k] = $o; $by[$k]['_src'] = [$src]; return; }
+        $by[$k]['_src'][] = $src;
+        /* اگه یکی از منابع وضعیتِ جدیدتری داره (تاریخچه‌ی بلندتر)، همون نشون داده می‌شه */
+        if (count((array) ($o['statusHistory'] ?? [])) > count((array) ($by[$k]['statusHistory'] ?? []))) { $src0 = $by[$k]['_src']; $by[$k] = $o; $by[$k]['_src'] = $src0; }
+    };
+    $d = ap_orders_read();
+    foreach ((array) ($d['orders'] ?? []) as $o) $add($o, 'db');
+    foreach ((array) glob(ap_orders_archive_dir() . '/order-*.json') as $f) $add(json_decode((string) @file_get_contents($f), true), 'archive');
+    foreach (get_posts(['post_type' => 'ap_order', 'post_status' => 'any', 'numberposts' => -1]) as $p) $add(json_decode($p->post_content, true), 'wp');
+    $all = array_values($by);
+    usort($all, function ($a, $b) { return strcmp((string) ($b['created_at'] ?? ''), (string) ($a['created_at'] ?? '')) ?: ((int) $b['id'] <=> (int) $a['id']); });
+    return $all;
+}
+/* یک‌بار: همه‌ی سفارش‌های فعلی آرشیو و در دیتابیسِ وردپرس هم ثبت می‌شن */
+add_action('admin_init', function () {
+    if (get_option('ap_orders_mirror_v1') || !current_user_can('manage_options')) return;
+    $d = ap_orders_read();
+    foreach ((array) ($d['orders'] ?? []) as $o) {
+        if (!file_exists(ap_orders_archive_dir() . '/order-' . (int) $o['id'] . '.json')) ap_archive_order_wp($o, 'backfill');
+        ap_mirror_order_to_wp($o);
+    }
+    update_option('ap_orders_mirror_v1', 1, false);
+});
+
+/* منوی مستقلِ «سفارش‌ها» در پیشخوان */
+add_action('admin_menu', function () {
+    $n = (int) get_option('ap_unseen_orders', 0);
+    $badge = $n > 0 ? ' <span class="awaiting-mod">' . $n . '</span>' : '';
+    add_menu_page('سفارش‌ها', 'سفارش‌ها' . $badge, 'manage_options', 'ap-orders', 'ap_orders_page_html', 'dashicons-cart', 2);
+});
+
+function ap_jalali_dt($iso) {
+    $ts = strtotime((string) $iso);
+    if (!$ts) return '';
+    return (function_exists('ap_jalali_pretty') ? ap_jalali_pretty($ts) : date_i18n('Y/m/d', $ts)) . ' — ساعت ' . wp_date('H:i', $ts);
+}
+function ap_backup_dir() { $d = dirname(ap_orders_db_path()) . '/orders-archive/backups'; if (!is_dir($d)) @mkdir($d, 0775, true); return $d; }
+
+/* ---------- بکاپ و خروجی‌ها ---------- */
+add_action('admin_post_ap_orders_backup', function () {
+    if (!current_user_can('manage_options')) wp_die('دسترسی غیرمجاز.');
+    check_admin_referer('ap_orders_backup');
+    $f = ap_backup_dir() . '/orders-' . wp_date('Y-m-d_H-i-s') . '.json';
+    $ok = @file_put_contents($f, wp_json_encode(array_map(function ($o) { unset($o['_src']); return $o; }, ap_all_orders()), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false;
+    wp_redirect(admin_url('admin.php?page=ap-orders&backup=' . ($ok ? 'ok' : 'fail')));
+    exit;
+});
+add_action('admin_post_ap_orders_download', function () {
+    if (!current_user_can('manage_options')) wp_die('دسترسی غیرمجاز.');
+    check_admin_referer('ap_orders_download');
+    $fmt = sanitize_key($_GET['fmt'] ?? 'json');
+    $orders = array_map(function ($o) { unset($o['_src']); return $o; }, ap_all_orders());
+    $stamp = wp_date('Y-m-d_H-i');
+    nocache_headers();
+    if ($fmt === 'file') {   // دانلودِ یکی از بکاپ‌های ذخیره‌شده
+        $name = basename((string) ($_GET['name'] ?? ''));
+        $path = ap_backup_dir() . '/' . $name;
+        if (!preg_match('/^orders-[\d_-]+\.json$/', $name) || !file_exists($path)) wp_die('فایل پیدا نشد.');
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        readfile($path); exit;
+    }
+    if ($fmt === 'csv') {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="ap-orders-' . $stamp . '.csv"');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['شماره', 'تاریخ ثبت', 'مشتری', 'تلفن', 'استان/شهر', 'آدرس', 'کدپستی', 'اقلام', 'جمع اقلام', 'هزینه ارسال', 'روش ارسال', 'جمع کل', 'وضعیت', 'رسید']);
+        $labels = ap_order_status_labels();
+        foreach ($orders as $o) {
+            $a = (array) ($o['address'] ?? []);
+            $items = implode(' | ', array_map(function ($it) { return ($it['title'] ?? '') . ' × ' . (int) ($it['qty'] ?? 1) . ' (' . (int) ($it['price'] ?? 0) . ')'; }, (array) ($o['items'] ?? [])));
+            fputcsv($out, [(int) $o['id'], ap_jalali_dt($o['created_at'] ?? ''), $o['customerName'] ?? '', $o['phone'] ?? '',
+                trim(($a['province'] ?? '') . ' / ' . ($a['city'] ?? ''), ' /'), trim(($a['district'] ?? '') . ' ' . ($a['fullAddress'] ?? '') . ' پلاک ' . ($a['plaque'] ?? '') . ' واحد ' . ($a['unit'] ?? '')),
+                $a['postalCode'] ?? '', $items, (int) ($o['itemsTotal'] ?? 0), (int) ($o['shippingFee'] ?? 0), $o['shippingMethod'] ?? '', (int) ($o['grandTotal'] ?? 0),
+                $labels[$o['status'] ?? ''] ?? ($o['status'] ?? ''), $o['receiptUrl'] ?? '']);
+        }
+        fclose($out); exit;
+    }
+    if ($fmt === 'zip' && class_exists('ZipArchive')) {
+        $tmp = wp_tempnam('ap-orders.zip');
+        $zip = new ZipArchive();
+        if ($zip->open($tmp, ZipArchive::OVERWRITE) === true) {
+            $zip->addFromString('orders.json', wp_json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            $rdir = dirname(ap_orders_db_path()) . '/receipts';
+            foreach ($orders as $o) {
+                $r = basename((string) ($o['receiptUrl'] ?? ''));
+                if ($r && file_exists($rdir . '/' . $r)) $zip->addFile($rdir . '/' . $r, 'receipts/' . $r);
+            }
+            $zip->close();
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="ap-orders-full-' . $stamp . '.zip"');
+            header('Content-Length: ' . filesize($tmp));
+            readfile($tmp); @unlink($tmp); exit;
+        }
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Disposition: attachment; filename="ap-orders-' . $stamp . '.json"');
+    echo wp_json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
+});
+
+function ap_orders_page_html() {
+    update_option('ap_unseen_orders', 0, false);
+    $orders = ap_all_orders();
+    $labels = ap_order_status_labels();
+    $api = get_template_directory_uri() . '/api.php';
+    $filter = sanitize_key($_GET['st'] ?? '');
+    $q = trim((string) wp_unslash($_GET['q'] ?? ''));
+    $counts = array_count_values(array_map(function ($o) { return (string) ($o['status'] ?? 'pending'); }, $orders));
+    $shown = array_filter($orders, function ($o) use ($filter, $q) {
+        if ($filter && ($o['status'] ?? '') !== $filter) return false;
+        if ($q !== '' && strpos((string) ($o['phone'] ?? '') . ' ' . ($o['customerName'] ?? '') . ' #' . $o['id'], $q) === false) return false;
+        return true;
+    });
+    $dl = function ($fmt) { return wp_nonce_url(admin_url('admin-post.php?action=ap_orders_download&fmt=' . $fmt), 'ap_orders_download'); };
+    $backups = array_reverse((array) glob(ap_backup_dir() . '/orders-*.json'));
+    $total = 0; foreach ($orders as $o) if (($o['status'] ?? '') !== 'rejected') $total += (int) ($o['grandTotal'] ?? 0);
+    ?>
+    <div class="wrap nx-wrap">
+        <h1>سفارش‌ها</h1>
+        <?php if (isset($_GET['updated'])): ?><div class="notice notice-success is-dismissible"><p>وضعیت سفارش #<?php echo (int) $_GET['updated']; ?> ذخیره شد.</p></div><?php endif; ?>
+        <?php if (($_GET['backup'] ?? '') === 'ok'): ?><div class="notice notice-success is-dismissible"><p>بکاپِ همه‌ی سفارش‌ها ساخته شد و پایینِ همین صفحه قابل دانلوده.</p></div><?php endif; ?>
+        <?php if (($_GET['backup'] ?? '') === 'fail'): ?><div class="notice notice-error"><p>ساختِ بکاپ ممکن نشد (دسترسیِ نوشتن روی هاست).</p></div><?php endif; ?>
+        <style>
+            .nx-wrap .nx-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 16px}
+            .nx-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0 18px}
+            .nx-card{background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:12px 14px}
+            .nx-card b{display:block;font-size:20px;margin-top:4px}
+            .nx-safe{background:#edfaef;border:1px solid #b8e6c1;border-radius:10px;padding:10px 14px;margin:6px 0 14px;color:#1d5b2b;font-size:13px;line-height:1.9}
+            .nx-orders{display:grid;gap:14px}
+            .nx-order{background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:1fr 150px;gap:16px}
+            .nx-order h2{margin:0 0 6px;font-size:16px}
+            .nx-order .meta{color:#50575e;font-size:13px;line-height:1.9}
+            .nx-order table{border-collapse:collapse;margin:8px 0;font-size:13px}
+            .nx-order td{padding:3px 8px;border-bottom:1px solid #f0f0f1}
+            .nx-order .rc img{width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
+            .nx-hist{font-size:12px;color:#646970;margin:4px 0 8px}
+            .nx-st{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;background:#f0f0f1}
+            .nx-st.pending{background:#fff4d6;color:#8a5a00}.nx-st.confirmed,.nx-st.shipped{background:#d9f7e6;color:#0a6b3a}.nx-st.rejected{background:#fde2e2;color:#a00}
+            .nx-src{font-size:11px;color:#8c8f94}
+            @media(max-width:782px){.nx-order{grid-template-columns:1fr}}
+        </style>
+
+        <div class="nx-cards">
+            <div class="nx-card">همه‌ی سفارش‌ها<b><?php echo count($orders); ?></b></div>
+            <div class="nx-card">در انتظار بررسی<b><?php echo (int) ($counts['pending'] ?? 0); ?></b></div>
+            <div class="nx-card">ارسال‌شده<b><?php echo (int) ($counts['shipped'] ?? 0); ?></b></div>
+            <div class="nx-card">جمع فروش (بدون ردشده‌ها)<b style="font-size:16px"><?php echo esc_html(number_format($total)); ?> تومان</b></div>
+        </div>
+
+        <div class="nx-safe">🔒 هر سفارش در <b>سه جای مستقل</b> ذخیره می‌شه (فایل اصلی سایت، آرشیو دائمی، دیتابیس وردپرس) و <b>امکانِ حذف سفارش غیرفعاله</b>. تاریخِ ثبت هیچ‌وقت عوض نمی‌شه و هر تغییرِ وضعیت با تاریخش ثبت می‌شه. هر روز هم یک نسخه‌ی کامل به‌صورت خودکار نگه داشته می‌شه.</div>
+
+        <div class="nx-top">
+            <a class="button button-primary" href="<?php echo esc_url($dl('zip')); ?>">⬇ دانلود بکاپ کامل (سفارش‌ها + عکس رسیدها، ZIP)</a>
+            <a class="button" href="<?php echo esc_url($dl('csv')); ?>">⬇ دانلود اکسل (CSV)</a>
+            <a class="button" href="<?php echo esc_url($dl('json')); ?>">⬇ دانلود JSON</a>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                <input type="hidden" name="action" value="ap_orders_backup"><?php wp_nonce_field('ap_orders_backup'); ?>
+                <button class="button">💾 ساخت بکاپ روی هاست</button>
+            </form>
+        </div>
+
+        <form method="get" class="nx-top">
+            <input type="hidden" name="page" value="ap-orders">
+            <select name="st"><option value="">همه‌ی وضعیت‌ها</option><?php foreach ($labels as $k => $l): ?><option value="<?php echo esc_attr($k); ?>" <?php selected($filter, $k); ?>><?php echo esc_html($l . ' (' . (int) ($counts[$k] ?? 0) . ')'); ?></option><?php endforeach; ?></select>
+            <input type="search" name="q" value="<?php echo esc_attr($q); ?>" placeholder="جستجو: شماره سفارش، نام یا تلفن">
+            <button class="button">فیلتر</button>
+        </form>
+
+        <div class="nx-orders">
+        <?php foreach ($shown as $o):
+            $a = (array) ($o['address'] ?? []);
+            $st = (string) ($o['status'] ?? 'pending');
+        ?>
+            <div class="nx-order" id="order-<?php echo (int) $o['id']; ?>">
+                <div>
+                    <h2>سفارش #<?php echo (int) $o['id']; ?> <span class="nx-st <?php echo esc_attr($st); ?>"><?php echo esc_html($labels[$st] ?? $st); ?></span></h2>
+                    <div class="meta">
+                        🗓 ثبت: <b><?php echo esc_html(ap_jalali_dt($o['created_at'] ?? '')); ?></b><br>
+                        <b><?php echo esc_html($o['customerName'] ?? ''); ?></b> — <a href="tel:<?php echo esc_attr($o['phone'] ?? ''); ?>" style="direction:ltr;display:inline-block"><?php echo esc_html($o['phone'] ?? ''); ?></a><br>
+                        <?php echo esc_html(implode('، ', array_filter([$a['province'] ?? '', $a['city'] ?? '', $a['district'] ?? '', !empty($a['plaque']) ? 'پلاک ' . $a['plaque'] : '', !empty($a['unit']) ? 'واحد ' . $a['unit'] : '']))); ?>
+                        <?php if (!empty($a['postalCode'])) echo ' — کدپستی ' . esc_html($a['postalCode']); ?><br><?php echo esc_html($a['fullAddress'] ?? ''); ?>
+                    </div>
+                    <table>
+                        <?php foreach ((array) ($o['items'] ?? []) as $it): ?>
+                            <tr><td><?php echo esc_html($it['title'] ?? ''); ?></td><td>× <?php echo (int) ($it['qty'] ?? 1); ?></td><td><?php echo esc_html(number_format((int) ($it['price'] ?? 0))); ?> تومان</td></tr>
+                        <?php endforeach; ?>
+                        <tr><td>ارسال (<?php echo esc_html($o['shippingMethod'] ?? ''); ?>)</td><td></td><td><?php echo esc_html(number_format((int) ($o['shippingFee'] ?? 0))); ?> تومان</td></tr>
+                        <tr><td><b>جمع کل</b></td><td></td><td><b><?php echo esc_html(number_format((int) ($o['grandTotal'] ?? 0))); ?> تومان</b></td></tr>
+                    </table>
+                    <?php if (!empty($o['statusHistory'])): ?>
+                        <div class="nx-hist">تاریخچه: <?php echo esc_html(implode('  ←  ', array_map(function ($h) use ($labels) { return ($labels[$h['status'] ?? ''] ?? ($h['status'] ?? '')) . ' (' . ap_jalali_dt($h['at'] ?? '') . ')'; }, (array) $o['statusHistory']))); ?></div>
+                    <?php endif; ?>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="hidden" name="action" value="ap_order_status"><input type="hidden" name="order_id" value="<?php echo (int) $o['id']; ?>">
+                        <?php wp_nonce_field('ap_order_status'); ?>
+                        <select name="status"><?php foreach ($labels as $k => $l): ?><option value="<?php echo esc_attr($k); ?>" <?php selected($st, $k); ?>><?php echo esc_html($l); ?></option><?php endforeach; ?></select>
+                        <button class="button button-primary">ذخیره وضعیت</button>
+                        <a class="button" target="_blank" href="<?php echo esc_url($api . '?action=invoice&order_id=' . (int) $o['id']); ?>">فاکتور</a>
+                        <span class="nx-src">ذخیره‌شده در: <?php echo esc_html(implode('، ', array_map(function ($s) { return ['db' => 'فایل اصلی', 'archive' => 'آرشیو', 'wp' => 'دیتابیس وردپرس'][$s] ?? $s; }, array_unique((array) ($o['_src'] ?? []))))); ?></span>
+                    </form>
+                </div>
+                <div class="rc"><?php if (!empty($o['receiptUrl'])): ?><a href="<?php echo esc_url($o['receiptUrl']); ?>" target="_blank"><img src="<?php echo esc_url($o['receiptUrl']); ?>" alt="رسید" loading="lazy"></a><?php endif; ?></div>
+            </div>
+        <?php endforeach; ?>
+        <?php if (!$shown): ?><p><?php echo $orders ? 'سفارشی با این فیلتر پیدا نشد.' : 'هنوز سفارشی ثبت نشده.'; ?></p><?php endif; ?>
+        </div>
+
+        <h2 style="margin-top:28px">بکاپ‌های ذخیره‌شده روی هاست</h2>
+        <?php if ($backups): ?>
+            <ul><?php foreach (array_slice($backups, 0, 50) as $b): $n = basename($b); ?>
+                <li><a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ap_orders_download&fmt=file&name=' . rawurlencode($n)), 'ap_orders_download')); ?>"><?php echo esc_html($n); ?></a> — <?php echo esc_html(size_format(filesize($b))); ?></li>
+            <?php endforeach; ?></ul>
+        <?php else: ?><p>هنوز بکاپ دستی ساخته نشده. (بکاپ روزانه‌ی خودکار جدا نگه داشته می‌شه.)</p><?php endif; ?>
+    </div>
+    <?php
+}
+
+/* =========================================================================
+ * اعلان‌ها (PWA + Web Push): اعلانِ سفارشِ جدید برای مدیر + اعلانِ همگانی برای مشتری‌ها
+ * - کلیدهای VAPID یک‌بار روی خودِ سایت ساخته می‌شن (بدون سرویس یا کتابخونه‌ی بیرونی)
+ * - مشترک‌ها و ارسال: push-lib.php (مشترکِ همین فایل و api.php)
+ * - روی آیفون فقط وقتی کار می‌کنه که سایت «Add to Home Screen» شده و از همون آیکون باز بشه
+ * ========================================================================= */
+if (file_exists(get_template_directory() . '/push-lib.php')) require_once get_template_directory() . '/push-lib.php';
+function ap_b64u($bin) { return rtrim(strtr(base64_encode($bin), '+/', '-_'), '='); }
+function ap_vapid() {
+    $v = get_option('ap_vapid');
+    if (is_array($v) && !empty($v['private']) && !empty($v['public'])) return $v;
+    if (!function_exists('openssl_pkey_new')) return null;
+    $key = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+    if (!$key) return null;
+    openssl_pkey_export($key, $pem);
+    $d = openssl_pkey_get_details($key);
+    $x = str_pad($d['ec']['x'], 32, "\0", STR_PAD_LEFT); $y = str_pad($d['ec']['y'], 32, "\0", STR_PAD_LEFT);
+    $v = ['private' => $pem, 'public' => ap_b64u("\x04" . $x . $y)];
+    update_option('ap_vapid', $v, false);
+    return $v;
+}
+function ap_push_subject() { $e = (string) get_option('admin_email'); return 'mailto:' . (is_email($e) && strpos($e, '@nexv.local') === false ? $e : 'admin@' . (parse_url(home_url(), PHP_URL_HOST) ?: 'localhost')); }
+function ap_push_data_dir() { return dirname(ap_orders_db_path()); }
+/* اعلانِ سفارشِ جدید → فقط دستگاه‌های مدیر */
+function ap_push_order_notify($order) {
+    if (!function_exists('ap_pl_send')) return null;
+    $v = ap_vapid(); if (!$v) return null;
+    $items = implode('، ', array_map(function ($it) { return ($it['title'] ?? '') . ' ×' . (int) ($it['qty'] ?? 1); }, array_slice((array) ($order['items'] ?? []), 0, 3)));
+    return ap_pl_send(ap_push_data_dir(), $v, 'admins', [
+        'title' => '🛒 سفارش جدید #' . (int) ($order['id'] ?? 0),
+        'body'  => trim(($order['customerName'] ?? '') . ' — ' . number_format((int) ($order['grandTotal'] ?? 0)) . ' تومان' . ($items !== '' ? "\n" . $items : '')),
+        'url'   => home_url('/?ap_admin=orders'),
+        'tag'   => 'ap-order-' . (int) ($order['id'] ?? 0),
+    ], ap_push_subject());
+}
+/* دستگاه‌هایی که با نسخه‌ی قبلی (لیستِ داخلِ تنظیماتِ وردپرس) ثبت شده بودن، یک‌بار منتقل می‌شن */
+add_action('admin_init', function () {
+    $old = get_option('ap_push_subs', null);
+    if (!is_array($old) || !function_exists('ap_pl_subscribe')) return;
+    foreach ($old as $s) { if (!empty($s['endpoint'])) ap_pl_subscribe(ap_push_data_dir(), ['endpoint' => $s['endpoint']], true, $s['ua'] ?? ''); }
+    delete_option('ap_push_subs'); delete_option('ap_push_last'); delete_option('ap_push_test_until');
+});
+function ap_manifest_data() {
+    return [
+        'name' => get_bloginfo('name') . ' — فروشگاه قطعات یدکی خودرو', 'short_name' => get_bloginfo('name'), 'lang' => 'fa', 'dir' => 'rtl', 'id' => home_url('/'),
+        'start_url' => home_url('/?source=pwa'), 'scope' => home_url('/'), 'display' => 'standalone',
+        'background_color' => '#f7f3f3', 'theme_color' => '#ff3b4e',
+        'icons' => [
+            ['src' => ap_icon_url('icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => ap_icon_url('icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+            ['src' => ap_icon_url('icon-maskable-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ['src' => ap_icon_url('icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+        ],
+    ];
+}
+
+/* راه‌های جایگزین برای سرویس‌ورکر و manifest (اصلی‌ها از api.php سرو می‌شن):
+   /?ap_sw=1 و /?ap_manifest=1 ، و آدرس‌های قبلی /ap-sw.js و /ap-manifest.webmanifest */
+add_action('init', function () {
+    if (!function_exists('ap_pl_serve_sw')) return;
+    $path = trim((string) wp_parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+    $base = trim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
+    if ($base !== '' && strpos($path, $base) === 0) $path = trim(substr($path, strlen($base)), '/');
+    if ($path === 'ap-manifest.webmanifest' || ($path === '' && isset($_GET['ap_manifest']))) {
+        if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+        header('Content-Type: application/manifest+json; charset=utf-8');
+        header('Cache-Control: public, max-age=3600');
+        echo wp_json_encode(ap_manifest_data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+    if ($path === 'ap-sw.js' || ($path === '' && isset($_GET['ap_sw']))) {
+        if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+        ap_pl_serve_sw();
+    }
+}, 0);
+
+/* =========================================================================
+ * انتقالِ یک‌باره از سیستمِ قبلیِ ادمین‌ها (پیشخوان ← مدیریت ادمین‌ها، نقشِ ap_staff)
+ * به سیستمِ جدید (پنلِ سایت ← حسابِ کاربری ← ادمین‌ها). هر ادمینِ قبلی با همون شماره،
+ * نام و دسترسی‌های معادل ثبت می‌شه و اولین بار با همون رمزِ قبلیش وارد می‌شه
+ * (api.php رمز رو با حسابِ وردپرسش چک و ذخیره می‌کنه).
+ * ========================================================================= */
+add_action('init', function () {
+    if (get_option('ap_staff_to_admins_v1')) return;
+    if (!function_exists('ap_read_data') || !function_exists('ap_write_data')) return;
+    $data = ap_read_data();
+    if (!is_array($data) || !isset($data['users']) || !is_array($data['users'])) { update_option('ap_staff_to_admins_v1', time(), false); return; }
+    if (!isset($data['next_user_id'])) $data['next_user_id'] = count($data['users']) + 1;
+    $norm = function ($p) {
+        $d = preg_replace('/[^0-9]/', '', strtr((string) $p, ['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9']));
+        if (substr($d, 0, 2) === '98' && strlen($d) === 12) $d = '0' . substr($d, 2);
+        return $d;
+    };
+    $users = get_role('ap_staff') ? get_users(['role' => 'ap_staff']) : [];
+    foreach ($users as $wu) {
+        $phone = $norm(get_user_meta($wu->ID, 'ap_phone', true));
+        if (!preg_match('/^09\d{9}$/', $phone)) continue;
+        $perms = [];
+        if (!empty($wu->allcaps['ap_manage_orders'])) { $perms[] = 'orders'; $perms[] = 'order_status'; $perms[] = 'customers'; }
+        if (!empty($wu->allcaps['edit_posts']) || !empty($wu->allcaps['manage_categories'])) $perms[] = 'products';
+        $found = false;
+        foreach ($data['users'] as &$rec) {
+            if ((string) ($rec['phone'] ?? '') !== $phone) continue;
+            $found = true;
+            if (empty($rec['is_owner'])) { $rec['is_admin'] = true; $rec['perms'] = $perms; }
+            $rec['wp_user_id'] = $wu->ID;
+        }
+        unset($rec);
+        if (!$found) {
+            $data['users'][] = [
+                'id' => $data['next_user_id']++, 'firstName' => $wu->display_name, 'lastName' => '',
+                'phone' => $phone, 'email' => null, 'google_id' => null, 'password_hash' => null,
+                'is_admin' => true, 'perms' => $perms, 'wp_user_id' => $wu->ID,
+                'addresses' => [], 'created_at' => date('c'),
+            ];
+        }
+        /* حسابِ وردپرسشون با سیستمِ جدید هماهنگ می‌شه: دسترسیِ محصولات = ویرایشگر، وگرنه بدونِ پیشخوان */
+        $wu->set_role(in_array('products', $perms, true) ? 'editor' : 'subscriber');
+    }
+    ap_write_data($data);
+    if (get_role('ap_staff')) remove_role('ap_staff');
+    update_option('ap_staff_to_admins_v1', time(), false);
+}, 30);
 
 /* ---------- لوگوی سایت در وردپرس: صفحه‌ی ورود، نوار مدیریت و فاویکون پیشخوان ---------- */
 function ap_logo_url($file = 'logo.png') {
