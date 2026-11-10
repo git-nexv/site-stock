@@ -245,26 +245,69 @@ function ap_parts_seed_create($job) {
     if ($mid) wp_set_post_terms($pid, [$mid], 'ap_vehicle');
 }
 
-add_action('admin_init', function () {
-    if (!current_user_can('manage_options') || wp_doing_ajax()) return;
-    /* اول باید برند/مدل‌ها ساخته شده باشن */
-    if (get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return;
-    if (get_option('ap_dupe_cleanup_v1') !== 'done') return;   /* اول تکراری‌ها پاک بشن */
+/* یک دسته از محصولات رو می‌سازه؛ true = هنوز کار مونده. با قفل، تا دو اجرا همزمان نشن. */
+function ap_parts_seed_run($batch) {
+    /* اول باید برند/مدل‌ها ساخته شده باشن و تکراری‌ها پاک شده باشن */
+    if (get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return false;
+    if (get_option('ap_dupe_cleanup_v1') !== 'done') return true;
     $state = get_option('ap_parts_seed', ['v' => '', 'done' => 0]);
     if (($state['v'] ?? '') !== AP_PARTS_SEED_VERSION) $state = ['v' => AP_PARTS_SEED_VERSION, 'done' => 0];
     $jobs = ap_parts_seed_jobs();
-    if ($state['done'] >= count($jobs)) return;
-
+    if ($state['done'] >= count($jobs)) return false;
+    if (get_transient('ap_parts_seed_lock')) return true;
+    set_transient('ap_parts_seed_lock', 1, 90);
     @set_time_limit(300);
     wp_defer_term_counting(true);
-    $end = min(count($jobs), $state['done'] + AP_PARTS_SEED_BATCH);
+    $end = min(count($jobs), $state['done'] + $batch);
     for ($i = $state['done']; $i < $end; $i++) ap_parts_seed_create($jobs[$i]);
     wp_defer_term_counting(false);
     $state['done'] = $end;
     update_option('ap_parts_seed', $state, false);
     delete_transient('ap_vehicles_cache_v2');
     delete_transient('ap_products_cache_v3');
+    delete_transient('ap_parts_seed_lock');
+    return $end < count($jobs);
+}
+
+/* خودکار در پس‌زمینه: هر دقیقه یک دسته با «کرون» وردپرس (بدونِ نیاز به رفرش یا کلیک).
+   کرونِ وردپرس با هر بازدید از سایت، جدا از صفحه و بدونِ کند کردنش اجرا می‌شه. */
+add_filter('cron_schedules', function ($s) {
+    $s['ap_every_minute'] = ['interval' => 60, 'display' => 'هر دقیقه'];
+    return $s;
+});
+add_action('init', function () {
+    $pending = get_option('ap_parts_seed_pending', 1);
+    if ($pending && !wp_next_scheduled('ap_parts_seed_tick')) wp_schedule_event(time() + 30, 'ap_every_minute', 'ap_parts_seed_tick');
+});
+add_action('ap_parts_seed_tick', function () {
+    $more = ap_parts_seed_run(AP_PARTS_SEED_BATCH);
+    if (!$more && get_option('ap_dupe_cleanup_v1') === 'done') {
+        update_option('ap_parts_seed_pending', 0, false);
+        wp_clear_scheduled_hook('ap_parts_seed_tick');
+    } else {
+        update_option('ap_parts_seed_pending', 1, false);
+        if (function_exists('spawn_cron')) spawn_cron();   /* دسته‌ی بعدی بی‌معطلی */
+    }
+});
+/* وقتی نسخه‌ی فهرست بالا می‌ره (قطعه/مدل جدید)، دوباره فعال بشه */
+add_action('init', function () {
+    if (get_option('ap_parts_seed_pending_v') !== AP_PARTS_SEED_VERSION) {
+        update_option('ap_parts_seed_pending', 1, false);
+        update_option('ap_parts_seed_pending_v', AP_PARTS_SEED_VERSION, false);
+    }
+}, 5);
+/* وقتی مدیر توی پیشخوانه، همون موقع هم یک دسته ساخته می‌شه (سریع‌تر تموم بشه) */
+add_action('admin_init', function () {
+    if (!current_user_can('manage_options') || wp_doing_ajax()) return;
+    ap_parts_seed_run(AP_PARTS_SEED_BATCH);
 }, 20);
+
+add_action('wp_ajax_ap_seed_progress', function () {
+    if (!current_user_can('manage_options')) wp_send_json(null);
+    if (get_option('ap_dupe_cleanup_v1') === 'done') ap_parts_seed_run(AP_PARTS_SEED_BATCH);   /* هر بار پرسیدن، یک دسته هم ساخته بشه */
+    $state = get_option('ap_parts_seed', []);
+    wp_send_json(['done' => (int) ($state['done'] ?? 0), 'total' => count(ap_parts_seed_jobs())]);
+});
 
 add_action('admin_notices', function () {
     if (!current_user_can('manage_options')) return;
@@ -272,8 +315,9 @@ add_action('admin_notices', function () {
     $total = count(ap_parts_seed_jobs());
     $done = (int) ($state['done'] ?? 0);
     if (($state['v'] ?? '') !== AP_PARTS_SEED_VERSION || $done >= $total) return;
-    printf('<div class="notice notice-info"><p>در حال ساخت محصولات: %d از %d. برای ادامه صفحه رو رفرش کن یا <a href="%s">این‌جا</a> بزن.</p></div>',
-        $done, $total, esc_url(admin_url('admin.php?page=ap-dashboard')));
+    printf('<div class="notice notice-info" id="apSeedNotice"><p>در حال ساخت خودکارِ محصولات: <b id="apSeedDone">%d</b> از %d — کاری لازم نیست انجام بدید؛ در پس‌زمینه ادامه پیدا می‌کنه.</p></div>', $done, $total);
+    /* عددِ پیشرفت هر ۱۵ ثانیه خودش به‌روز می‌شه (بدونِ رفرشِ کلِ صفحه) */
+    echo '<script>(function(){var t=setInterval(function(){fetch(' . wp_json_encode(admin_url('admin-ajax.php?action=ap_seed_progress')) . ',{credentials:"same-origin"}).then(function(r){return r.json();}).then(function(d){var e=document.getElementById("apSeedDone");if(e&&d)e.textContent=d.done;if(d&&d.done>=d.total){clearInterval(t);var n=document.getElementById("apSeedNotice");if(n){n.className="notice notice-success";n.innerHTML="<p>ساخت محصولات تموم شد ✅</p>";}}}).catch(function(){});},15000);})();</script>';
 });
 
 /* یک‌بار (نسخه‌ی ۲): همه‌ی محصولاتی که عنوانشون هنوز «|» نداره دوزبانه می‌شن («فارسی | English»).
