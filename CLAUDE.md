@@ -18,7 +18,8 @@
 ### قانون انتخاب مخزن
 - «فقط استوک» / لوازم یدکی → فقط همین مخزن.
 - «فقط اپل» → فقط `site-apple`؛ به این مخزن دست نزن.
-- «هر دو» / «مشترک» → در هر دو اعمال کن و نام‌ها را تطبیق بده (`ap_` ↔ `nexv_`). چیزهای مخصوص خودرو (`ap_vehicle`، seed خودروها، `staff.php`، `updater.php`) در اپل وجود ندارند؛ چیزهای مخصوص اپل (`push-lib.php`، Web Push) اینجا نیستند.
+- «هر دو» / «مشترک» → در هر دو اعمال کن و نام‌ها را تطبیق بده (`ap_` ↔ `nexv_`، و شناسه‌های camelCase مثل `apBg` ↔ `nexvBg`). چیزهای مخصوص خودرو (`ap_vehicle`، seed خودروها، `updater.php`) در اپل وجود ندارند.
+- از آبان ۱۴۰۵ (نوامبر ۲۰۲۶) تقریباً همه‌ی قابلیت‌های اپل به استوک منتقل شدن (اعلان/PWA، ادمین‌ها در پنل سایت، سرچ هوشمند، سئو، سفارش‌های ماندگار و ...). تفاوت‌های عمدی: کلیدِ قیمتِ متغیرها در استوک `برچسب||گزینه` (هر گزینه جدا) است ولی در اپل ترکیبی با `|~|`؛ استوک به‌جای صفحه‌ی «به‌روزرسانی قالب» اپل، `updater.php` خودش را دارد.
 - اگر معلوم نیست کدام سایت منظور است، **قبل از تغییر بپرس**.
 
 ## ساختار فایل‌ها (`autoparts-core-v2/`)
@@ -27,22 +28,26 @@
 | `style.css` | فقط هدر قالب. استایل واقعی داخل `site.html`. |
 | `index.php` | تمپلیت همه‌ی صفحات (about/terms/مقاله مستقل؛ بقیه `site.html` + داده‌ی محصول). |
 | `site.html` | کل فرانت‌اند SPA: فارسی/RTL، حالت شب، انتخاب خودرو، فیلتر، سبد، پنل مشتری/مدیریت. |
-| `api.php` | API با `switch` روی `action`: products, categories, vehicles, articles, add/update/delete_product, register, login, logout, google_login, update_profile, address ها, create_order, list_my_orders, list_orders, invoice, list_customers, update_order_status, delete_order, config. |
-| `functions.php` | CPT/تاکسونومی‌ها، اسلاگ انگلیسی، ایمپورت/اکسپورت CSV، متاباکس محصول، لوگوی برند، کش‌ها. در انتها `updater.php` و `staff.php` را require می‌کند. |
-| `staff.php` | پنل مدیریت ادمین‌ها و زیرادمین‌ها با دسترسی بخشی. |
+| `api.php` | API با `switch` روی `action`: products, categories, vehicles, articles, register, login, ... create_order, list_orders, invoice, list_customers, update_order_status, push_*, manifest, admin_me, admin_update_me, admin_list, admin_save, admin_remove, config. ادمین‌ها با هدر `X-AP-Admin` (توکن ۹۰ روزه) احراز می‌شوند. |
+| `functions.php` | CPT/تاکسونومی‌ها، اسلاگ انگلیسی، ایمپورت/اکسپورت CSV، متاباکس محصول، لوگوی برند، کش‌ها، حساب وردپرسی ادمین‌ها، سئو، صفحه‌ی سفارش‌ها در پیشخوان، PWA/اعلان. در انتها `updater.php` و `push-lib.php` را require می‌کند، و مهاجرت یک‌باره‌ی ادمین‌های سیستم قدیمی (`ap_staff_to_admins_v1`) را دارد. |
+| `push-lib.php` | Web Push با VAPID خودمیزبان + سرویس‌ورکر. |
+| `icons/` | آیکون‌های PWA/اعلان (از `assets/logo.png` ساخته شده‌اند). |
 | `updater.php` | به‌روزرسانی خودکار قالب از گیت‌هاب. |
 | `vehicles-seed.php` | لیست برندها/مدل‌ها/سال‌های خودرو (چینی و ...؛ نام‌ها به شکل `EN (FA)`)، به‌روزرسانی درجا. |
 | `parts-seed.php` | محصولات پایه برای هر مدل با اسلاگ انگلیسی و SEO. |
 
 ## داده‌ها
 - محصولات/مقالات/دسته‌ها/خودروها: پست و ترم وردپرس.
-- مشتری‌ها، سفارش‌ها: JSON در `wp-content/uploads/ap-data/` (`ap_read_data`/`ap_write_data`) — آپدیت به آن دست نمی‌زند.
+- مشتری‌ها، سفارش‌ها، ادمین‌ها (`is_admin`/`is_owner`/`perms`): JSON در `wp-content/uploads/ap-data/` (`ap_read_data`/`ap_write_data`) — آپدیت به آن دست نمی‌زند.
 - مهاجرت‌ها/seed ها با option نسخه‌دار (`ap_xxx_v1`) یک بار اجرا می‌شوند؛ برای اجرای دوباره نام option را عوض کن.
 
 ## دیپلوی (مهم)
 - GitHub Actions ندارد. `updater.php` هر ۵ دقیقه آخرین کامیت شاخه‌ی **`main`** را چک می‌کند و پوشه‌ی `autoparts-core-v2` را روی قالب سایت می‌ریزد (توکن گیت‌هاب در پیشخوان ← نمایش ← به‌روزرسانی خودکار؛ دکمه‌ی «به‌روزرسانی سایت» هم هست).
 - یعنی push روی شاخه‌های `claude/...` روی سایت نمی‌رود تا به `main` merge شود.
 - ثابت‌های `AP_UPD_REPO`, `AP_UPD_BRANCH`, `AP_UPD_SUBDIR` را بدون دلیل عوض نکن؛ اگر پوشه را تغییر نام دادی آپدیت سایت می‌شکند.
+
+## سرچ
+- `smartSearch()` در `site.html` (بعد از `normalizeSearchText`): غلط املایی، چسبیده/جدا، فارسی/انگلیسی، کیبورد اشتباه. فهرست کلمه‌های هم‌معنی در `SS_SYN_GROUPS` (مخصوص هر سایت).
 
 ## قراردادها
 - متن رابط کاربری و کامنت‌ها فارسی؛ URL و اسلاگ انگلیسی؛ پیام کامیت انگلیسی.

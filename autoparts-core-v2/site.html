@@ -269,7 +269,9 @@ section{padding:80px 0;}
   /* اسکرولِ افقی هر چیزی رو که از بالا/پایینِ ردیف بیرون بزنه می‌بُره؛ برای همین کارت موقعِ
      هاور از بالا زیرِ لبه می‌رفت و سایه‌ش از پایین با یک خطِ صاف قطع می‌شد (همون حالتِ
      دورنگ). با این padding جا باز می‌شه و margin منفی نمی‌ذاره فاصله‌ی ظاهری عوض بشه. */
-  padding:14px 4px 30px; margin:-14px -4px -24px;
+  /* سایه‌ی کارت (تا ~۶۰px پایین‌تر در حالتِ هاور) نباید با لبه‌ی صافِ ردیف بریده بشه؛
+     همین برش یه نوارِ رنگیِ متفاوت زیرِ ردیف می‌ساخت */
+  padding:24px 4px 64px; margin:-24px -4px -58px;
   scrollbar-width:none; -ms-overflow-style:none;
 }
 .reco-track .card{min-width:200px; max-width:200px; scroll-snap-align:start; flex-shrink:0;}
@@ -279,6 +281,23 @@ section{padding:80px 0;}
 .card-visual{overflow:hidden;}
 .card-visual img{color:transparent; font-size:0;}
 .reco-track::-webkit-scrollbar{display:none; height:0;}
+/* دکمه‌های چپ/راست برای ردیف‌های افقی (فقط دسکتاپ؛ در موبایل با انگشت کشیده می‌شه) */
+.sa-wrap{position:relative;}
+.sa-btn{
+  position:absolute; top:50%; z-index:5; width:38px; height:38px; margin-top:-19px; border-radius:50%; padding:0; cursor:pointer;
+  display:none; place-items:center; color:var(--text);
+  background:var(--glass-solid); border:1px solid var(--glass-edge); box-shadow:var(--glass-hl), 0 8px 22px rgba(20,10,60,.16);
+  -webkit-backdrop-filter:blur(14px) saturate(180%); backdrop-filter:blur(14px) saturate(180%);
+  opacity:0; pointer-events:none; transform:scale(.6); filter:blur(4px);
+  transition:opacity .35s ease, transform .5s cubic-bezier(.3,1.5,.5,1), filter .35s ease, background .2s ease, color .2s ease;
+}
+.sa-btn svg{width:17px; height:17px;}
+.sa-left{left:-8px;} .sa-right{right:-8px;}
+.sa-left:not(.show){transform:translateX(14px) scale(.6);} .sa-right:not(.show){transform:translateX(-14px) scale(.6);}
+.sa-btn.show{opacity:1; pointer-events:auto; transform:none; filter:none;}
+.sa-btn:hover{color:#fff; background:var(--accent); border-color:transparent;}
+.sa-btn.show:active{transform:scale(.88); transition-duration:.12s;}
+@media (hover:hover) and (pointer:fine){ .sa-btn{display:grid;} }
 
 /* محوشدنِ نرمِ لبه‌ی ردیف‌های افقی (محصولات پیشنهادی و مقالات) به‌جای بریدگیِ ناگهانی.
    هر لبه فقط وقتی محو می‌شه که واقعاً محتوای بیشتری پشتش باشه (با اسکریپت تنظیم می‌شه). */
@@ -298,6 +317,13 @@ section{padding:80px 0;}
      کوتاه/بلند باشه فقط فضای وسط رو می‌گیره و قیمت همیشه به کفِ کارت می‌چسبه. */
   display:flex; flex-direction:column; height:100%;
 }
+.card .spec{min-height:calc(1.6em * 2);}
+.card .spec.card-variants{display:flex; flex-direction:column; gap:4px; height:calc(13px * 1.6 * 2); padding:0; overflow:hidden; -webkit-line-clamp:unset;}
+.cv-row{display:flex; gap:4px; flex-wrap:nowrap; overflow:hidden; min-width:0;}
+.cv-chip{flex-shrink:0; font-size:10px; font-weight:600; line-height:1.2; padding:2px 8px; border-radius:20px; white-space:nowrap; color:var(--text);
+  background:var(--bg-elev-2); border:1px solid var(--glass-edge); box-shadow:var(--glass-hl);}
+.cv-chip.cv-more{color:var(--accent); background:var(--accent-soft); border-color:transparent;}
+.card-foot{margin-top:auto;}
 @media (hover:hover){
   .card:hover{transform:translateY(-6px); box-shadow:var(--glass-hl), 0 18px 40px -14px rgba(150,25,40,.26); border-color:color-mix(in srgb, var(--accent) 22%, var(--glass-edge));}
 }
@@ -389,7 +415,8 @@ section{padding:80px 0;}
 .articles-head{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:10px;}
 .articles-see-all{white-space:nowrap;}
 .articles-row{
-  display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x proximity; padding-bottom:8px;
+  display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x proximity;
+  padding:24px 4px 64px; margin:-24px -4px -58px;
   scrollbar-width:thin;
 }
 /* نوارِ اسکرولِ افقی مخفی شد؛ کشیدن با انگشت/ترک‌پد و چرخِ موس همچنان کار می‌کنه */
@@ -654,6 +681,39 @@ footer{border-top:1px solid var(--border); padding:40px 0 22px;}
 .order-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:700; font-size:13.5px;}
 /* حذفِ سفارش: کشیدنِ ردیف به چپ، یا دکمه‌ی ضربدر */
 .order-wrap{position:relative; border:1px solid var(--border); border-radius:14px; overflow:hidden;}
+.admin-push{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:6px 0 10px; padding:12px 14px;
+  border-radius:16px; background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 25%, transparent);}
+.admin-push .ap-text{display:flex; flex-direction:column; gap:3px; min-width:0; flex:1 1 220px;}
+.admin-push .ap-text b{font-size:13.5px;} .admin-push .ap-text small{font-size:12px; color:var(--text-dim); line-height:1.7;}
+.admin-push .ap-btns{display:flex; gap:8px;} .admin-push .btn{padding:8px 14px; font-size:12.5px;}
+/* اعلان‌ها (حساب کاربری ← اعلان‌ها، فقط مدیر) */
+.notify-stats{display:flex; flex-direction:column; gap:4px; padding:12px 14px; margin-bottom:12px; border-radius:16px; border:1px solid var(--border); font-size:13px; color:var(--text-dim); min-height:20px;}
+.notify-stats .ns-row{display:flex; align-items:baseline; gap:8px; color:var(--text); font-weight:700;}
+.notify-stats .ns-num{font-size:22px; color:var(--accent);}
+.notify-stats small{font-size:12px; line-height:1.8;}
+.notify-preview{display:flex; align-items:center; gap:10px; padding:10px 12px; margin:2px 0 14px; border-radius:18px; background:var(--bg-elev-2); border:1px solid var(--border);}
+.notify-preview .np-ic{width:38px; height:38px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--accent-soft);}
+.notify-preview .np-ic img{width:100%; height:100%; object-fit:cover; display:block;}
+.notify-preview .np-text{display:flex; flex-direction:column; gap:2px; min-width:0;}
+.notify-preview .np-text b{font-size:13px;} .notify-preview .np-text small{font-size:12px; color:var(--text-dim); line-height:1.7; white-space:pre-line; overflow-wrap:anywhere;}
+.notify-result{display:block; text-align:center; font-size:12.5px; color:var(--text-dim); margin:8px 0 12px; min-height:18px;}
+#notifyForm .admin-push{margin-top:4px;}
+/* بنرِ درخواستِ اجازه‌ی اعلان (برای همه‌ی بازدیدکننده‌ها) */
+.push-ask{
+  position:fixed; z-index:95; left:50%; bottom:calc(92px + env(safe-area-inset-bottom));
+  width:min(440px, calc(100vw - 24px)); transform:translate(-50%, 24px); opacity:0; visibility:hidden;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px; border-radius:22px;
+  background:var(--glass-solid); border:1px solid var(--glass-edge); box-shadow:var(--glass-hl), var(--glass-shadow);
+  -webkit-backdrop-filter:blur(30px) saturate(190%); backdrop-filter:blur(30px) saturate(190%);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease, visibility 0s linear .3s;
+}
+.push-ask.show{transform:translate(-50%, 0); opacity:1; visibility:visible; transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease, visibility 0s;}
+.push-ask .pa-ic{width:42px; height:42px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--accent-2));}
+.push-ask .pa-ic svg{width:21px; height:21px; stroke:#fff;}
+.push-ask .pa-text{flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.push-ask .pa-text b{font-size:14px;} .push-ask .pa-text small{font-size:12px; color:var(--text-dim); line-height:1.8;}
+.push-ask .pa-btns{display:flex; gap:8px; margin-inline-start:auto;}
+.push-ask .btn{padding:8px 16px; font-size:13px;}
 .order-del-bg{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:flex-start;
   padding-left:20px; background:#e5484d; color:#fff; font-size:13px; font-weight:700; gap:7px;
@@ -691,6 +751,35 @@ footer{border-top:1px solid var(--border); padding:40px 0 22px;}
 .admin-tabs{display:flex; gap:8px; margin:14px 0 4px; border-bottom:1px solid var(--border);}
 .admin-tab{padding:10px 4px; margin-inline-end:18px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--text-dim); font-size:14px; font-weight:700; cursor:pointer;}
 .admin-tab.active{color:var(--accent); border-bottom-color:var(--accent);}
+/* ادمینِ بدونِ دسترسیِ «تغییرِ وضعیت»، دکمه‌های وضعیت رو نمی‌بینه (سمتِ سرور هم بسته‌ست) */
+#adminOverlay.no-order-status .order-action-btn, #adminOverlay.no-order-status .order-stage-btn{display:none !important;}
+/* تبِ ادمین‌ها */
+.adm-card{display:flex; flex-direction:column; padding:14px; border-radius:18px; border:1px solid var(--border); background:var(--bg-elev-2); margin:12px 0;}
+.adm-card-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.adm-ic{width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.adm-ic svg{width:19px; height:19px; stroke:#fff;}
+.adm-card-head b{display:block; font-size:14.5px;} .adm-card-head small{font-size:12px; color:var(--text-dim);}
+.adm-wp-link{display:block; text-align:center; margin-top:12px; font-size:12.5px; font-weight:700; color:var(--accent); text-decoration:none;}
+.adm-sec-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:20px 0 4px;}
+.adm-sec-head b{font-size:14.5px;} .adm-sec-head .btn{padding:8px 14px; font-size:12.5px;}
+.adm-edit-title{font-size:14px; margin-bottom:12px;}
+.adm-list{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
+.adm-row{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:12px 14px; border:1px solid var(--border); border-radius:14px;}
+.adm-row-main{display:flex; flex-direction:column; gap:4px; min-width:0;}
+.adm-row-main b{font-size:13.5px;} .adm-row-main small{font-size:12px; color:var(--text-dim);}
+.adm-row-main .adm-phone{direction:ltr; text-align:right;}
+.adm-chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px;}
+.adm-chip{font-size:11px; padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:700;}
+.adm-row-btns{display:flex; flex-direction:column; gap:6px; flex-shrink:0;}
+.adm-row-btns .btn{padding:6px 12px; font-size:12px; justify-content:center;}
+.adm-row-btns .adm-del{color:var(--danger);}
+.adm-perms-title{font-size:12.5px; font-weight:700; color:var(--text-dim); margin:4px 0 8px;}
+.adm-perms{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+.adm-perm{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; cursor:pointer; font-size:13px; line-height:1.6; transition:border-color .2s ease, background .2s ease;}
+.adm-perm input{width:18px; height:18px; accent-color:var(--accent); flex-shrink:0; margin:0;}
+.adm-perm.on{border-color:var(--accent); background:var(--accent-soft);}
+.adm-edit-btns{display:flex; gap:8px; justify-content:flex-end;}
+.adm-edit-btns .btn{padding:9px 18px; font-size:13px;}
 .admin-customer-row{
   display:flex; align-items:center; justify-content:space-between; width:100%; padding:12px 14px;
   border:1px solid var(--border); border-radius:12px; background:transparent; text-align:right; cursor:pointer;
@@ -712,6 +801,31 @@ footer{border-top:1px solid var(--border); padding:40px 0 22px;}
   border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:13.5px; font-weight:600;
 }
 .adv-filter-toggle svg{width:16px; height:16px;}
+.adv-filter{display:flex; flex-wrap:wrap; align-items:center; gap:8px;}
+/* باکسِ «دسته‌ی انتخاب‌شده» کنارِ دکمه‌ی فیلتر پیشرفته؛ هم‌قدِ همون دکمه، با گرادیانِ بنفشِ سایت */
+.adv-filter-active{
+  position:relative; overflow:hidden; display:inline-flex; align-items:center; gap:8px; max-width:100%;
+  height:40px; padding:0 10px 0 16px; border-radius:30px; border:1px solid transparent;
+  background:linear-gradient(135deg, var(--accent), #a68bff); color:#fff; font-size:13.5px; font-weight:700;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 8px 22px -6px color-mix(in srgb, var(--accent) 65%, transparent) !important;
+  animation:advPillIn .35s cubic-bezier(.2,.9,.3,1.3);
+}
+.adv-filter-active::before{ /* درخششِ شیشه‌ای روی نیمه‌ی بالا */
+  content:''; position:absolute; inset:0 0 50% 0; background:linear-gradient(180deg, rgba(255,255,255,.22), transparent);
+  pointer-events:none;
+}
+.adv-filter-active[hidden]{display:none;}
+.adv-filter-active .afa-name{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-.1px;}
+.adv-filter-active .afa-clear{
+  flex-shrink:0; width:20px; height:20px; border-radius:50%; padding:0; margin:0; cursor:pointer;
+  display:grid; place-items:center; line-height:0; font-size:0; color:#fff;
+  background:rgba(255,255,255,.22); border:0; transition:background .2s ease;
+}
+.adv-filter-active .afa-clear:hover{background:rgba(255,255,255,.36);}
+.adv-filter-active .afa-clear:active{transform:scale(.9);}
+.adv-filter-active .afa-clear svg{display:block; width:10px; height:10px;}
+.adv-filter-toggle{height:40px;}
+@keyframes advPillIn{from{opacity:0; transform:translateX(10px) scale(.9);} to{opacity:1; transform:none;}}
 
 .filter-screen{
   position:fixed; inset:0; z-index:120; background:var(--bg); display:flex; flex-direction:column;
@@ -928,15 +1042,20 @@ body{background:var(--bg);}
   100%{transform:translate3d(-40vw,10vh,0) scale(.9); opacity:.75;}
 }
 @media (prefers-reduced-motion: reduce){ #apBg .blob{animation:none;} }
+/* روی گوشی، حینِ اسکرول حرکتِ خیلی آرومِ پس‌زمینه لحظه‌ای مکث می‌کنه تا اسکرول روان بمونه (ظاهر عوض نمی‌شه) */
+html.ap-scrolling #apBg .blob{animation-play-state:paused;}
 
 /* سطح‌های داخل صفحه: شیشه‌ی شفاف با لبه‌ی نوری (بدون blur برای روان ماندنِ اسکرول در موبایل) */
 .card, .feature, .article-card, .product-detail, .pd-description, .pd-reviews,
-.chip, .btn-ghost, .icon-btn, .theme-toggle, .adv-filter-toggle, .orbit-item,
+.chip, .btn-ghost, .icon-btn, .theme-toggle, .adv-filter-toggle, .adv-filter-active, .orbit-item,
 .account-menu-item, .ship-option, .drawer-item, .filter-cat-box, .ap-error-box{
   border-color:var(--glass-edge);
   box-shadow:var(--glass-hl), var(--glass-shadow);
 }
 .chip.active{box-shadow:var(--glass-hl), 0 6px 18px var(--accent-soft);}
+/* کارت‌های داخلِ ردیف‌های افقیِ محوشونده (mask) نباید blur بگیرن؛ backdrop-filter داخلِ
+   لایه‌ی mask یک مستطیلِ روشن پشتِ کلِ ردیف می‌کشید و رنگش با پس‌زمینه فرق می‌کرد. */
+.reco-track .card, .articles-row .article-card{-webkit-backdrop-filter:none !important; backdrop-filter:none !important;}
 /* روی دسکتاپ که قدرت پردازش بیشتره، کارت‌ها blur واقعی هم می‌گیرن */
 @media (hover:hover) and (min-width:900px){
   .card, .feature, .article-card, .product-detail, .pd-description, .pd-reviews{
@@ -972,6 +1091,12 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 #footer{padding-bottom:6px;}
 .foot-made{text-align:center; font-family:"Outfit","Vazirmatn",sans-serif; font-weight:600; letter-spacing:.2px; direction:ltr; padding-top:10px; font-size:12.5px; color:var(--text-dim);}
 .foot-tools{display:flex; align-items:center; gap:14px;}
+/* لینک‌های اصلیِ سایت در فوتر (به گوگل کمک می‌کنه زیرلینک‌های سایت رو در نتایج نشون بده) */
+.foot-nav{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:22px; margin:6px 0 26px;}
+.foot-nav h4{font-size:13.5px; font-weight:800; margin:0 0 10px; color:var(--text);}
+.foot-nav ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+.foot-nav a{font-size:13px; color:var(--text-dim); text-decoration:none; transition:color .2s ease;}
+.foot-nav a:hover{color:var(--accent);}
 .foot-tools a{font-size:14.5px; font-weight:700; color:var(--text);}
 .foot-tools a:hover{color:var(--accent);}
 
@@ -1857,6 +1982,12 @@ body{ animation:apEnter .38s var(--ease-out) both; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
         فیلتر پیشرفته
       </button>
+      <div class="adv-filter-active" id="advFilterActive" hidden>
+        <bdi class="afa-name" id="advFilterActiveName"></bdi>
+        <button type="button" class="afa-clear" id="advFilterClear" aria-label="حذف فیلتر">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="grid" id="productGrid"></div>
     <div id="searchModelReco"></div>
@@ -1894,6 +2025,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
         <p>با عشق کنار مشتری‌هامون هستیم؛ از پیدا کردن قطعه‌ی درست تا بعد از خرید، قطعات اورجینال با گارانتی اصالت و پشتیبانی صمیمانه، همیشه در دسترستون.</p>
       </div>
     </div>
+    <!--AP_FOOT_LINKS-->
     <div class="foot-bottom">
       <span>© ۱۴۰۵ {{SITE_NAME}} — تمامی حقوق محفوظ است.</span>
       <div class="foot-tools">
@@ -2059,6 +2191,31 @@ body{ animation:apEnter .38s var(--ease-out) both; }
       <div id="myOrdersList" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
+    <!-- اعلان‌ها (فقط مدیر): ارسالِ اعلان برای همه‌ی مشتری‌هایی که اجازه دادن -->
+    <form id="notifyForm" class="account-subform" style="display:none;" autocomplete="off">
+      <button type="button" class="account-back" data-back="menu">→ بازگشت</button>
+      <div class="notify-stats" id="notifyStats"></div>
+      <div class="field"><label>عنوانِ اعلان</label><input type="text" id="notifyTitle" maxlength="60" placeholder="مثلاً: تخفیفِ ویژه‌ی آخر هفته"></div>
+      <div class="field"><label>متنِ اعلان</label><textarea id="notifyBody" maxlength="300" required placeholder="متنی که روی گوشیِ مشتری‌ها نمایش داده می‌شه..."></textarea></div>
+      <div class="field"><label>لینک (اختیاری — با زدن روی اعلان باز می‌شه)</label><input type="text" id="notifyUrl" dir="ltr" inputmode="url" placeholder="https://nexv.ir/..."></div>
+      <div class="notify-preview" aria-hidden="true">
+        <span class="np-ic"><img src="" alt="" id="notifyPrevIcon"></span>
+        <span class="np-text"><b id="notifyPrevTitle">{{SITE_NAME}}</b><small id="notifyPrevBody">متنِ اعلان اینجا نمایش داده می‌شه.</small></span>
+      </div>
+      <button type="submit" class="submit-btn btn btn-primary" id="notifySend">
+        <span class="spinner"></span>
+        <span class="btn-text">ارسال برای همه</span>
+      </button>
+      <small class="notify-result" id="notifyResult"></small>
+      <div class="admin-push" id="notifyDevice">
+        <div class="ap-text"><b>🔔 همین دستگاه</b><small id="notifyDevStatus">اعلانِ سفارشِ جدید روی این گوشی</small></div>
+        <div class="ap-btns">
+          <button type="button" class="btn btn-primary" id="notifyDevEnable">فعال‌سازی</button>
+          <button type="button" class="btn btn-ghost" id="notifyDevTest" style="display:none;">ارسال آزمایشی</button>
+        </div>
+      </div>
+    </form>
+
     <button type="button" class="account-logout" id="accountLogoutBtn">خروج از حساب کاربری</button>
   </div>
 </div>
@@ -2110,9 +2267,17 @@ body{ animation:apEnter .38s var(--ease-out) both; }
     <div class="admin-tabs" id="adminTabs">
       <button type="button" class="admin-tab active" data-tab="orders">سفارش‌ها</button>
       <button type="button" class="admin-tab" data-tab="customers">مشتریان</button>
+      <button type="button" class="admin-tab" data-tab="admins" id="adminTabAdmins">ادمین‌ها</button>
     </div>
 
     <div id="adminOrdersPane">
+      <div class="admin-push" id="adminPush">
+        <div class="ap-text"><b>🔔 اعلانِ سفارشِ جدید</b><small id="adminPushStatus">روی این گوشی، با هر سفارشِ جدید یک اعلان دریافت کنید.</small></div>
+        <div class="ap-btns">
+          <button type="button" class="btn btn-primary" id="adminPushEnable">فعال‌سازی</button>
+          <button type="button" class="btn btn-ghost" id="adminPushTest" style="display:none;">ارسال آزمایشی</button>
+        </div>
+      </div>
       <p class="modal-sub" id="adminSub">سفارش‌های ثبت‌شده و رسیدهای پرداخت</p>
       <div id="adminOrdersList" style="display:flex; flex-direction:column; gap:12px; margin-top:10px;"></div>
     </div>
@@ -2125,6 +2290,45 @@ body{ animation:apEnter .38s var(--ease-out) both; }
       <div id="customerDetailView" style="display:none;">
         <button type="button" class="account-back" id="customerDetailBack">→ بازگشت به فهرست مشتریان</button>
         <div id="customerDetailBody"></div>
+      </div>
+    </div>
+
+    <!-- ادمین‌ها: حسابِ خودِ ادمین + ادمین‌های زیرمجموعه (فقط مدیرِ کل) -->
+    <div id="adminAdminsPane" style="display:none;">
+      <form class="adm-card" id="adminMeForm" autocomplete="off">
+        <div class="adm-card-head">
+          <span class="adm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div><b id="adminMeName">حساب من</b><small id="adminMeRole"></small></div>
+        </div>
+        <div class="field"><label>شماره موبایل (برای ورود)</label><input type="tel" id="adminMePhone" inputmode="numeric" maxlength="11" dir="ltr" autocomplete="off"></div>
+        <div class="name-row">
+          <div class="field"><label>رمزِ جدید</label><input type="password" id="adminMeNewPass" autocomplete="new-password" placeholder="خالی = بدون تغییر"></div>
+          <div class="field"><label>تکرارِ رمزِ جدید</label><input type="password" id="adminMeNewPass2" autocomplete="new-password"></div>
+        </div>
+        <div class="field"><label>رمزِ فعلی (برای تأیید)</label><input type="password" id="adminMeCurPass" autocomplete="current-password"></div>
+        <button type="submit" class="submit-btn btn btn-primary" id="adminMeSave"><span class="spinner"></span><span class="btn-text">ذخیره‌ی تغییرات</span></button>
+        <a class="adm-wp-link" id="adminWpLink" href="#" style="display:none;">ورود به پیشخوانِ وردپرس ←</a>
+      </form>
+
+      <div id="adminSubSection" style="display:none;">
+        <div class="adm-sec-head"><b>ادمین‌های زیرمجموعه</b><button type="button" class="btn btn-primary" id="adminAddBtn">+ افزودن ادمین</button></div>
+        <form class="adm-card" id="adminEditForm" style="display:none;" autocomplete="off">
+          <input type="hidden" id="admEditId" value="">
+          <b class="adm-edit-title" id="admEditTitle">ادمینِ جدید</b>
+          <div class="name-row">
+            <div class="field"><label>نام</label><input type="text" id="admFirst"></div>
+            <div class="field"><label>نام خانوادگی</label><input type="text" id="admLast"></div>
+          </div>
+          <div class="field"><label>شماره موبایل (برای ورود)</label><input type="tel" id="admPhone" inputmode="numeric" maxlength="11" dir="ltr" autocomplete="off"></div>
+          <div class="field"><label id="admPassLabel">رمزِ ورود (حداقل ۸ کاراکتر)</label><input type="text" id="admPass" dir="ltr" autocomplete="off" spellcheck="false"></div>
+          <div class="adm-perms-title">به چه بخش‌هایی دسترسی داشته باشه؟</div>
+          <div class="adm-perms" id="admPerms"></div>
+          <div class="adm-edit-btns">
+            <button type="button" class="btn btn-ghost" id="admCancel">انصراف</button>
+            <button type="submit" class="btn btn-primary" id="admSave">ذخیره</button>
+          </div>
+        </form>
+        <div class="adm-list" id="adminSubList"></div>
       </div>
     </div>
   </div>
@@ -2297,14 +2501,31 @@ function unlockBodyScroll(){
   }
 }
 
+/* متغیرهای محصول (رنگ، حجم و گروه‌های دیگه) به‌صورت چیپ‌های کوچیک، دقیقاً جای همون
+   دو خطِ توضیح؛ ارتفاعش ثابته تا ابعاد و جای بقیه‌ی اجزای کارت هیچ تغییری نکنه. */
+function cardVariantsHtml(p){
+  /* هر نوعِ متغیر (حجم، رنگ، گروه‌های دیگه) در یک خطِ جدا؛ حداکثر دو خط تا ارتفاعِ کارت ثابت بمونه */
+  const groups = [];
+  if(p.storages && p.storages.length) groups.push(p.storages);
+  if(p.colors && p.colors.length) groups.push(p.colors);
+  (p.variantGroups || []).forEach(g => { if(g && g.options && g.options.length) groups.push(g.options); });
+  const rows = groups.map(g => g.map(v => String(v).trim()).filter(Boolean)).filter(g => g.length).slice(0, 2);
+  if(!rows.length) return '';
+  const MAX = 3;
+  const rowHtml = r => {
+    const shown = r.slice(0, MAX), extra = r.length - shown.length;
+    return `<div class="cv-row">${shown.map(v => `<span class="cv-chip">${escHtml(v)}</span>`).join('')}${extra > 0 ? `<span class="cv-chip cv-more" dir="ltr">+${extra}</span>` : ''}</div>`;
+  };
+  return `<div class="spec card-variants">${rows.map(rowHtml).join('')}</div>`;
+}
 function cardHtml(p){
   return `
     <div class="card reveal in" style="--card-color:${p.color}" data-url="${p.url ? p.url : ''}">
       <div class="card-glow"></div>
       ${badgesHtml(p)}
-      <div class="card-visual${p.image ? ' has-img' : ''}">${p.image ? `<img src="${p.image}" alt="${p.title}" loading="lazy" decoding="async">` : icon(p.ic)}</div>
+      <div class="card-visual${p.image ? ' has-img' : ''}">${p.image ? `<img src="${p.thumb || p.image}" alt="${p.title}" loading="lazy" decoding="async">` : icon(p.ic)}</div>
       <h3><bdi>${p.title}</bdi></h3>
-      <p class="spec">${p.spec}</p>
+      ${cardVariantsHtml(p) || `<p class="spec">${p.spec}</p>`}
       <div class="card-foot">
         <div class="price">${(()=>{
           const hasVariantPrices = Object.keys(p.variantPrices || {}).length > 0;
@@ -2381,6 +2602,21 @@ function render(list){
   }
   grid.innerHTML = finalList.map(cardHtml).join('');
   wireProductCards(grid);
+  updateActiveFilterBox();
+}
+/* آخرین دسته‌ای که انتخاب شده کنارِ دکمه‌ی «فیلتر پیشرفته» نشون داده می‌شه */
+function updateActiveFilterBox(){
+  const box = document.getElementById('advFilterActive');
+  if(!box) return;
+  let cat = null;
+  try{
+    const slug = selectedCatPath.length ? selectedCatPath[selectedCatPath.length - 1] : '';
+    cat = slug ? CATS.find(c => c.slug === slug) : null;
+  }catch(_){ /* هنوز متغیرهای دسته‌بندی تعریف نشدن (رندرِ اولیه) */ }
+  if(!cat){ box.hidden = true; return; }
+  document.getElementById('advFilterActiveName').textContent = cat.name;
+  box.title = cat.name;
+  box.hidden = false;
 }
 const HOME_URL = window.AP_HOME_URL || '/';
 const SITE_NAME = window.AP_SITE_NAME || '{{SITE_NAME}}';
@@ -2433,6 +2669,33 @@ function getSearchHistory(){
   catch(e){ return []; }
 }
 
+/* انتخابِ تصادفی و متنوع برای «پیشنهادهای ویژه»ی صفحه‌ی اصلی: محصولات بر اساسِ نوعِ قطعه
+   (باتری، ال سی دی، مادربرد، دوربین و ...) دسته می‌شن و به نوبت از هر نوع یکی برداشته می‌شه،
+   بدون تکرارِ مدلِ دستگاه؛ هر بار باز شدنِ صفحه ترکیبِ جدیدی میاد. محصولاتِ عکس‌دار اولویت دارن. */
+function diverseRandomPicks(list, n){
+  const shuffle = a => { for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  /* نوعِ قطعه = اولین کلمه‌ی عنوان (لنت، فیلتر، سپر، چراغ ...)؛ مدل = اولین خودروی سازگار */
+  const typeOf = t => normalizeSearchText(String(t || '').split('|')[0]).split(' ')[0] || 'other';
+  const modelOf = (t, p) => (p && p.vehicles && p.vehicles[0]) ? String(p.vehicles[0]) : String(t || '').split('|').pop().trim().toLowerCase();
+  const pool = shuffle(list.slice()).sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+  const buckets = {};
+  pool.forEach(p => { (buckets[typeOf(p.title)] = buckets[typeOf(p.title)] || []).push(p); });
+  const types = shuffle(Object.keys(buckets));
+  const out = [], usedModels = new Set();
+  let guard = 0;
+  while(out.length < n && guard++ < 500){
+    let added = false;
+    for(const t of types){
+      if(out.length >= n) break;
+      const b = buckets[t];
+      const idx = b.findIndex(p => !usedModels.has(modelOf(p.title, p)));
+      if(idx >= 0){ const p = b.splice(idx, 1)[0]; out.push(p); usedModels.add(modelOf(p.title, p)); added = true; }
+    }
+    if(!added) usedModels.clear();   /* مدل‌های متفاوت تموم شد؛ از این به بعد تکرارِ مدل مجازه */
+    if(!types.some(t => buckets[t].length)) break;
+  }
+  return out;
+}
 function renderRecommendations(){
   const box = document.getElementById('recoRow');
   if(!box) return;
@@ -2446,8 +2709,7 @@ function renderRecommendations(){
   if(!matches.length){
     /* «پیشنهادهای ویژه برای شما» فقط محصولاتی رو نشون می‌ده که برچسبِ «پرفروش» دارن
        (قبلاً هر محصولی که هر برچسبی داشت، مثلاً «اورجینال»، اینجا میومد). */
-    const best = PRODUCTS.filter(p => productHasTag(p, 'پرفروش'));
-    matches = best.length ? best : PRODUCTS.slice(0, 10);
+    matches = diverseRandomPicks(PRODUCTS, 10);
     term = null;
     heading = 'پیشنهادهای ویژه برای شما';
   }
@@ -2538,6 +2800,13 @@ wireChips();
    پس این المان‌ها ممکنه null باشن؛ حتماً قبل از رویداد گذاشتن چک بشن. */
 const filterScreen = document.getElementById('filterScreen');
 const advFilterToggle = document.getElementById('advFilterToggle');
+document.getElementById('advFilterClear')?.addEventListener('click', ()=>{
+  selectedCatPath = []; priceMin = null; priceMax = null;
+  renderAdvancedFilter();
+  document.querySelectorAll('#quickChips .chip').forEach(c=>c.classList.toggle('active', c.dataset.cat === 'all'));
+  render(pickHomeProducts());
+  updateUrlForSelectedCategory();
+});
 if(advFilterToggle && filterScreen){
   advFilterToggle.addEventListener('click', ()=>{
     renderAdvancedFilter();
@@ -2628,15 +2897,48 @@ function applyAdvancedFilter(){
    باشه، آدرس بالای مرورگر بدون رفرش صفحه به همون پیوند تغییر می‌کنه؛ این‌طوری هم
    تجربه‌ی سریع و بی‌رفرش حفظ می‌شه، هم آدرس صفحه دقیقاً همون پیوند یکتای سئوشده‌ست
    (برای اشتراک‌گذاری، بوکمارک، و اگه صفحه رفرش بشه هم درست لود می‌شه). */
-function updateUrlForSelectedCategory(){
-  if(!window.history || !window.history.pushState) return;
-  if(!selectedCatPath.length){
-    if(HOME_URL) history.pushState({}, '', HOME_URL);
-    return;
-  }
+function samePath(a, b){
+  try{
+    const x = new URL(a, location.origin), y = new URL(b, location.origin);
+    const n = u => decodeURI(u.pathname).replace(/\/+$/, '') + u.search;
+    return n(x) === n(y);
+  }catch(_){ return a === b; }
+}
+/* آدرس بالای مرورگر رو هم‌گام با چیزی که روی صفحه نشون داده می‌شه نگه می‌داره؛
+   اگه آدرس همونی باشه که الان هست، ورودیِ تکراری توی تاریخچه ساخته نمی‌شه. */
+function setUrl(url, replace){
+  if(!url || !window.history || !window.history.pushState) return;
+  if(samePath(url, location.href)) { rememberShopUrl(); return; }
+  try{ replace ? history.replaceState({}, '', url) : history.pushState({}, '', url); }catch(_){}
+  rememberShopUrl();
+}
+/* آخرین آدرسِ فروشگاه (دسته/سرچِ انتخاب‌شده) ذخیره می‌شه تا «بازگشت به فروشگاه»
+   در صفحه‌ی محصول، مشتری رو به همون فیلتر برگردونه، نه به صفحه‌ی اصلیِ خالی. */
+function rememberShopUrl(){
+  try{ if(!SINGLE_VIEW_ID && !location.pathname.match(/\/cart\/?$/)) sessionStorage.setItem('ap_shop_url', location.href); }catch(_){}
+}
+function shopReturnUrl(){
+  try{
+    const u = sessionStorage.getItem('ap_shop_url');
+    if(u && new URL(u).origin === location.origin) return u;
+  }catch(_){}
+  return HOME_URL;
+}
+document.addEventListener('click', e=>{
+  const a = e.target.closest && e.target.closest('#pdBackToShop');
+  if(!a) return;
+  /* اگه از همون صفحه‌ی فروشگاه اومده، با Back مرورگر برمی‌گرده تا جای اسکرول هم حفظ بشه */
+  try{
+    /* هر صفحه‌ای از همین سایت که ازش اومده (فروشگاه، محصولِ قبلی، مقاله) با Back برمی‌گرده */
+    if(document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1){ e.preventDefault(); history.back(); }
+  }catch(_){}
+});
+window.addEventListener('pageshow', ()=>{ try{ rememberShopUrl(); }catch(_){} });
+function updateUrlForSelectedCategory(replace){
+  if(!selectedCatPath.length){ setUrl(HOME_URL, replace); return; }
   const slug = selectedCatPath[selectedCatPath.length - 1];
   const cat = CATS.find(c => c.slug === slug);
-  if(cat && cat.url){ history.pushState({}, '', cat.url); }
+  setUrl(cat && cat.url ? cat.url : HOME_URL, replace);
 }
 
 document.getElementById('advFilterApply')?.addEventListener('click', ()=>{
@@ -2652,7 +2954,8 @@ document.getElementById('advFilterApply')?.addEventListener('click', ()=>{
 
 /* از سرچ یا از صفحه‌ی یک محصول به یک دسته‌بندی خاص می‌ره (روی صفحه‌ی اصلی فیلتر می‌کنه،
    روی صفحه‌ی اختصاصی محصول به صفحه‌ی اصلی هدایت می‌شه). */
-function goToCategory(slug){
+function goToCategory(slug, opts){
+  opts = opts || {};
   if(SINGLE_VIEW_ID){
     const sep = HOME_URL.includes('?') ? '&' : '?';
     window.location.href = HOME_URL + sep + 'ap_cat=' + encodeURIComponent(slug);
@@ -2663,8 +2966,8 @@ function goToCategory(slug){
   selectedCatPath = [slug];
   renderAdvancedFilter();
   applyAdvancedFilter();
-  updateUrlForSelectedCategory();
-  document.getElementById('products')?.scrollIntoView({behavior:'smooth'});
+  if(opts.history !== false) updateUrlForSelectedCategory(!!opts.replace);
+  if(opts.scroll !== false) document.getElementById('products')?.scrollIntoView({behavior:'smooth'});
 }
 
 /* ---------- صفحه‌ی جداگانه‌ی محصولاتِ یک برچسب (مثلاً «پرفروش») ----------
@@ -2696,12 +2999,34 @@ function renderTagView(tag){
   window.scrollTo(0, 0);
 }
 
+/* دکمه‌ی Back/Forward مرورگر: محتوای صفحه دقیقاً با آدرسِ جدید هماهنگ می‌شه */
+window.addEventListener('popstate', ()=>{
+  if(SINGLE_VIEW_ID || TAG_VIEW){ location.reload(); return; }
+  if(typeof CART_URL !== 'undefined' && samePath(location.pathname, CART_URL)) return;
+  const home = new URL(HOME_URL, location.origin);
+  if(samePath(location.pathname, home.pathname)){
+    const q = new URLSearchParams(location.search).get('ap_search');
+    if(q){ if(searchInput) searchInput.value = q; submitSearch(q, {history:false}); return; }
+    setSearchMode(false);
+    if(searchInput) searchInput.value = '';
+    selectedCatPath = []; priceMin = null; priceMax = null;
+    renderAdvancedFilter();
+    document.querySelectorAll('#quickChips .chip').forEach(c=>c.classList.toggle('active', c.dataset.cat === 'all'));
+    render(pickHomeProducts());
+    renderRecommendations();
+    return;
+  }
+  const cat = CATS.find(c => c.url && samePath(c.url, location.pathname));
+  if(cat){ goToCategory(cat.slug, {history:false}); return; }
+  location.reload();
+});
+
 function applyUrlParams(){
   const params = new URLSearchParams(window.location.search);
   const cat = params.get('ap_cat');
   const q   = params.get('ap_search');
   if(cat){
-    goToCategory(cat);
+    goToCategory(cat, {replace:true});
   } else if(q){
     if(searchInput) searchInput.value = q;
     document.querySelectorAll('#quickChips .chip').forEach(c=>c.classList.remove('active'));
@@ -2765,9 +3090,15 @@ function loadProducts(){
       } else if(TAG_VIEW){
         renderTagView(TAG_VIEW);
       } else {
-        const activeChip = document.querySelector('#quickChips .chip.active');
-        const cat = activeChip ? activeChip.dataset.cat : 'all';
-        render(cat === 'all' ? pickHomeProducts() : PRODUCTS.filter(p => (p.cats||[p.cat]).includes(cat)));
+        /* اگه دسته‌بندی‌ها زودتر از محصولات رسیده باشن و صفحه روی پیوندِ یک دسته (یا زیردسته)
+           باز شده باشه، همون دسته دوباره اعمال می‌شه؛ قبلاً اینجا صفحه به حالتِ «همه» برمی‌گشت. */
+        if(selectedCatPath.length){
+          applyAdvancedFilter();
+        }else{
+          const activeChip = document.querySelector('#quickChips .chip.active');
+          const cat = activeChip ? activeChip.dataset.cat : 'all';
+          render(cat === 'all' ? pickHomeProducts() : PRODUCTS.filter(p => (p.cats||[p.cat]).includes(cat)));
+        }
         renderRecommendations();
         applyUrlParams();
       }
@@ -2788,7 +3119,7 @@ fetch(window.AP_API_URL + '?action=categories').then(r => r.json()).then(data =>
     /* اگه از پیوند یکتای خودِ یک دسته‌بندی وارد شده (برای سئو بهتر)، همون لحظه
        محصولات همون دسته فیلتر و نمایش داده می‌شن. */
     if(window.AP_CAT_SLUG && !SINGLE_VIEW_ID){
-      goToCategory(window.AP_CAT_SLUG);
+      goToCategory(window.AP_CAT_SLUG, {history:false});
     }
   }
 }).catch(()=>{ /* بک‌اند در دسترس نیست */ });
@@ -3031,7 +3362,13 @@ function initArticlesAutoScroll(row){
   ['wheel','touchstart','pointerdown'].forEach(evt=>{
     row.addEventListener(evt, pauseForAWhile, { passive:true });
   });
+  /* فقط وقتی ردیف روی صفحه دیده می‌شه حرکت می‌کنه؛ بیرون از دید هیچ کاری انجام نمی‌شه (روی گوشی سبک‌تر) */
+  let onScreen = true;
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(es => { onScreen = es[0].isIntersecting; if(onScreen && !rafId) rafId = requestAnimationFrame(step); }).observe(row);
+  }
   function step(){
+    if(!onScreen){ rafId = null; return; }
     if(!paused && document.visibilityState === 'visible'){
       /* در چیدمانِ راست‌به‌راست، scrollLeft از ۰ به سمتِ منفی می‌ره؛ پس جهتِ حرکت باید برعکس باشه */
       const rtl = getComputedStyle(row).direction === 'rtl';
@@ -3116,18 +3453,114 @@ function normalizeSearchText(s){
     .toLowerCase();
 }
 
+/* =====================================================================
+   سرچِ هوشمند: غلطِ املایی (۱ حرف، و برای کلمه‌های بلند ۲ حرف)، چسبیده یا جدا نوشتن
+   («آیفون13پرو» = «آیفون 13 پرو»)، فارسی/انگلیسی، ارقامِ فارسی/عربی/لاتین، نیم‌فاصله و
+   خط‌تیره، و حتی تایپ با کیبوردِ انگلیسی به‌جای فارسی (مثلاً «hdtk,k» = «ایفون»).
+   نتیجه‌ها بر اساسِ نزدیکی مرتب می‌شن: تطابقِ دقیق اول، بعد تطابقِ کلمه‌ها، بعد غلط‌دارها.
+   ===================================================================== */
+const SS_SYN_GROUPS = [["پژو", "peugeot"], ["پراید", "pride"], ["سمند", "samand"], ["دنا", "dena"], ["رانا", "rana"], ["تیبا", "tiba"], ["ساینا", "saina"], ["کوییک", "کوئیک", "quick"], ["شاهین", "shahin"], ["سورن", "soren"], ["تارا", "tara"], ["ایران خودرو", "ikco", "iran khodro"], ["سایپا", "saipa"], ["کیا", "kia"], ["هیوندای", "هیوندا", "hyundai"], ["تویوتا", "toyota"], ["نیسان", "nissan"], ["رنو", "renault"], ["چری", "chery"], ["آریزو", "arrizo", "arizo"], ["تیگو", "tiggo"], ["ام وی ام", "mvm"], ["جک", "jac"], ["کی ام سی", "kmc"], ["هاوال", "haval"], ["ام جی", "mg"], ["لیفان", "lifan"], ["برلیانس", "brilliance"], ["دانگ فنگ", "dongfeng"], ["هایما", "haima"], ["چانگان", "changan"], ["فونیکس", "fownix", "fonix"], ["جیلی", "geely"], ["بی وای دی", "byd"], ["دیگنیتی", "dignity"], ["ریسپکت", "respect"], ["لاماری", "lamari"], ["سپر", "bumper"], ["چراغ", "light", "lamp"], ["چراغ جلو", "headlight"], ["چراغ عقب", "taillight"], ["جلوپنجره", "grille"], ["کاپوت", "درب موتور", "hood"], ["گلگیر", "fender"], ["آینه", "mirror"], ["رادیاتور", "radiator"], ["لنت", "brake pad"], ["دیسک", "disc"], ["کمک فنر", "shock absorber"], ["فیلتر", "filter"], ["فیلتر روغن", "oil filter"], ["فیلتر هوا", "air filter"], ["تسمه", "belt"], ["تسمه تایم", "timing belt"], ["واتر پمپ", "واترپمپ", "water pump"], ["دینام", "alternator"], ["استارت", "starter"], ["شمع", "spark plug"], ["کویل", "coil"], ["سنسور", "sensor"], ["واشر", "gasket"], ["کلاچ", "clutch"], ["گیربکس", "gearbox"], ["موتور", "engine"], ["اورجینال", "original"], ["افتر مارکت", "آفتر مارکت", "aftermarket"]];   /* هر گروه = چند شکلِ نوشتاریِ یک کلمه */
+const SS_SYN = (()=>{ const m = {}; SS_SYN_GROUPS.forEach(g => { const n = g.map(x => ssNorm(x).replace(/ /g, '')); n.forEach(a => { m[a] = (m[a] || []).concat(n.filter(b => b !== a)); }); }); return m; })();
+const SS_SYN_FLAT = Object.keys(SS_SYN);
+function ssNorm(s){
+  return normalizeSearchText(s)
+    .replace(/[أإٱ]/g, 'ا').replace(/ؤ/g, 'و').replace(/ئ/g, 'ی').replace(/ة/g, 'ه').replace(/[ءـً-ٟ]/g, '')
+    .replace(/[‌‍‎‏ ]/g, ' ')
+    .replace(/[-_\/\\|(),.:;+*'"«»؛،!?؟#&\[\]{}]/g, ' ')
+    .replace(/([0-9])([^0-9\s])/g, '$1 $2').replace(/([^0-9\s])([0-9])/g, '$1 $2')
+    .replace(/\s+/g, ' ').trim();
+}
+/* فاصله‌ی ویرایشی (با جابه‌جاییِ دو حرفِ کنارِ هم)؛ اگه از max بیشتر شد زود برمی‌گرده */
+function ssDist(a, b, max){
+  if(Math.abs(a.length - b.length) > max) return max + 1;
+  let p2 = null, p1 = Array.from({length: b.length + 1}, (_, j) => j);
+  for(let i = 1; i <= a.length; i++){
+    const cur = [i]; let rowMin = i;
+    for(let j = 1; j <= b.length; j++){
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      let v = Math.min(p1[j] + 1, cur[j-1] + 1, p1[j-1] + cost);
+      if(p2 && i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) v = Math.min(v, p2[j-2] + 1);
+      cur[j] = v; if(v < rowMin) rowMin = v;
+    }
+    if(rowMin > max) return max + 1;
+    p2 = p1; p1 = cur;
+  }
+  return p1[b.length];
+}
+const SS_IDX = new WeakMap();
+function ssIndexOf(obj, text){
+  let ix = SS_IDX.get(obj);
+  if(ix && ix.src === text) return ix;
+  const norm = ssNorm(text);
+  const words = Array.from(new Set(norm.split(' ').filter(Boolean)));
+  ix = { src: text, norm, words, compact: words.join('') };
+  SS_IDX.set(obj, ix);
+  return ix;
+}
+function ssTokenScore(t, ix, noSplit){
+  const v = ssTokenScore1(t, ix);
+  if(v || noSplit || t.length < 5 || /[0-9]/.test(t)) return v;
+  /* دو کلمه‌ی چسبیده که توی عنوان کنارِ هم نیستن («سپرچری» → «سپر» + «چری») */
+  for(let k = 2; k <= t.length - 2; k++){
+    const a = ssTokenScore1(t.slice(0, k), ix), b = a >= 2 ? ssTokenScore1(t.slice(k), ix) : 0;
+    if(a >= 2 && b >= 2) return 1.8;
+  }
+  return 0;
+}
+function ssTokenScore1(t, ix){
+  const isNum = /^[0-9]+$/.test(t);
+  let best = 0;
+  for(const w of ix.words){
+    if(w === t) return 3;
+    if(isNum){ if(t.length >= 2 && w.startsWith(t)) best = Math.max(best, 2); continue; }
+    if(w.startsWith(t)) best = Math.max(best, t.length >= 2 ? 2.6 : 1.5);
+    else if(t.length >= 3 && w.includes(t)) best = Math.max(best, 2);
+  }
+  if(best >= 2.6 || isNum) return best;
+  if(t.length >= 3 && ix.compact.includes(t)) best = Math.max(best, 2.2);           /* «پرومکس» در «پرو مکس» */
+  for(const syn of (SS_SYN[t] || [])){ if(ix.compact.includes(syn)){ best = Math.max(best, 2.6); break; } }
+  if(best) return best;
+  const allowed = t.length >= 7 ? 2 : (t.length >= 4 ? 1 : 0);
+  if(!allowed) return 0;
+  for(const w of ix.words){
+    if(/^[0-9]+$/.test(w)) continue;
+    if(ssDist(t, w, allowed) <= allowed) return 1.6;
+    if(w.length > t.length && ssDist(t, w.slice(0, t.length), allowed) <= allowed) best = Math.max(best, 1.3);   /* نیمه‌کاره + غلط */
+  }
+  if(!best){ for(const syn of SS_SYN_FLAT){ if(syn.length >= 4 && ix.compact.includes(syn) && ssDist(t, syn, allowed) <= allowed){ best = 1.4; break; } } }   /* «ایفوم» → «ایفون» → iphone */
+  return best;
+}
+/* امتیازِ تطابقِ یک متن با عبارتِ جستجو (۰ = تطابق نداره) */
+function ssScore(obj, text, q){
+  const qn = ssNorm(q); if(!qn) return 0;
+  const ix = ssIndexOf(obj, text);
+  const toks = qn.split(' '), qc = toks.join('');
+  let s = 0;
+  if(ix.norm.includes(qn)) s += 10;
+  else if(qc.length >= 3 && ix.compact.includes(qc)) s += 8;
+  let sum = 0;
+  for(const t of toks){ const v = ssTokenScore(t, ix); if(!v) return s; sum += v; }
+  return s + sum;
+}
+/* کیبوردِ اشتباه: متنی که با کیبوردِ انگلیسی به‌جای فارسی تایپ شده (و برعکس) */
+const SS_EN = "qwertyuiop[]asdfghjkl;'zxcvbnm,`", SS_FA = 'ضصثقفغعهخحجچشسیبلاتنمکگظطزرذدپوپ';
+function ssSwapLayout(q){
+  const s = String(q || '');
+  if(/[a-z]/i.test(s) && !/[؀-ۿ]/.test(s)) return s.toLowerCase().split('').map(c => { const i = SS_EN.indexOf(c); return i >= 0 ? SS_FA[i] : c; }).join('');
+  if(/[؀-ۿ]/.test(s) && !/[a-z]/i.test(s)) return s.split('').map(c => { const i = SS_FA.indexOf(c); return i >= 0 ? SS_EN[i] : c; }).join('');
+  return '';
+}
+/* جستجو در یک لیست؛ textOf(item) متنِ قابلِ جستجوی هر آیتمه. خروجی مرتب‌شده بر اساسِ امتیاز. */
+function smartSearch(list, q, textOf){
+  const run = query => list.map(it => ({ it, s: ssScore(it, textOf(it), query) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.it);
+  let out = run(q);
+  if(!out.length){ const alt = ssSwapLayout(q); if(alt) out = run(alt); }
+  return out;
+}
+
 function matchProducts(q){
-  q = normalizeSearchText(q);
-  if(!q) return [];
-  return PRODUCTS.filter(p =>
-    normalizeSearchText(p.title).includes(q) ||
-    normalizeSearchText(p.spec).includes(q) ||
-    normalizeSearchText(p.cat).includes(q) ||
-    /* جستجو با کد فنیِ قطعه (OEM) هم کار می‌کنه — تعمیرکارها معمولاً با همین کد می‌گردن */
-    (p.oem ? normalizeSearchText(p.oem).includes(q) : false) ||
-    /* و با نام برند/مدلِ خودرو، چون اسلاگِ خودروها روی هر قطعه ذخیره شده */
-    (p.vehicles || []).some(v => normalizeSearchText(String(v).replace(/-/g, ' ')).includes(q))
-  );
+  if(!normalizeSearchText(q)) return [];
+  return smartSearch(PRODUCTS, q, p => [p.title, p.spec, p.cat, p.oem || '', (p.vehicles || []).join(' '), (p.vehicleNames || []).join(' ')].join(' '));
 }
 
 /* پیشنهاد بر اساس همون مدلی که مشتری سرچ کرده: اگه کالای سرچ‌شده به یک مدل خاص
@@ -3166,16 +3599,9 @@ function renderSearchModelReco(matches){
 /* برای پیشنهادهای زیرِ سرچ‌بار، به‌جای کارت کامل محصول، فقط اسمِ محصولات مشابه
    (بدون تکرار) نشون داده می‌شه؛ کلیک روش، جستجوی همون متن رو روی همه‌ی محصولات انجام می‌ده. */
 function matchProductNames(q){
-  q = normalizeSearchText(q);
-  if(!q) return [];
-  const seen = new Set();
-  const names = [];
-  PRODUCTS.forEach(p=>{
-    if(normalizeSearchText(p.title).includes(q) && !seen.has(p.title)){
-      seen.add(p.title);
-      names.push(p.title);
-    }
-  });
+  if(!normalizeSearchText(q)) return [];
+  const seen = new Set(), names = [];
+  smartSearch(PRODUCTS, q, p => p.title).forEach(p => { if(!seen.has(p.title)){ seen.add(p.title); names.push(p.title); } });
   return names.slice(0, 6);
 }
 
@@ -3203,7 +3629,7 @@ function matchCategories(q){
   }
 
   CATS
-    .filter(c => normalizeSearchText(c.name).includes(q))
+    .filter(c => normalizeSearchText(c.name).includes(q) || (q.length >= 3 && ssScore(c, c.name, q) > 0))
     .forEach(m => {
       const node = deepestMatch(m);
       push(node);
@@ -3224,7 +3650,7 @@ function submitSearch(q){
   if(!q) return;
   saveSearchTerm(q);
   renderSearchResults([], '');
-  if(SINGLE_VIEW_ID){
+  if(SINGLE_VIEW_ID || TAG_VIEW){
     const sep = HOME_URL.includes('?') ? '&' : '?';
     window.location.href = HOME_URL + sep + 'ap_search=' + encodeURIComponent(q);
     return;
@@ -3240,6 +3666,10 @@ function submitSearch(q){
   const recoBox = document.getElementById('recoRow');
   if(recoBox) recoBox.innerHTML = '';
   renderSearchModelReco(matches);
+  if(!(arguments[1] && arguments[1].history === false)){
+    const u = new URL(HOME_URL, location.origin); u.searchParams.set('ap_search', q);
+    setUrl(u.toString());
+  }
   document.getElementById('products')?.scrollIntoView({behavior:'smooth'});
 }
 
@@ -3289,6 +3719,7 @@ searchInput.addEventListener('input', ()=>{
     if(searchReco) searchReco.innerHTML = '';
     render(pickHomeProducts());
     renderRecommendations();
+    if(new URLSearchParams(location.search).has('ap_search')) setUrl(HOME_URL, true);
   }
   renderSearchResults(matchCategories(q), q);
 });
@@ -3428,7 +3859,7 @@ function updateCartUI(){
     total += unitPrice * qty;
     const variantLabel = variantLabelParts(color, storage, extraVariants).join(' / ');
     return `<div class="drawer-item" style="--card-color:${p.color}">
-      <div class="drawer-thumb">${p.image ? `<img src="${p.image}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : icon(p.ic)}</div>
+      <div class="drawer-thumb">${p.image ? `<img src="${p.thumb || p.image}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : icon(p.ic)}</div>
       <div class="drawer-info">
         <h5>${p.title}</h5>
         ${variantLabel ? `<span style="color:var(--accent);">${variantLabel}</span>` : ''}
@@ -3455,8 +3886,19 @@ updateCartUI();
 /* Drawer open/close */
 const drawer = document.getElementById('cartDrawer');
 const drawerOverlay = document.getElementById('drawerOverlay');
-function openDrawer(){ drawer.classList.add('open'); drawerOverlay.classList.add('open'); lockBodyScroll(); }
-function closeDrawer(){ drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); unlockBodyScroll(); }
+/* سبد خرید آدرسِ اختصاصیِ خودش (/cart/) رو داره: با باز شدن، آدرس عوض می‌شه و با بستن برمی‌گرده */
+const CART_URL = new URL('cart/', new URL(HOME_URL, location.origin)).pathname;
+let cartPrevUrl = null;
+function openDrawer(){
+  drawer.classList.add('open'); drawerOverlay.classList.add('open'); lockBodyScroll();
+  try{ if(location.pathname !== CART_URL){ cartPrevUrl = location.href; history.pushState({apCart:1}, '', CART_URL); } }catch(_){}
+}
+function closeDrawer(){
+  drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); unlockBodyScroll();
+  try{ if(location.pathname === CART_URL) history.replaceState(null, '', cartPrevUrl || HOME_URL); }catch(_){}
+  cartPrevUrl = null;
+}
+window.addEventListener('popstate', ()=>{ if(drawer.classList.contains('open') && location.pathname !== CART_URL){ cartPrevUrl = null; closeDrawer(); } });
 document.getElementById('cartBtn').addEventListener('click', openDrawer);
 document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 drawerOverlay.addEventListener('click', closeDrawer);
@@ -3487,11 +3929,31 @@ themeToggle.addEventListener('click', ()=>{
 function currentUser(){
   try { return JSON.parse(localStorage.getItem('ap_user') || 'null'); } catch(e){ return null; }
 }
+/* توکنِ مدیر (موقعِ ورودِ مدیر از سرور گرفته می‌شه) همراهِ همه‌ی درخواست‌های API فرستاده می‌شه
+   تا پنلِ سفارش‌ها به سشنِ وردپرس (که بعد از چند روز منقضی می‌شد) وابسته نباشه. */
+function adminToken(){ try{ return localStorage.getItem('ap_admin_token') || ''; }catch(_){ return ''; } }
+(function(){
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try{
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const tok = adminToken();
+      if(tok && window.AP_API_URL && url.indexOf(window.AP_API_URL) === 0){
+        init = Object.assign({}, init || {});
+        const h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+        h.set('X-AP-Admin', tok);
+        init.headers = h;
+      }
+    }catch(_){}
+    return nativeFetch(input, init);
+  };
+})();
 const AVATAR_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
 const ADMIN_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 20h8"/></svg>';
 
 function logoutUser(){
   localStorage.removeItem('ap_user');
+  try{ localStorage.removeItem('ap_admin_token'); }catch(_){}
   renderAuthHeader();
   showToast('از حساب کاربری خارج شدید.');
   fetch(window.AP_API_URL + '?action=logout', { method: 'POST' }).catch(()=>{});
@@ -3733,6 +4195,7 @@ authForm.addEventListener('submit', e=>{
     authSubmit.classList.remove('loading');
     if(ok && data.success){
       if(data.user) localStorage.setItem('ap_user', JSON.stringify(data.user));
+      try{ if(data.adminToken) localStorage.setItem('ap_admin_token', data.adminToken); else localStorage.removeItem('ap_admin_token'); }catch(_){}
       closeAuth();
       renderAuthHeader();
       showToast(authMode==='signup' ? 'ثبت‌نام با موفقیت انجام شد 🎉' : 'خوش آمدید!');
@@ -3843,7 +4306,7 @@ document.getElementById('phoneInput').addEventListener('input', function(){
 const PERSONAL_FIELD_MAP = { accFirstName: 'firstName', accLastName: 'lastName', accPhone: 'phone', accEmail: 'email' };
 const ADDRESS_FIELD_MAP  = { accLabel: 'label', accProvince: 'province', accCity: 'city', accDistrict: 'district', accPlaque: 'plaque', accUnit: 'unit', accPostalCode: 'postalCode', accFullAddress: 'fullAddress' };
 
-const ALL_ACCOUNT_PANES = { menu: accountMenu, personal: personalForm, addressList: addressListPane, addressForm: addressForm, orders: ordersPane };
+const ALL_ACCOUNT_PANES = { menu: accountMenu, personal: personalForm, addressList: addressListPane, addressForm: addressForm, orders: ordersPane, notify: document.getElementById('notifyForm') };
 function showAccountPane(pane){
   Object.entries(ALL_ACCOUNT_PANES).forEach(([key, el])=>{
     const show = key === pane;
@@ -3852,6 +4315,7 @@ function showAccountPane(pane){
   });
   if(pane === 'addressList') renderAddressList();
   if(pane === 'orders') loadMyOrders();
+  if(pane === 'notify') loadNotifyStats();
 }
 
 function fillPersonalForm(user){
@@ -4219,12 +4683,31 @@ document.getElementById('receiptPickBtn').addEventListener('click', ()=> receipt
 receiptInput.addEventListener('change', ()=>{
   const file = receiptInput.files && receiptInput.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    receiptDataUrl = reader.result;
-    document.getElementById('receiptPreview').src = receiptDataUrl;
+  /* عکسِ گوشی معمولاً چند مگابایته و آپلودش روی اینترنتِ موبایل خیلی طول می‌کشید؛ قبل از
+     ارسال، حداکثر ۱۶۰۰ پیکسل و JPEG فشرده می‌شه (حدود ۲۰۰ تا ۴۰۰ کیلوبایت، کاملاً خوانا). */
+  paymentSubmit.disabled = true;
+  const showReceipt = url => {
+    receiptDataUrl = url;
+    document.getElementById('receiptPreview').src = url;
     document.getElementById('receiptPreviewWrap').style.display = 'block';
     paymentSubmit.disabled = false;
+  };
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const original = reader.result;
+    const img = new Image();
+    img.onload = ()=>{
+      try{
+        const MAX = 1600, scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+        const out = c.toDataURL('image/jpeg', 0.82);
+        showReceipt(out.length < original.length ? out : original);
+      }catch(_){ showReceipt(original); }
+    };
+    img.onerror = ()=> showReceipt(original);
+    img.src = original;
   };
   reader.readAsDataURL(file);
 });
@@ -4236,14 +4719,19 @@ paymentSubmit.addEventListener('click', ()=>{
   if(!items.length){ showToast('سبد خرید شما خالی است.'); return; }
   const itemsTotal = items.reduce((s,it)=>s + it.price*it.qty, 0);
 
+  if(paymentSubmit.classList.contains('loading')) return;   /* جلوگیری از ثبتِ دوباره با چند بار زدن */
   paymentSubmit.classList.add('loading');
+  const ctrl = window.AbortController ? new AbortController() : null;
+  const killer = ctrl ? setTimeout(()=> ctrl.abort(), 90000) : null;
   fetch(window.AP_API_URL + '?action=create_order', {
     method: 'POST',
+    signal: ctrl ? ctrl.signal : undefined,
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ userId: user.id, addressId: selectedShipAddress.id, items, itemsTotal, shippingMethod: selectedShippingMethod, shippingFee: currentShippingFee(), receiptImage: receiptDataUrl })
   })
   .then(r => r.json().then(data => ({ok: r.ok, data})))
   .then(({ok, data})=>{
+    if(killer) clearTimeout(killer);
     paymentSubmit.classList.remove('loading');
     if(ok && data.success){
       cart = {};
@@ -4256,8 +4744,9 @@ paymentSubmit.addEventListener('click', ()=>{
     }
   })
   .catch(()=>{
+    if(killer) clearTimeout(killer);
     paymentSubmit.classList.remove('loading');
-    showToast('اتصال به سرور ممکن نشد. دوباره تلاش کنید.');
+    showToast('اتصال به سرور ممکن نشد. اینترنت رو چک کنید و دوباره تلاش کنید.');
   });
 });
 
@@ -4266,44 +4755,495 @@ const adminOverlay = document.getElementById('adminOverlay');
 let adminOrdersCache = [];
 let adminOpenOrderId = null;
 
+/* دسترسی‌های ادمینِ فعلی (مدیرِ کل همه‌چیز؛ ادمینِ زیرمجموعه فقط چیزهایی که مدیرِ کل داده) */
+const ADMIN_PERM_SHORT = { orders:'سفارش‌ها', order_status:'تغییر وضعیت', customers:'مشتری‌ها', notify:'اعلان‌ها', products:'محصولات' };
+const ADMIN_PERM_ALL = Object.keys(ADMIN_PERM_SHORT);
+function adminPerms(u){
+  u = u || currentUser();
+  if(!u || !u.is_admin) return [];
+  if(u.is_owner || !Array.isArray(u.perms)) return ADMIN_PERM_ALL.slice();
+  return u.perms;
+}
+function adminCan(p, u){ return adminPerms(u).includes(p); }
+function applyAdminTabs(){
+  const u = currentUser();
+  const tabs = { orders: adminCan('orders', u), customers: adminCan('customers', u), admins: true };
+  document.querySelectorAll('.admin-tab').forEach(t => { t.style.display = tabs[t.dataset.tab] ? '' : 'none'; });
+  const at = document.getElementById('adminTabAdmins');
+  if(at) at.textContent = (u && u.is_owner) ? 'ادمین‌ها' : 'حساب من';
+  adminOverlay.classList.toggle('no-order-status', !adminCan('order_status', u));
+  return tabs;
+}
+function showAdminTab(name){
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('adminOrdersPane').style.display = name === 'orders' ? 'block' : 'none';
+  document.getElementById('adminCustomersPane').style.display = name === 'customers' ? 'block' : 'none';
+  document.getElementById('adminAdminsPane').style.display = name === 'admins' ? 'block' : 'none';
+  if(name === 'orders') loadAdminOrders();
+  else if(name === 'customers') loadCustomers();
+  else loadAdminsPane();
+}
+function firstAdminTab(){ const t = applyAdminTabs(); return t.orders ? 'orders' : (t.customers ? 'customers' : 'admins'); }
+/* دسترسی‌ها از سرور تازه می‌شن (اگه مدیرِ کل در این فاصله عوضشون کرده باشه) */
+function refreshAdminMe(){
+  return fetch(window.AP_API_URL + '?action=admin_me').then(r => r.json()).then(d => {
+    if(!d || !d.success || !d.user) return;
+    const before = JSON.stringify(adminPerms());
+    localStorage.setItem('ap_user', JSON.stringify(d.user));
+    if(JSON.stringify(adminPerms()) !== before && adminOverlay.classList.contains('open')){
+      const active = document.querySelector('.admin-tab.active');
+      const tabs = applyAdminTabs();
+      if(!active || !tabs[active.dataset.tab]) showAdminTab(firstAdminTab());
+    }
+  }).catch(()=>{});
+}
+
 function openAdmin(){
   const user = currentUser();
   if(!user || !user.is_admin) return;
   adminOverlay.classList.add('open');
   lockBodyScroll();
   adminOpenOrderId = null;
+  showAdminTab(firstAdminTab());
+  refreshAdminMe();
+}
+function loadAdminOrders(){
+  const user = currentUser();
+  if(!user) return;
+  refreshPushUI();
   const list = document.getElementById('adminOrdersList');
   list.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:20px 0;">در حال بارگذاری...</p>';
   fetch(window.AP_API_URL + '?action=list_orders&requesterId=' + encodeURIComponent(user.id))
     .then(r => r.json())
     .then(data => {
-      if(!data || !data.success){ list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">دسترسی به سفارش‌ها ممکن نشد.</p>'; return; }
+      if(!data || !data.success){
+        list.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:10px 0;">
+          <p style="margin:0 0 14px;">${escHtml((data && data.error) || 'نشستِ مدیریت منقضی شده؛ برای دیدنِ سفارش‌ها یک بار دوباره وارد شوید.')}</p>
+          <button type="button" class="btn btn-primary" id="adminRelogin">ورود دوباره</button></div>`;
+        document.getElementById('adminRelogin')?.addEventListener('click', ()=>{
+          const phone = (currentUser() || {}).phone || '';
+          closeAdmin(); logoutUser(); openAuth('login');
+          setTimeout(()=>{ const f = document.getElementById('phoneInput'); if(f && phone){ f.value = phone; } }, 50);
+        });
+        return;
+      }
       adminOrdersCache = data.orders || [];
       renderAdminOrders();
     })
     .catch(()=>{ list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">اتصال به سرور ممکن نشد.</p>'; });
 }
 function closeAdmin(){ adminOverlay.classList.remove('open'); unlockBodyScroll(); }
+
+/* ---------------- اعلان‌ها (PWA / Web Push): مشتری‌ها + سفارشِ جدید برای مدیر ---------------- */
+const AP_SW_SCOPE = new URL(HOME_URL, location.origin).pathname;
+/* سرویس‌ورکر اول از api.php (همیشه به PHP می‌رسه)، اگه نشد از ریشه‌ی سایت؛ هر دو با origin همین صفحه */
+const AP_SW_URLS = (function(){
+  const api = new URL(new URL(window.AP_API_URL || 'api.php', location.href).pathname, location.origin);
+  const root = new URL(AP_SW_SCOPE, location.origin);
+  root.searchParams.set('ap_sw', '2'); root.searchParams.set('api', api.href); root.searchParams.set('icon', new URL('icons/icon-192.png', api).href); root.searchParams.set('badge', new URL('icons/badge-96.png', api).href);
+  return [api.href + '?action=sw', root.href];
+})();
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function b64uToBytes(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); s += '='.repeat((4 - s.length % 4) % 4); const b = atob(s); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+function apPushSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext !== false; }
+/* آیفون/آیپد داخلِ سافاری (نه نسخه‌ی نصب‌شده): اعلان فقط بعد از «Add to Home Screen» ممکنه (iOS 16.4+) */
+function apIOSNeedsInstall(){
+  if(!isIOS() || isStandalone() || apPushSupported()) return false;
+  const ua = navigator.userAgent;
+  if(!/Safari\//.test(ua) || /CriOS|FxiOS|EdgiOS|OPiOS|Instagram|FBAN|FBAV|Telegram|Line\//.test(ua)) return false;
+  const v = ua.match(/OS (\d+)_(\d+)/) || ua.match(/Version\/(\d+)\.(\d+)/);
+  return !v || (+v[1] > 16 || (+v[1] === 16 && +v[2] >= 4));
+}
+function apLS(k, v){ try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(_){ return null; } }
+function apSwActive(reg){
+  return new Promise((resolve, reject)=>{
+    if(reg.active) return resolve(reg);
+    const w = reg.installing || reg.waiting;
+    if(!w) return reject(new Error('سرویس‌ورکر فعال نشد.'));
+    const t = setTimeout(()=> reg.active ? resolve(reg) : reject(new Error('سرویس‌ورکر فعال نشد.')), 15000);
+    w.addEventListener('statechange', ()=>{
+      if(w.state === 'activated' || reg.active){ clearTimeout(t); resolve(reg); }
+      else if(w.state === 'redundant'){ clearTimeout(t); reject(new Error('سرویس‌ورکر نصب نشد.')); }
+    });
+  });
+}
+let apSwPromise = null;
+function apSwRegistration(){
+  if(!('serviceWorker' in navigator)) return Promise.resolve(null);
+  if(apSwPromise) return apSwPromise;
+  apSwPromise = (async ()=>{
+    /* ۰: api.php با دامنه‌ی کلِ سایت — ۱: ریشه‌ی سایت — ۲: api.php با دامنه‌ی پیش‌فرض */
+    const pref = +(apLS('ap_sw_i') || 0);
+    const order = [pref].concat([0, 1, 2].filter(i => i !== pref));
+    let lastErr = null;
+    for(const i of order){
+      try{
+        const opts = i === 2 ? { updateViaCache:'none' } : { scope: AP_SW_SCOPE, updateViaCache:'none' };
+        const reg = await navigator.serviceWorker.register(AP_SW_URLS[i === 1 ? 1 : 0], opts);
+        await apSwActive(reg);
+        apLS('ap_sw_i', String(i));
+        return reg;
+      }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error('سرویس‌ورکر ثبت نشد.');
+  })();
+  apSwPromise.catch(()=>{ apSwPromise = null; });
+  return apSwPromise;
+}
+async function apPushKey(){
+  if(window.AP_PUSH_KEY) return window.AP_PUSH_KEY;
+  const kr = await fetch(window.AP_API_URL + '?action=push_vapid').then(r => r.json());
+  if(!kr || !kr.success) throw new Error((kr && kr.error) || 'کلید اعلان دریافت نشد.');
+  return (window.AP_PUSH_KEY = kr.publicKey);
+}
+function apAskPermission(){
+  return new Promise(res => {
+    try{ const p = Notification.requestPermission(res); if(p && p.then) p.then(res, () => res(Notification.permission)); }
+    catch(_){ res(Notification.permission); }
+  });
+}
+function apSameKey(sub, key){
+  try{
+    const a = sub.options && sub.options.applicationServerKey; if(!a) return true;
+    const x = new Uint8Array(a), y = b64uToBytes(key);
+    return x.length === y.length && x.every((v, i) => v === y[i]);
+  }catch(_){ return true; }
+}
+async function apPushRegister(sub){
+  const u = currentUser();
+  const d = await fetch(window.AP_API_URL + '?action=push_subscribe', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ subscription: sub.toJSON(), userId: u ? u.id : null }) }).then(r => r.json());
+  if(!d || !d.success) throw new Error((d && d.error) || 'ثبت دستگاه ناموفق بود.');
+  apLS('ap_push_sync', JSON.stringify({ ep: sub.endpoint, role: d.role, at: Date.now() }));
+  return d;
+}
+/* اجازه گرفتن + ثبتِ دستگاه. باید مستقیم از کلیکِ کاربر صدا زده بشه (آیفون بدونِ لمسِ کاربر اجازه نمی‌پرسه) */
+async function apPushEnable(){
+  if(!apPushSupported()) throw new Error('این مرورگر از اعلان پشتیبانی نمی‌کنه.');
+  const perm = Notification.permission === 'granted' ? 'granted' : await apAskPermission();
+  if(perm !== 'granted') throw new Error(perm === 'denied' ? 'اجازه‌ی اعلان بسته شده؛ از تنظیماتِ گوشی/مرورگر، اعلان‌های {{SITE_NAME}} رو روشن کنید.' : 'اجازه‌ی اعلان داده نشد.');
+  const reg = await apSwRegistration();
+  const key = await apPushKey();
+  let sub = await reg.pushManager.getSubscription();
+  if(sub && !apSameKey(sub, key)){ try{ await sub.unsubscribe(); }catch(_){} sub = null; }
+  if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(key) });
+  return apPushRegister(sub);
+}
+/* هر بار که سایت باز می‌شه (فقط برای کسایی که قبلاً اجازه دادن)، اشتراک بی‌صدا به‌روز نگه داشته می‌شه */
+async function apPushSilentSync(){
+  if(!apPushSupported() || Notification.permission !== 'granted') return;
+  const reg = await apSwRegistration();
+  const key = await apPushKey();
+  let sub = await reg.pushManager.getSubscription();
+  if(sub && !apSameKey(sub, key)){ try{ await sub.unsubscribe(); }catch(_){} sub = null; }
+  if(!sub){ try{ sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(key) }); }catch(_){ return; } }
+  let s = null; try{ s = JSON.parse(apLS('ap_push_sync') || 'null'); }catch(_){}
+  const u = currentUser(), wantAdmin = !!(u && u.is_admin && adminToken());
+  if(!s || s.ep !== sub.endpoint || Date.now() - (s.at || 0) > 3 * 86400000 || (wantAdmin && s.role !== 'admin')) await apPushRegister(sub);
+}
+function apPushRole(){ try{ const s = JSON.parse(apLS('ap_push_sync') || 'null'); return s && s.role; }catch(_){ return null; } }
+
+/* ---- بنرِ «اعلان‌ها رو روشن کنید» برای همه‌ی بازدیدکننده‌ها ---- */
+const AP_BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const AP_SHARE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-3px;"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+function apPushBanner(mode){
+  if(document.getElementById('apPushAsk')) return;
+  const u = currentUser(), admin = !!(u && u.is_admin);
+  const el = document.createElement('div');
+  el.id = 'apPushAsk'; el.className = 'push-ask'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'اعلان‌های {{SITE_NAME}}');
+  el.innerHTML = mode === 'ios'
+    ? `<span class="pa-ic">${AP_BELL_SVG}</span>
+       <div class="pa-text"><b>اعلان‌های {{SITE_NAME}} روی آیفون</b>
+         <small>در سافاری دکمه‌ی اشتراک‌گذاری ${AP_SHARE_SVG} رو بزنید، «Add to Home Screen» رو انتخاب کنید و {{SITE_NAME}} رو از آیکونش باز کنید؛ همون‌جا اجازه‌ی اعلان پرسیده می‌شه.</small></div>
+       <div class="pa-btns"><button type="button" class="btn btn-primary" data-pa="later">متوجه شدم</button></div>`
+    : `<span class="pa-ic">${AP_BELL_SVG}</span>
+       <div class="pa-text"><b>${admin ? 'اعلانِ سفارش‌های جدید' : 'اعلان‌های {{SITE_NAME}} رو روشن کنید'}</b>
+         <small>${admin ? 'با هر سفارشِ جدید، روی همین دستگاه یک اعلان دریافت کنید.' : 'از تخفیف‌ها، محصولاتِ جدید و خبرهای {{SITE_NAME}} زودتر از همه باخبر بشید.'}</small></div>
+       <div class="pa-btns"><button type="button" class="btn btn-ghost" data-pa="later">بعداً</button><button type="button" class="btn btn-primary" data-pa="yes">فعال‌سازی</button></div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=> requestAnimationFrame(()=> el.classList.add('show')));
+  const close = ()=>{ el.classList.remove('show'); setTimeout(()=> el.remove(), 450); };
+  el.querySelector('[data-pa="later"]').addEventListener('click', ()=>{
+    apLS('ap_push_snooze', String(Date.now() + (mode === 'ios' ? 10 : 3) * 86400000)); close();
+  });
+  el.querySelector('[data-pa="yes"]')?.addEventListener('click', async (e)=>{
+    const btn = e.currentTarget; btn.disabled = true;
+    try{
+      const r = await apPushEnable();
+      close();
+      showToast(r.role === 'admin' ? 'اعلانِ سفارش‌های جدید روی این دستگاه فعال شد 🔔' : 'اعلان‌های {{SITE_NAME}} فعال شد 🔔');
+      refreshPushUI();
+    }catch(err){
+      btn.disabled = false;
+      if(Notification.permission === 'denied'){ close(); }
+      else apLS('ap_push_snooze', String(Date.now() + 86400000));
+      const msg = (err && err.message) || '';
+      showToast(/[\u0600-\u06FF]/.test(msg) ? msg : ('فعال‌سازیِ اعلان ممکن نشد' + (msg ? ': ' + msg : '.')));
+      if(Notification.permission !== 'default') close();
+    }
+  });
+}
+function apPushMaybeAsk(tries){
+  tries = tries || 0;
+  if(Date.now() < +(apLS('ap_push_snooze') || 0)) return;
+  const mode = apPushSupported() ? (Notification.permission === 'default' ? 'ask' : '') : (apIOSNeedsInstall() ? 'ios' : '');
+  if(!mode) return;
+  /* وقتی یک پنجره/سبد/فیلتر بازه، صبر می‌کنه تا بسته بشه */
+  if(document.querySelector('.overlay.open, .drawer.open, .drawer-overlay.open, .filter-screen.open')){
+    if(tries < 20) setTimeout(()=> apPushMaybeAsk(tries + 1), 3000);
+    return;
+  }
+  apPushBanner(mode);
+}
+(function(){
+  const start = ()=>{
+    setTimeout(()=> apPushMaybeAsk(0), 3500);
+    const idle = window.requestIdleCallback || (f => setTimeout(f, 1500));
+    idle(()=>{ apPushSilentSync().catch(()=>{}); });
+  };
+  if(document.readyState === 'complete') start(); else window.addEventListener('load', start, { once:true });
+})();
+
+/* ---- باکسِ اعلانِ سفارشِ جدید داخلِ پیشخوانِ مدیر ---- */
+function pushStatus(t){ const el = document.getElementById('adminPushStatus'); if(el) el.textContent = t; }
+async function refreshPushUI(){
+  const boxes = [
+    { en: document.getElementById('adminPushEnable'), te: document.getElementById('adminPushTest'), st: document.getElementById('adminPushStatus') },
+    { en: document.getElementById('notifyDevEnable'), te: document.getElementById('notifyDevTest'), st: document.getElementById('notifyDevStatus') },
+  ].filter(b => b.en);
+  const set = (t, enShow, enText, teShow) => boxes.forEach(b => {
+    if(b.st) b.st.textContent = t;
+    b.en.style.display = enShow ? '' : 'none'; if(enText) b.en.textContent = enText;
+    if(b.te) b.te.style.display = teShow ? '' : 'none';
+  });
+  if(!apPushSupported()){
+    if(isIOS() && !isStandalone()) set('روی آیفون: از دکمه‌ی اشتراک‌گذاری (Share) سافاری گزینه‌ی «Add to Home Screen» رو بزنید، بعد سایت رو از آیکونِ {{SITE_NAME}} روی صفحه‌ی گوشی باز کنید و اینجا «فعال‌سازی» رو بزنید.', false, '', false);
+    else set('این مرورگر از اعلان پشتیبانی نمی‌کنه؛ از Chrome (اندروید) یا نسخه‌ی نصب‌شده روی صفحه‌ی آیفون استفاده کنید.', false, '', false);
+    return;
+  }
+  if(Notification.permission === 'denied'){ set('اجازه‌ی اعلان برای این سایت بسته شده؛ از تنظیماتِ گوشی/مرورگر، اعلان‌های {{SITE_NAME}} رو روشن کنید.', false, '', false); return; }
+  if(Notification.permission !== 'granted'){ set('روی این گوشی، با هر سفارشِ جدید یک اعلان دریافت کنید.', true, 'فعال‌سازی', false); return; }
+  try{
+    const reg = await apSwRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if(sub && apPushRole() === 'admin') set('✅ اعلانِ سفارشِ جدید روی این دستگاه فعاله.', true, 'ثبت دوباره', true);
+    else set('اعلان روی این دستگاه روشنه؛ برای گرفتنِ اعلانِ سفارش‌ها، «فعال‌سازی» رو بزنید.', true, 'فعال‌سازی', false);
+  }catch(err){ set('سرویس‌ورکر ثبت نشد: ' + ((err && err.message) || err), true, 'تلاش دوباره', false); }
+}
+async function apAdminPushEnableClick(btn){
+  try{
+    btn.disabled = true; pushStatus('در حال فعال‌سازی...');
+    const r = await apPushEnable();
+    if(r.role !== 'admin') throw new Error('این دستگاه به‌عنوان مدیر ثبت نشد؛ یک بار از حساب خارج و دوباره وارد شوید.');
+    showToast('اعلانِ سفارشِ جدید روی این دستگاه فعال شد 🔔');
+    document.getElementById('apPushAsk')?.remove();
+  }catch(err){ showToast('فعال‌سازی ممکن نشد: ' + ((err && err.message) || err)); }
+  finally{ btn.disabled = false; refreshPushUI(); }
+}
+async function apAdminPushTestClick(){
+  pushStatus('در حال ارسال اعلان آزمایشی...');
+  try{
+    const r = await fetch(window.AP_API_URL + '?action=push_test', { method:'POST' }).then(r => r.json());
+    const t = r && r.success ? '✅ اعلان آزمایشی فرستاده شد؛ چند ثانیه‌ی دیگه روی گوشی میاد.' : ('ارسال نشد: ' + ((r && r.error) || 'خطای ناشناخته'));
+    pushStatus(t); showToast(t);
+  }catch(_){ pushStatus('اتصال به سرور ممکن نشد.'); }
+}
+document.getElementById('adminPushEnable')?.addEventListener('click', e => apAdminPushEnableClick(e.currentTarget));
+document.getElementById('adminPushTest')?.addEventListener('click', apAdminPushTestClick);
+document.getElementById('notifyDevEnable')?.addEventListener('click', e => apAdminPushEnableClick(e.currentTarget));
+document.getElementById('notifyDevTest')?.addEventListener('click', apAdminPushTestClick);
+
+/* ---- حساب کاربری ← اعلان‌ها (فقط مدیر): نوشتن و ارسالِ اعلان برای همه‌ی مشتری‌ها ---- */
+function apFaNum(n){ return Number(n || 0).toLocaleString('fa-IR'); }
+let notifyCounts = null;
+function loadNotifyStats(){
+  refreshPushUI();
+  const box = document.getElementById('notifyStats');
+  if(!box) return;
+  box.textContent = 'در حال بارگذاری...';
+  fetch(window.AP_API_URL + '?action=push_stats').then(r => r.json()).then(d => {
+    if(!d || !d.success){ box.textContent = (d && d.error) || 'دسترسی ممکن نشد؛ یک بار خارج و دوباره وارد شوید.'; return; }
+    notifyCounts = d.counts;
+    const last = d.last && d.last.broadcast;
+    box.innerHTML = `<div class="ns-row"><span class="ns-num">${apFaNum(d.counts.total)}</span><span>دستگاهِ مشترک</span></div>
+      <small>${apFaNum(d.counts.customer)} مشتری · ${apFaNum(d.counts.admin)} دستگاهِ مدیر</small>
+      ${last ? `<small>آخرین ارسال: ${new Date(last.at * 1000).toLocaleString('fa-IR', { dateStyle:'medium', timeStyle:'short' })} — ${apFaNum(last.sent)} از ${apFaNum(last.total)} دستگاه</small>` : ''}`;
+  }).catch(()=>{ box.textContent = 'اتصال به سرور ممکن نشد.'; });
+}
+function updateNotifyPreview(){
+  const t = (document.getElementById('notifyTitle')?.value || '').trim() || '{{SITE_NAME}}';
+  const b = (document.getElementById('notifyBody')?.value || '').trim() || 'متنِ اعلان اینجا نمایش داده می‌شه.';
+  const pt = document.getElementById('notifyPrevTitle'), pb = document.getElementById('notifyPrevBody');
+  if(pt) pt.textContent = t; if(pb) pb.textContent = b;
+}
+['notifyTitle', 'notifyBody'].forEach(id => document.getElementById(id)?.addEventListener('input', updateNotifyPreview));
+document.getElementById('notifyForm')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('notifySend'), res = document.getElementById('notifyResult');
+  const title = document.getElementById('notifyTitle').value.trim();
+  const body = document.getElementById('notifyBody').value.trim();
+  let url = document.getElementById('notifyUrl').value.trim();
+  if(!body){ showToast('متنِ اعلان رو بنویسید.'); return; }
+  if(url && !/^(https?:\/\/|\/)/i.test(url)) url = 'https://' + url;
+  const n = notifyCounts ? notifyCounts.total : 0;
+  if(!confirm(n ? `این اعلان برای ${apFaNum(n)} دستگاه فرستاده می‌شه. ارسال بشه؟` : 'اعلان برای همه‌ی دستگاه‌های مشترک فرستاده بشه؟')) return;
+  btn.classList.add('loading'); btn.disabled = true; res.textContent = '';
+  try{
+    const d = await fetch(window.AP_API_URL + '?action=push_broadcast', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title, body, url }) }).then(r => r.json());
+    if(d && d.success){
+      const r = d.result;
+      res.textContent = `✅ برای ${apFaNum(r.sent)} دستگاه از ${apFaNum(r.total)} فرستاده شد.` + (r.removed ? ` (${apFaNum(r.removed)} اشتراکِ منقضی حذف شد)` : '');
+      showToast('اعلان فرستاده شد 🔔');
+      document.getElementById('notifyBody').value = ''; updateNotifyPreview();
+      loadNotifyStats();
+    }else{ res.textContent = (d && d.error) || 'ارسال ناموفق بود.'; }
+  }catch(_){ res.textContent = 'اتصال به سرور ممکن نشد.'; }
+  finally{ btn.classList.remove('loading'); btn.disabled = false; }
+});
+
+/* با زدن روی اعلانِ سفارش، پنلِ سفارش‌ها مستقیم باز می‌شه */
+(function(){
+  const u = currentUser();
+  if(new URLSearchParams(location.search).get('ap_admin') === 'orders' && u && u.is_admin){
+    try{ const x = new URL(location.href); x.searchParams.delete('ap_admin'); history.replaceState(null, '', x.toString()); }catch(_){}
+    setTimeout(()=> openAdmin(), 300);
+  }
+})();
 document.getElementById('adminClose').addEventListener('click', closeAdmin);
 adminOverlay.addEventListener('click', e=>{ if(e.target===adminOverlay) closeAdmin(); });
 
 /* ---------------- تب مشتریان (فقط ادمین) ---------------- */
 let customersCache = [];
 document.querySelectorAll('.admin-tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    const ordersPane = document.getElementById('adminOrdersPane');
-    const customersPane = document.getElementById('adminCustomersPane');
-    if(tab.dataset.tab === 'customers'){
-      ordersPane.style.display = 'none';
-      customersPane.style.display = 'block';
-      loadCustomers();
-    }else{
-      ordersPane.style.display = 'block';
-      customersPane.style.display = 'none';
-    }
-  });
+  tab.addEventListener('click', ()=> showAdminTab(tab.dataset.tab));
+});
+
+/* ---------------- تبِ ادمین‌ها: رمز/شماره‌ی خودِ ادمین + ادمین‌های زیرمجموعه ---------------- */
+let adminPermLabels = null, adminListCache = [];
+function loadAdminsPane(){
+  const u = currentUser() || {};
+  document.getElementById('adminMeName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || 'حساب من';
+  document.getElementById('adminMeRole').textContent = u.is_owner ? 'مدیرِ کل — دسترسی به همه‌ی بخش‌ها' : ('ادمین — ' + (adminPerms(u).map(p => ADMIN_PERM_SHORT[p]).filter(Boolean).join('، ') || 'بدون دسترسی'));
+  document.getElementById('adminMePhone').value = u.phone || '';
+  ['adminMeNewPass', 'adminMeNewPass2', 'adminMeCurPass'].forEach(id => { document.getElementById(id).value = ''; });
+  const wp = document.getElementById('adminWpLink');
+  if(wp){ wp.style.display = adminCan('products', u) ? '' : 'none'; try{ wp.href = new URL('wp-admin/', new URL(HOME_URL, location.origin)).href; }catch(_){} }
+  document.getElementById('adminSubSection').style.display = u.is_owner ? '' : 'none';
+  document.getElementById('adminEditForm').style.display = 'none';
+  if(u.is_owner) loadAdminList();
+}
+function loadAdminList(){
+  const list = document.getElementById('adminSubList');
+  list.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:12px 0;">در حال بارگذاری...</p>';
+  fetch(window.AP_API_URL + '?action=admin_list').then(r => r.json()).then(d => {
+    if(!d || !d.success){ list.innerHTML = `<p style="text-align:center; color:var(--text-dim);">${escHtml((d && d.error) || 'دسترسی ممکن نشد؛ یک بار خارج و دوباره وارد شوید.')}</p>`; return; }
+    adminPermLabels = d.labels || adminPermLabels;
+    adminListCache = (d.admins || []).filter(a => !a.is_owner);
+    if(!adminListCache.length){ list.innerHTML = '<p style="text-align:center; color:var(--text-dim); font-size:13px; padding:8px 0;">هنوز ادمینِ زیرمجموعه‌ای اضافه نکردید.</p>'; return; }
+    list.innerHTML = adminListCache.map(a => `
+      <div class="adm-row">
+        <div class="adm-row-main">
+          <b>${escHtml(((a.firstName || '') + ' ' + (a.lastName || '')).trim() || 'ادمین')}</b>
+          <small class="adm-phone">${escHtml(a.phone)}</small>
+          <div class="adm-chips">${(a.perms || []).map(p => `<span class="adm-chip">${escHtml(ADMIN_PERM_SHORT[p] || p)}</span>`).join('')}</div>
+          <small>${a.last_login ? 'آخرین ورود: ' + new Date(a.last_login).toLocaleString('fa-IR', { dateStyle:'medium', timeStyle:'short' }) : 'هنوز وارد نشده'}</small>
+        </div>
+        <div class="adm-row-btns">
+          <button type="button" class="btn btn-ghost" data-adm-edit="${a.id}">ویرایش</button>
+          <button type="button" class="btn btn-ghost adm-del" data-adm-del="${a.id}">حذف</button>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('[data-adm-edit]').forEach(b => b.addEventListener('click', ()=> openAdminEdit(adminListCache.find(a => String(a.id) === b.dataset.admEdit))));
+    list.querySelectorAll('[data-adm-del]').forEach(b => b.addEventListener('click', ()=> removeAdmin(adminListCache.find(a => String(a.id) === b.dataset.admDel))));
+  }).catch(()=>{ list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">اتصال به سرور ممکن نشد.</p>'; });
+}
+function openAdminEdit(a){
+  const f = document.getElementById('adminEditForm');
+  document.getElementById('admEditId').value = a ? a.id : '';
+  document.getElementById('admEditTitle').textContent = a ? 'ویرایشِ ادمین' : 'ادمینِ جدید';
+  document.getElementById('admFirst').value = a ? (a.firstName || '') : '';
+  document.getElementById('admLast').value = a ? (a.lastName || '') : '';
+  document.getElementById('admPhone').value = a ? (a.phone || '') : '';
+  document.getElementById('admPass').value = '';
+  document.getElementById('admPass').placeholder = a ? 'خالی بذارید تا عوض نشه' : '';
+  document.getElementById('admPassLabel').textContent = a ? 'رمزِ جدید (اختیاری)' : 'رمزِ ورود (حداقل ۸ کاراکتر)';
+  const labels = adminPermLabels || ADMIN_PERM_SHORT;
+  const have = a ? (a.perms || []) : ['orders'];
+  const box = document.getElementById('admPerms');
+  box.innerHTML = Object.keys(labels).map(k => `<label class="adm-perm${have.includes(k) ? ' on' : ''}"><input type="checkbox" value="${k}"${have.includes(k) ? ' checked' : ''}><span>${escHtml(labels[k])}</span></label>`).join('');
+  box.querySelectorAll('input').forEach(inp => inp.addEventListener('change', ()=>{
+    /* «تغییرِ وضعیت» بدونِ «دیدنِ سفارش‌ها» معنی نداره */
+    const get = v => box.querySelector(`input[value="${v}"]`);
+    if(inp.value === 'order_status' && inp.checked && get('orders')) get('orders').checked = true;
+    if(inp.value === 'orders' && !inp.checked && get('order_status')) get('order_status').checked = false;
+    box.querySelectorAll('.adm-perm').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
+  }));
+  f.style.display = 'flex';
+  f.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+document.getElementById('adminAddBtn')?.addEventListener('click', ()=> openAdminEdit(null));
+document.getElementById('admCancel')?.addEventListener('click', ()=>{ document.getElementById('adminEditForm').style.display = 'none'; });
+document.getElementById('adminEditForm')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('admSave');
+  const id = document.getElementById('admEditId').value;
+  const payload = {
+    id: id ? Number(id) : 0,
+    firstName: document.getElementById('admFirst').value.trim(),
+    lastName: document.getElementById('admLast').value.trim(),
+    phone: document.getElementById('admPhone').value.replace(/[^0-9۰-۹]/g, '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)),
+    password: document.getElementById('admPass').value,
+    perms: [...document.querySelectorAll('#admPerms input:checked')].map(i => i.value),
+  };
+  if(!/^09\d{9}$/.test(payload.phone)){ showToast('شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.'); return; }
+  if(!id && payload.password.length < 8){ showToast('برای ادمینِ جدید یک رمز (حداقل ۸ کاراکتر) تعیین کنید.'); return; }
+  if(payload.password && payload.password.length < 8){ showToast('رمز باید حداقل ۸ کاراکتر باشد.'); return; }
+  if(!payload.perms.length){ showToast('حداقل یک دسترسی انتخاب کنید.'); return; }
+  btn.disabled = true;
+  try{
+    const d = await fetch(window.AP_API_URL + '?action=admin_save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r => r.json());
+    if(!d || !d.success){ showToast((d && d.error) || 'ذخیره نشد.'); return; }
+    document.getElementById('adminEditForm').style.display = 'none';
+    showToast(id ? 'ادمین به‌روزرسانی شد ✅' : 'ادمینِ جدید اضافه شد ✅');
+    loadAdminList();
+  }catch(_){ showToast('اتصال به سرور ممکن نشد.'); }
+  finally{ btn.disabled = false; }
+});
+async function removeAdmin(a){
+  if(!a) return;
+  const name = ((a.firstName || '') + ' ' + (a.lastName || '')).trim() || a.phone;
+  if(!confirm(`دسترسیِ ادمینِ «${name}» برداشته بشه؟ حسابش به یک مشتریِ معمولی برمی‌گرده.`)) return;
+  try{
+    const d = await fetch(window.AP_API_URL + '?action=admin_remove', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: a.id }) }).then(r => r.json());
+    showToast(d && d.success ? 'دسترسیِ ادمین برداشته شد.' : ((d && d.error) || 'انجام نشد.'));
+    loadAdminList();
+  }catch(_){ showToast('اتصال به سرور ممکن نشد.'); }
+}
+document.getElementById('adminMeForm')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const u = currentUser() || {};
+  const btn = document.getElementById('adminMeSave');
+  const phone = document.getElementById('adminMePhone').value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[^0-9]/g, '');
+  const p1 = document.getElementById('adminMeNewPass').value, p2 = document.getElementById('adminMeNewPass2').value;
+  const cur = document.getElementById('adminMeCurPass').value;
+  const phoneChanged = phone !== (u.phone || '');
+  if(!phoneChanged && !p1){ showToast('شماره یا رمزِ جدید رو وارد کنید.'); return; }
+  if(phoneChanged && !/^09\d{9}$/.test(phone)){ showToast('شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.'); return; }
+  if(p1 && p1.length < 8){ showToast('رمزِ جدید باید حداقل ۸ کاراکتر باشد.'); return; }
+  if(p1 !== p2){ showToast('رمزِ جدید و تکرارش یکی نیستن.'); return; }
+  if(!cur){ showToast('برای تأیید، رمزِ فعلی رو وارد کنید.'); document.getElementById('adminMeCurPass').focus(); return; }
+  btn.classList.add('loading'); btn.disabled = true;
+  try{
+    const d = await fetch(window.AP_API_URL + '?action=admin_update_me', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ currentPassword: cur, newPhone: phoneChanged ? phone : '', newPassword: p1 }) }).then(r => r.json());
+    if(!d || !d.success){ showToast((d && d.error) || 'ذخیره نشد.'); return; }
+    localStorage.setItem('ap_user', JSON.stringify(d.user));
+    showToast(phoneChanged ? 'ذخیره شد ✅ از این به بعد با شماره‌ی جدید وارد شوید.' : 'رمزِ جدید ذخیره شد ✅');
+    loadAdminsPane();
+  }catch(_){ showToast('اتصال به سرور ممکن نشد.'); }
+  finally{ btn.classList.remove('loading'); btn.disabled = false; }
 });
 
 function loadCustomers(){
@@ -4421,18 +5361,11 @@ function renderAdminOrders(){
     ).join('');
 
     return `<div class="order-wrap" data-order="${o.id}">
-      <div class="order-del-bg" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
-        حذف سفارش
-      </div>
       <div class="order-slide" data-order="${o.id}">
       <button type="button" class="admin-order-row" data-order="${o.id}" style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:13px 14px; background:transparent; border:none; text-align:right; cursor:pointer;">
         <span style="font-size:13px; font-weight:700;">#${o.id} — ${escHtml(o.customerName || '')}</span>
         <span style="display:flex; align-items:center; gap:8px;">
           <span class="order-status-badge st-${o.status}">${ORDER_STATUS_LABEL[o.status] || o.status}</span>
-          <span class="order-del-x" role="button" tabindex="0" data-del="${o.id}" aria-label="حذف سفارش">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px; transform:rotate(${open?90:0}deg); transition:transform .2s;"><path d="M9 6l6 6-6 6"/></svg>
         </span>
       </button>
@@ -4463,45 +5396,8 @@ function renderAdminOrders(){
     });
   });
 
-  list.querySelectorAll('.order-del-x').forEach(x=>{
-    x.addEventListener('click', e=>{ e.stopPropagation(); confirmDeleteOrder(Number(x.dataset.del)); });
-  });
 
-  /* کشیدنِ ردیف به چپ: نوارِ قرمزِ «حذف سفارش» پشتش پیدا می‌شه و اگه به‌اندازه‌ی کافی
-     کشیده بشه، پیامِ تأیید نشون داده می‌شه. */
-  list.querySelectorAll('.order-slide').forEach(slide=>{
-    let sx = 0, sy = 0, dx = 0, active = false, decided = false;
-    const reset = ()=>{ slide.classList.remove('dragging'); slide.style.transform = ''; dx = 0; };
-    slide.addEventListener('pointerdown', e=>{
-      if(e.pointerType === 'mouse' && e.button !== 0) return;
-      sx = e.clientX; sy = e.clientY; active = true; decided = false; dx = 0;
-    });
-    slide.addEventListener('pointermove', e=>{
-      if(!active) return;
-      const mx = e.clientX - sx, my = e.clientY - sy;
-      if(!decided){
-        if(Math.abs(mx) < 8 && Math.abs(my) < 8) return;
-        decided = true;
-        if(Math.abs(my) > Math.abs(mx)){ active = false; return; }   // اسکرولِ عمودی
-        slide.classList.add('dragging');
-        try{ slide.setPointerCapture(e.pointerId); }catch(_){}
-      }
-      dx = Math.min(0, Math.max(-150, mx));      // فقط به سمت چپ
-      slide.style.transform = `translateX(${dx}px)`;
-      e.preventDefault();
-    });
-    const finish = ()=>{
-      if(!active) return;
-      active = false;
-      if(dx < -80){
-        slide.style.transform = 'translateX(-150px)';
-        slide.classList.remove('dragging');
-        confirmDeleteOrder(Number(slide.dataset.order), reset);
-      }else{ reset(); }
-    };
-    slide.addEventListener('pointerup', finish);
-    slide.addEventListener('pointercancel', ()=>{ active = false; reset(); });
-  });
+  /* حذفِ سفارش غیرفعال شد: سفارش‌ها هیچ‌وقت پاک نمی‌شن (نه با دکمه، نه با کشیدنِ ردیف). */
   list.querySelectorAll('.order-action-btn, .order-stage-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> setOrderStatus(Number(btn.dataset.order), btn.dataset.status));
   });
@@ -4511,7 +5407,7 @@ function renderAdminOrders(){
     btn.addEventListener('click', ()=>{
       const user = currentUser();
       if(!user) return;
-      const url = window.AP_API_URL + '?action=invoice&order_id=' + encodeURIComponent(btn.dataset.order) + '&requesterId=' + encodeURIComponent(user.id);
+      const url = window.AP_API_URL + '?action=invoice&order_id=' + encodeURIComponent(btn.dataset.order) + '&requesterId=' + encodeURIComponent(user.id) + (adminToken() ? '&t=' + encodeURIComponent(adminToken()) : '');
       window.open(url, '_blank');
     });
   });
@@ -5037,10 +5933,15 @@ if(stage){
   /* ---------- بالا آمدنِ نوار همراه با کیبوردِ موبایل ---------- */
   if(window.visualViewport){
     const vv = window.visualViewport;
+    /* نوار همیشه پایینِ صفحه پین می‌مونه؛ فقط وقتی کیبورد واقعاً باز است (فیلدی در حال
+       تایپه) بالا میاد. قبلاً جمع/باز شدنِ نوارِ آدرسِ سافاری موقعِ اسکرول هم نوار رو جابه‌جا می‌کرد. */
     const onVV = ()=>{
+      const ae = document.activeElement;
+      const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
       const hidden = window.innerHeight - vv.height - vv.offsetTop;
-      dock.style.setProperty('--kb', (hidden > 60 ? -hidden : 0) + 'px');
+      dock.style.setProperty('--kb', (typing && hidden > 120 ? -hidden : 0) + 'px');
     };
+    document.addEventListener('focusout', ()=> setTimeout(onVV, 50));
     vv.addEventListener('resize', onVV);
     vv.addEventListener('scroll', onVV);
   }
@@ -5059,12 +5960,27 @@ if(stage){
       <svg class="account-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>`;
     adminItem.addEventListener('click', ()=>{ closeAccount(); openAdmin(); });
     accMenu.insertBefore(adminItem, accMenu.firstChild);
+    /* اعلان‌ها: نوشتن و ارسالِ اعلان برای همه‌ی مشتری‌هایی که اجازه‌ی اعلان دادن */
+    const notifyItem = document.createElement('button');
+    notifyItem.type = 'button';
+    notifyItem.className = 'account-menu-item';
+    notifyItem.id = 'accountNotifyEntry';
+    notifyItem.style.display = 'none';
+    notifyItem.innerHTML = `
+      <span class="account-menu-ic">${AP_BELL_SVG}</span>
+      <span class="account-menu-text"><b>اعلان‌ها</b><small>ارسالِ اعلان برای همه‌ی مشتری‌ها</small></span>
+      <svg class="account-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>`;
+    notifyItem.addEventListener('click', ()=> showAccountPane('notify'));
+    accMenu.insertBefore(notifyItem, adminItem.nextSibling);
+    const prevIc = document.getElementById('notifyPrevIcon');
+    if(prevIc){ try{ prevIc.src = new URL('icons/icon-192.png', new URL(window.AP_API_URL, location.href)).href; }catch(_){} }
     const accOv = document.getElementById('accountOverlay');
     if(accOv){
       new MutationObserver(()=>{
         if(accOv.classList.contains('open')){
           const u = currentUser();
           adminItem.style.display = (u && u.is_admin) ? '' : 'none';
+          notifyItem.style.display = (u && u.is_admin && adminCan('notify', u)) ? '' : 'none';
         }
       }).observe(accOv, { attributes:true, attributeFilter:['class'] });
     }
@@ -5079,6 +5995,18 @@ if(stage){
       history.replaceState(null, '', u.toString());
     }catch(_){}
   }
+
+  /* ---------- آدرس‌های اختصاصی: /cart/ ، /checkout/ ، /my-account/ ، /shop/ ---------- */
+  (function(){
+    let seg = '';
+    try{
+      const base = new URL(HOME_URL, location.origin).pathname;
+      seg = decodeURIComponent(location.pathname.slice(base.length)).replace(/^\/+|\/+$/g, '');
+    }catch(_){}
+    if(seg === 'cart' || seg === 'checkout'){ openDrawer(); }
+    else if(seg === 'my-account'){ try{ history.replaceState(null, '', HOME_URL); }catch(_){} openAccount(); }
+    else if(seg === 'shop'){ setTimeout(()=> document.getElementById('products')?.scrollIntoView({behavior:'smooth'}), 300); }
+  })();
 
   syncFromState();
 })();
@@ -5333,8 +6261,71 @@ function fillDealTicker(){
   function scan(){ document.querySelectorAll('.reco-track').forEach(bind); }
   scan();
   // ردیف‌ها بعد از رسیدنِ محصولات/مقالات ساخته می‌شن؛ هر تغییری تو صفحه دوباره بررسی می‌شه
-  new MutationObserver(()=> requestAnimationFrame(scan)).observe(document.body, { childList:true, subtree:true });
+  let scanQueued = false;
+  new MutationObserver(()=>{ if(scanQueued) return; scanQueued = true; requestAnimationFrame(()=>{ scanQueued = false; scan(); }); }).observe(document.body, { childList:true, subtree:true });
   window.addEventListener('resize', scan);
+})();
+
+/* دکمه‌های فلش چپ/راست روی همه‌ی ردیف‌های اسکرولی؛ هر فلش فقط وقتی دیده می‌شه که اون طرف
+   هنوز محتوا باشه. scrollBy با جهتِ فیزیکی کار می‌کنه، پس در راست‌به‌چپ هم درسته. */
+(function pauseBgWhileScrolling(){
+  if(!window.matchMedia || !matchMedia('(pointer:coarse)').matches) return;
+  const root = document.documentElement; let t = null;
+  window.addEventListener('scroll', ()=>{
+    if(!t) root.classList.add('ap-scrolling');
+    clearTimeout(t);
+    t = setTimeout(()=>{ root.classList.remove('ap-scrolling'); t = null; }, 180);
+  }, { passive:true });
+})();
+(function scrollArrows(){
+  const SEL = '.reco-track, .articles-row';
+  const ICON = { left:'<path d="M15 5l-7 7 7 7"/>', right:'<path d="M9 5l7 7-7 7"/>' };
+  function attach(row){
+    if(row.dataset.saInit) return;
+    row.dataset.saInit = '1';
+    const wrap = document.createElement('div');
+    wrap.className = 'sa-wrap';
+    row.parentNode.insertBefore(wrap, row);
+    wrap.appendChild(row);
+    const btn = {};
+    ['left','right'].forEach(side=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sa-btn sa-' + side;
+      b.setAttribute('aria-label', side === 'left' ? 'نمایش موارد سمت چپ' : 'نمایش موارد سمت راست');
+      b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ICON[side]}</svg>`;
+      b.addEventListener('click', ()=>{
+        row.dispatchEvent(new Event('wheel'));   /* اسکرولِ خودکارِ مقالات چند ثانیه متوقف بشه */
+        /* هر کلیک دقیقاً یک باکس (عرضِ یک کارت + فاصله‌ی بینشون) */
+        const card = row.firstElementChild;
+        const gap = parseFloat(getComputedStyle(row).columnGap || getComputedStyle(row).gap) || 16;
+        const amt = card ? card.getBoundingClientRect().width + gap : 220;
+        row.scrollBy({ left: side === 'left' ? -amt : amt, behavior:'smooth' });
+      });
+      wrap.appendChild(b);
+      btn[side] = b;
+    });
+    /* به‌جای عددِ scrollLeft (که با padding و اسنپ چند پیکسل جابه‌جا می‌شه)، جای واقعیِ
+       اولین و آخرین کارت نسبت به لبه‌های ردیف سنجیده می‌شه */
+    const update = ()=>{
+      const kids = row.children;
+      if(!kids.length){ btn.left.classList.remove('show'); btn.right.classList.remove('show'); return; }
+      const box = row.getBoundingClientRect();
+      let minL = Infinity, maxR = -Infinity;
+      for(const k of kids){ const r = k.getBoundingClientRect(); if(r.width){ minL = Math.min(minL, r.left); maxR = Math.max(maxR, r.right); } }
+      const pad = 12;
+      btn.left.classList.toggle('show', minL < box.left - pad);
+      btn.right.classList.toggle('show', maxR > box.right + pad);
+    };
+    row.addEventListener('scroll', update, { passive:true });
+    row.addEventListener('scrollend', update);
+    window.addEventListener('resize', update);
+    update(); setTimeout(update, 400); setTimeout(update, 1500);
+  }
+  const scan = ()=> document.querySelectorAll(SEL).forEach(attach);
+  scan();
+  let scanQueued = false;
+  new MutationObserver(()=>{ if(scanQueued) return; scanQueued = true; requestAnimationFrame(()=>{ scanQueued = false; scan(); }); }).observe(document.body, { childList:true, subtree:true });
 })();
 </script>
 </body>

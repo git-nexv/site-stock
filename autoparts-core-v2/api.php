@@ -10,7 +10,19 @@
  *   دوباره‌ی قالب پاک نشه.
  */
 
+/* سرویس‌ورکرِ اعلان‌ها: از همین فایل (که همیشه مستقیم به PHP می‌رسه) سرو می‌شه؛ فایلِ
+   .js در ریشه‌ی سایت روی بعضی هاست‌ها/CDNها اصلاً به وردپرس نمی‌رسید و ثبت نمی‌شد */
+if (($_GET['action'] ?? '') === 'sw' && file_exists(__DIR__ . '/push-lib.php')) {
+    require_once __DIR__ . '/push-lib.php';
+    ap_pl_serve_sw();
+}
+
 header('Content-Type: application/json; charset=utf-8');
+/* فشرده‌سازیِ پاسخ‌ها (لیست محصولات چند صد کیلوبایته؛ با gzip چند برابر کوچیک‌تر و سریع‌تر روی موبایل) */
+if (!ini_get('zlib.output_compression') && extension_loaded('zlib') && stripos((string) ($_SERVER['HTTP_ACCEPT_ENCODING'] ?? ''), 'gzip') !== false
+    && in_array($_GET['action'] ?? '', ['products', 'categories', 'articles', 'list_orders', 'list_customers', 'list_my_orders'], true)) {
+    ob_start('ob_gzhandler');
+}
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -34,10 +46,20 @@ function ap_boot_wp() {
     $done = true;
 }
 
+/* هشِ رمز با هزینه‌ی صریحِ ۱۰ (سریع ولی امن)؛ رمزهای قدیمی بعد از اولین ورود بازنویسی می‌شن */
+define('AP_PW_COST', 10);
+function ap_hash_password($password) {
+    return password_hash((string) $password, PASSWORD_BCRYPT, ['cost' => AP_PW_COST]);
+}
+function ap_password_needs_rehash($hash) {
+    return password_needs_rehash((string) $hash, PASSWORD_BCRYPT, ['cost' => AP_PW_COST]);
+}
+
 /* اکشن‌های سبک: بدون وردپرس اجرا می‌شن */
 $AP_LIGHT_ACTIONS = [
     'register', 'login', 'logout', 'config', 'google_login',
     'update_profile', 'add_address', 'update_address', 'delete_address', 'list_my_orders',
+    'push_subscribe', 'push_unsubscribe', 'push_pull',
 ];
 $ap_action_early = $_GET['action'] ?? '';
 if ($ap_action_early === '' || !in_array($ap_action_early, $AP_LIGHT_ACTIONS, true)) {
@@ -186,6 +208,8 @@ function ap_wp_products() {
             'url'   => get_permalink($p->ID),
             'image' => $gallery[0] ?? ($img ?: null),
             'images' => $gallery,
+            /* نسخه‌ی کوچیک‌ترِ همون عکس برای کارت‌ها (۷۶۸px به‌جای ۱۰۲۴px)؛ روی گوشی سریع‌تر لود می‌شه */
+            'thumb' => function_exists('ap_card_thumb_url') ? (ap_card_thumb_url($p->ID) ?: ($gallery[0] ?? ($img ?: null))) : null,
             'shortDesc' => (string) get_post_meta($p->ID, '_ap_short_desc', true),
             'colors' => array_values(array_filter(array_map('trim', explode(',', (string) get_post_meta($p->ID, '_ap_colors', true))))),
             'storages' => array_values(array_filter(array_map('trim', explode(',', (string) get_post_meta($p->ID, '_ap_storages', true))))),
@@ -373,8 +397,46 @@ $LATEST_JSON  = $BACKUP_DIR . '/latest.json';
 $MAX_BACKUPS  = 30;
 
 if (!is_dir($DATA_DIR))     { @mkdir($DATA_DIR, 0775, true); }
+if (file_exists(__DIR__ . '/push-lib.php')) require_once __DIR__ . '/push-lib.php';
 if (!is_dir($BACKUP_DIR))   { @mkdir($BACKUP_DIR, 0775, true); }
 if (!is_dir($RECEIPTS_DIR)) { @mkdir($RECEIPTS_DIR, 0775, true); }
+
+/* =========================================================================
+ * آرشیوِ دائمیِ سفارش‌ها (هیچ‌وقت پاک نمی‌شه)
+ * هر سفارش، جدا از db.json، در یک فایلِ مستقل (order-<id>.json) و یک دفترِ فقط‌افزودنی
+ * (orders-log.jsonl) هم ذخیره می‌شه. اگه db.json به هر دلیلی خراب/خالی بشه، سفارش‌ها
+ * در اولین درخواست از همین آرشیو برمی‌گردن. تاریخِ ثبتِ سفارش هیچ‌وقت عوض نمی‌شه.
+ * ========================================================================= */
+$ARCHIVE_DIR = $DATA_DIR . '/orders-archive';
+if (!is_dir($ARCHIVE_DIR)) { @mkdir($ARCHIVE_DIR, 0775, true); }
+if (!file_exists($ARCHIVE_DIR . '/.htaccess')) {
+    @file_put_contents($ARCHIVE_DIR . '/.htaccess', "Require all denied\n<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n");
+}
+function ap_archive_order($dir, $order, $event = 'save') {
+    if (!$dir || !is_dir($dir) || empty($order['id'])) return;
+    $file = $dir . '/order-' . (int) $order['id'] . '.json';
+    if (file_exists($file)) {
+        $prev = json_decode((string) @file_get_contents($file), true);
+        /* اگه با همین شماره سفارشِ دیگه‌ای (با تاریخِ ثبتِ متفاوت) آرشیو شده، روش نوشته نمی‌شه */
+        if (is_array($prev) && !empty($prev['created_at']) && !empty($order['created_at']) && $prev['created_at'] !== $order['created_at']) {
+            $file = $dir . '/order-' . (int) $order['id'] . '-' . preg_replace('/\D/', '', $order['created_at']) . '.json';
+        } elseif (is_array($prev) && !empty($prev['created_at'])) {
+            $order['created_at'] = $prev['created_at'];   // تاریخِ ثبت همیشه همون اولی می‌مونه
+        }
+    }
+    $json = json_encode($order, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $tmp = $file . '.tmp';
+    if (@file_put_contents($tmp, $json, LOCK_EX) !== false) { @rename($tmp, $file); }
+    @file_put_contents($dir . '/orders-log.jsonl', json_encode(['event' => $event, 'at' => date('c'), 'order' => $order], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+}
+function ap_archived_orders($dir) {
+    $out = [];
+    foreach ((array) glob($dir . '/order-*.json') as $f) {
+        $o = json_decode((string) @file_get_contents($f), true);
+        if (is_array($o) && !empty($o['id'])) $out[] = $o;
+    }
+    return $out;
+}
 
 /* جلوگیری از دسترسیِ مستقیمِ وب به دیتابیس و بکاپ‌ها (که شاملِ رمزها و آدرس‌ها هستن).
    فایل‌های رسید عکس (png/jpg) هستن و همچنان برای مدیر قابل نمایش می‌مونن. روی هاست‌های
@@ -407,6 +469,31 @@ function ap_gregorian_to_jalali($gy, $gm, $gd) {
     return [$jy, $jm, $jd];
 }
 
+/* کلیدِ سبد («<id>::c:رنگ::s:حجم::x:برچسب=مقدار») رو می‌خونه و اگه اون ترکیب قیمتِ
+   اختصاصی داشته باشه برمی‌گردونه. ترتیبِ مقدارها همونیه که سمتِ مرورگر ساخته می‌شه:
+   [رنگ، حجم، مقدارِ گروه‌ها به ترتیب]، و با «|~|» به هم می‌چسبن. */
+function ap_variant_price_from_cart_key($cartKey, $variantPrices) {
+    if (!is_array($variantPrices) || !$variantPrices) return 0;
+    $parts = explode('::', (string) $cartKey);
+    array_shift($parts);
+    $color = ''; $storage = ''; $extras = [];
+    foreach ($parts as $part) {
+        if (strpos($part, 'c:') === 0)      { $color   = urldecode(substr($part, 2)); }
+        elseif (strpos($part, 's:') === 0)  { $storage = urldecode(substr($part, 2)); }
+        elseif (strpos($part, 'x:') === 0) {
+            $raw = substr($part, 2);
+            $eq  = strpos($raw, '=');
+            if ($eq !== false) $extras[] = urldecode(substr($raw, $eq + 1));
+        }
+    }
+    $values = array_merge([$color, $storage], $extras);
+    $key = implode('|~|', array_map(function ($v) { return trim((string) $v); }, $values));
+    if (isset($variantPrices[$key])) return (int) $variantPrices[$key];
+    $n = ap_norm_variant_key($key);
+    foreach ($variantPrices as $k => $v) { if (ap_norm_variant_key($k) === $n && (int) $v > 0) return (int) $v; }
+    return 0;
+}
+
 function json_fail($msg, $code = 400) {
     http_response_code($code);
     echo json_encode(['success' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
@@ -434,6 +521,7 @@ function default_db() {
                 'google_id' => null,
                 'password_hash' => null,
                 'is_admin' => true,
+                'is_owner' => true,
                 'addresses' => [],
                 'created_at' => date('c'),
             ],
@@ -502,6 +590,9 @@ function save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $data, $ligh
     if (time() - $lastBackup < 600) { return; }   // حداکثر هر ۱۰ دقیقه یک بکاپ
 
     file_put_contents($BACKUP_DIR . '/backup-' . date('Ymd-His') . '.json', $json);
+    /* یک نسخه‌ی روزانه که هیچ‌وقت پاک نمی‌شه (نسخه‌های بالا فقط ۳۰تای آخر نگه داشته می‌شن) */
+    $daily = $BACKUP_DIR . '/daily-' . date('Ymd') . '.json';
+    file_put_contents($daily, $json);
     file_put_contents($stamp, (string) time());
 
     $files = glob($BACKUP_DIR . '/backup-*.json');
@@ -513,21 +604,105 @@ function save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $data, $ligh
 }
 
 function public_user($u) {
+    unset($u['admin_tokens']);
     unset($u['password_hash']);
     unset($u['password_plain']);
+    if (!empty($u['is_admin'])) { $u['perms'] = ap_admin_perms($u); $u['is_owner'] = !empty($u['is_owner']); }
+    else { unset($u['perms'], $u['is_owner']); }
     return $u;
 }
 
-/* بررسی دسترسیِ مدیر: فقط سشنِ واقعیِ مدیرِ وردپرس (که هنگام ورودِ مالک از فرم
-   سایت به‌صورت خودکار ساخته می‌شه) اجازه‌ی اکشن‌های مدیریتی رو داره. قبلاً این
-   بررسی فقط با requesterId ای بود که از سمت مرورگر فرستاده می‌شد و هرکسی می‌تونست
-   جعلش کنه؛ حالا سمتِ سرور و غیرقابل‌جعله. */
-function ap_require_admin($cap = 'manage_options') {
-    ap_boot_wp();
-    if (!(function_exists('current_user_can') && (current_user_can('manage_options') || current_user_can($cap)))) {
-        json_fail('دسترسی غیرمجاز.', 403);
-    }
+/* ---------------------------------------------------------------------------
+   مدیرها: یک «مدیرِ کل» (مالکِ سایت، is_owner) و هر تعداد ادمینِ زیرمجموعه که
+   مدیرِ کل برای هرکدوم مشخص می‌کنه به چه بخش‌هایی دسترسی داشته باشه. همه‌ی
+   بررسی‌ها سمتِ سرور انجام می‌شه (با توکنِ ۹۰ روزه‌ی هر ادمین).
+--------------------------------------------------------------------------- */
+function ap_admin_perm_labels() {
+    return [
+        'orders'       => 'دیدنِ سفارش‌ها، رسیدها و فاکتورها (+ اعلانِ سفارشِ جدید)',
+        'order_status' => 'تغییرِ وضعیتِ سفارش‌ها',
+        'customers'    => 'دیدنِ لیستِ مشتری‌ها',
+        'notify'       => 'ارسالِ اعلان برای مشتری‌ها',
+        'products'     => 'مدیریتِ محصولات، دسته‌ها و مقالات (پیشخوانِ وردپرس)',
+    ];
 }
+function ap_admin_perms($u) {
+    $all = array_keys(ap_admin_perm_labels());
+    if (!empty($u['is_owner'])) return $all;
+    if (empty($u['is_admin'])) return [];
+    /* ادمین‌های قدیمی (قبل از اضافه‌شدنِ سطحِ دسترسی) همون دسترسیِ کاملِ قبلی رو دارن */
+    if (!isset($u['perms']) || !is_array($u['perms'])) return $all;
+    return array_values(array_intersect($all, $u['perms']));
+}
+/* ادمینی که این درخواست رو فرستاده (از روی توکن)، یا null */
+function ap_admin_user() {
+    global $db;
+    $token = (string) ($_SERVER['HTTP_X_AP_ADMIN'] ?? $_GET['t'] ?? '');
+    if ($token === '' || !is_array($db) || empty($db['users'])) return null;
+    $h = hash('sha256', $token);
+    foreach ($db['users'] as $u) {
+        if (empty($u['is_admin'])) continue;
+        foreach ((array) ($u['admin_tokens'] ?? []) as $t) {
+            if (($t['exp'] ?? 0) > time() && hash_equals((string) ($t['h'] ?? ''), $h)) return $u;
+        }
+    }
+    return null;
+}
+function ap_admin_token_valid() { return ap_admin_user() !== null; }
+function ap_owner_user() {
+    global $db;
+    foreach ((array) ($db['users'] ?? []) as $u) { if (!empty($u['is_owner'])) return $u; }
+    return null;
+}
+function ap_user_index($id) {
+    global $db;
+    foreach ($db['users'] as $i => $u) { if ((int) $u['id'] === (int) $id) return $i; }
+    return null;
+}
+function ap_phone_taken($phone, $exceptId = 0) {
+    global $db;
+    foreach ($db['users'] as $u) { if (($u['phone'] ?? '') === $phone && (int) $u['id'] !== (int) $exceptId) return true; }
+    return false;
+}
+
+/* بررسی دسترسی. $perm: null = هر ادمینی، 'owner' = فقط مدیرِ کل، یا یکی از کلیدهای ap_admin_perm_labels.
+   سشنِ واقعیِ مدیرِ وردپرس (manage_options) هم مثلِ مدیرِ کل حساب می‌شه. */
+function ap_require_admin($perm = null) {
+    $u = ap_admin_user();
+    if ($u) {
+        if ($perm === null) return $u;
+        if ($perm === 'owner') { if (!empty($u['is_owner'])) return $u; json_fail('این بخش فقط برای مدیرِ کلِ سایته.', 403); }
+        if (in_array($perm, ap_admin_perms($u), true)) return $u;
+        json_fail('شما به این بخش دسترسی ندارید؛ از مدیرِ کلِ سایت بخواهید دسترسی رو براتون فعال کنه.', 403);
+    }
+    ap_boot_wp();
+    if (function_exists('current_user_can') && current_user_can('manage_options')) {
+        return ap_owner_user() ?: ['id' => 0, 'is_admin' => true, 'is_owner' => true];
+    }
+    json_fail('دسترسی غیرمجاز. لطفاً یک بار از حساب خارج و دوباره وارد شوید.', 403);
+}
+
+/* ---------------------------------------------------------------------------
+   توکنِ مدیر: قبلاً دسترسیِ مدیر فقط به سشنِ وردپرس وابسته بود که بعد از ۱۴ روز
+   منقضی می‌شد؛ مدیر هنوز در سایت «وارد» دیده می‌شد ولی سفارش‌ها نمیومدن. حالا
+   هنگامِ ورودِ مدیر یک توکنِ تصادفیِ ۹۰ روزه ساخته می‌شه (فقط هش‌اش ذخیره می‌شه)
+   و مرورگرِ مدیر اون رو همراهِ درخواست‌های مدیریتی می‌فرسته؛ غیرقابل‌جعله.
+--------------------------------------------------------------------------- */
+function ap_issue_admin_token(&$db, $userId) {
+    $token = bin2hex(random_bytes(24));
+    foreach ($db['users'] as &$u) {
+        if ((int) $u['id'] !== (int) $userId) continue;
+        $list = array_values(array_filter((array) ($u['admin_tokens'] ?? []), function ($t) { return ($t['exp'] ?? 0) > time(); }));
+        $list[] = ['h' => hash('sha256', $token), 'exp' => time() + 90 * DAY_SECONDS_AP];
+        $u['admin_tokens'] = array_slice($list, -10);
+        $u['last_login'] = date('c');
+        break;
+    }
+    unset($u);
+    return $token;
+}
+define('DAY_SECONDS_AP', 86400);
+/* رمزِ مدیرِ کل (فقط هشِ bcrypt نگه داشته می‌شه، نه خودِ رمز) */
 
 $db = read_db($DB_FILE, $LATEST_JSON);
 
@@ -541,6 +716,28 @@ if (!isset($db['next_order_id'])) {
     $db_dirty = true;
 }
 if (!isset($db['next_address_id'])) { $db['next_address_id'] = 1; $db_dirty = true; }
+
+/* بازیابیِ خودکار: هر سفارشی که در آرشیو هست ولی در db.json نیست، برگردونده می‌شه */
+$ap_arch_files = (array) glob($ARCHIVE_DIR . '/order-*.json');
+if (count($ap_arch_files) > count($db['orders'])) {
+    $have = [];
+    foreach ($db['orders'] as $o) { $have[(int) $o['id'] . '|' . ($o['created_at'] ?? '')] = true; }
+    foreach (ap_archived_orders($ARCHIVE_DIR) as $ao) {
+        if (!isset($have[(int) $ao['id'] . '|' . ($ao['created_at'] ?? '')])) { $db['orders'][] = $ao; $db_dirty = true; }
+    }
+    usort($db['orders'], function ($a, $b) { return strcmp((string) ($a['created_at'] ?? ''), (string) ($b['created_at'] ?? '')) ?: ((int) $a['id'] <=> (int) $b['id']); });
+}
+$ap_max_order = 0;
+foreach ($db['orders'] as $o) { $ap_max_order = max($ap_max_order, (int) ($o['id'] ?? 0)); }
+foreach ($ap_arch_files as $f) { if (preg_match('/order-(\d+)/', basename($f), $m)) $ap_max_order = max($ap_max_order, (int) $m[1]); }
+if ((int) $db['next_order_id'] <= $ap_max_order) { $db['next_order_id'] = $ap_max_order + 1; $db_dirty = true; }
+/* سفارش‌هایی که قبل از اضافه‌شدنِ آرشیو ثبت شدن، یک‌بار آرشیو می‌شن */
+if (count((array) glob($ARCHIVE_DIR . '/order-*.json')) < count($db['orders'])) {
+    foreach ($db['orders'] as $o) {
+        if (!file_exists($ARCHIVE_DIR . '/order-' . (int) $o['id'] . '.json')) ap_archive_order($ARCHIVE_DIR, $o, 'backfill');
+    }
+}
+unset($ap_arch_files, $ap_max_order);
 
 foreach ($db['users'] as &$u) {
     if (!isset($u['addresses']) || !is_array($u['addresses'])) {
@@ -562,8 +759,44 @@ foreach ($db['users'] as &$u) {
 }
 unset($u);
 
-/* ادمین‌ها (مالک و زیرمجموعه‌ها) از پیشخوان ← مدیریت ادمین‌ها تعیین می‌شن و staff.php
-   فهرستشون رو با فیلد wp_user_id توی همین دیتابیس همگام نگه می‌داره. */
+/* مدیرِ کل (مالکِ سایت): یک‌بار با شماره‌ی 09109973428 مشخص می‌شه و از اون به بعد با
+   علامتِ is_owner شناخته می‌شه؛ پس اگه شماره یا رمزش رو از پنل عوض کنه، دیگه هیچ حسابِ
+   پیش‌فرضی با شماره‌ی قبلی ساخته نمی‌شه. اگه مدیرِ کل هنوز رمزِ سایت نداره، اولین ورودش
+   با رمزِ حسابِ وردپرسش انجام می‌شه (پایینِ case 'login'). */
+$ADMIN_PHONE = '09109973428';
+if (!isset($db['migrations']) || !is_array($db['migrations'])) { $db['migrations'] = []; }
+$ownerIdx = null;
+foreach ($db['users'] as $i => $u) { if (!empty($u['is_owner'])) { $ownerIdx = $i; break; } }
+if ($ownerIdx === null) {
+    foreach ($db['users'] as $i => $u) { if (($u['phone'] ?? '') === $ADMIN_PHONE && !empty($u['is_admin'])) { $ownerIdx = $i; break; } }
+    if ($ownerIdx === null) foreach ($db['users'] as $i => $u) { if (($u['phone'] ?? '') === $ADMIN_PHONE) { $ownerIdx = $i; break; } }
+    if ($ownerIdx !== null) { $db['users'][$ownerIdx]['is_owner'] = true; $db_dirty = true; }
+}
+if ($ownerIdx === null) {
+    $db['users'][] = [
+        'id' => $db['next_user_id'],
+        'firstName' => 'مدیر',
+        'lastName' => 'سایت',
+        'phone' => $ADMIN_PHONE,
+        'email' => null,
+        'google_id' => null,
+        'password_hash' => null,
+        'is_admin' => true,
+        'is_owner' => true,
+        'addresses' => [],
+        'created_at' => date('c'),
+    ];
+    $db['next_user_id']++;
+    $ownerIdx = count($db['users']) - 1;
+    $db_dirty = true;
+}
+if (empty($db['users'][$ownerIdx]['is_admin'])) { $db['users'][$ownerIdx]['is_admin'] = true; $db_dirty = true; }
+/* سیستمِ قبلیِ ادمین‌ها (staff.php) روی ادمین‌ها علامتِ is_staff می‌ذاشت؛ دیگه لازم نیست */
+foreach ($db['users'] as &$u) {
+    if (!empty($u['is_admin']) && isset($u['password_plain'])) { unset($u['password_plain']); $db_dirty = true; }
+    if (isset($u['is_staff'])) { unset($u['is_staff']); $db_dirty = true; }
+}
+unset($u, $ownerIdx);
 if ($db_dirty) { save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db, true); }
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -603,7 +836,7 @@ switch ($action) {
     }
 
     case 'add_product': {
-        ap_require_admin();
+        ap_require_admin('products');
         $p = $input;
         if (empty($p['title']) || !isset($p['price'])) json_fail('عنوان و قیمت الزامی است.');
         $id = $p['id'] ?? ('p' . substr(md5(uniqid('', true)), 0, 8));
@@ -618,7 +851,7 @@ switch ($action) {
     }
 
     case 'update_product': {
-        ap_require_admin();
+        ap_require_admin('products');
         $p = $input;
         if (empty($p['id'])) json_fail('شناسه‌ی محصول الزامی است.');
         foreach ($db['products'] as &$row) {
@@ -636,7 +869,7 @@ switch ($action) {
     }
 
     case 'delete_product': {
-        ap_require_admin();
+        ap_require_admin('products');
         $id = $input['id'] ?? $_GET['id'] ?? '';
         if (!$id) json_fail('شناسه‌ی محصول الزامی است.');
         $db['products'] = array_values(array_filter($db['products'], function ($row) use ($id) { return $row['id'] !== $id; }));
@@ -694,22 +927,48 @@ switch ($action) {
                 if ($u['phone'] === $phoneDigits) { $found = $u; break; }
             }
         }
-        /* ادمین‌ها: رمز با حساب وردپرسِ خودشون چک می‌شه و سشن وردپرس هم براشون باز می‌شه.
-           کاربرِ عادی اصلاً وردپرس رو لود نمی‌کنه. */
-        $staffId = $found ? (int) ($found['wp_user_id'] ?? 0) : 0;
-        if ($staffId) {
+        /* ادمین‌هایی که هنوز رمزِ سایت ندارن (مدیرِ کل یا ادمین‌های منتقل‌شده از سیستمِ قبلیِ
+           پیشخوان): رمز با حسابِ وردپرسشون چک می‌شه و همون لحظه به‌عنوان رمزِ سایت ذخیره می‌شه. */
+        if ($found && !empty($found['is_admin']) && empty($found['password_hash'])) {
             ap_boot_wp();
-            $wpUser = function_exists('get_user_by') ? get_user_by('id', $staffId) : null;
-            $ok = $wpUser && wp_check_password($password, $wpUser->user_pass, $wpUser->ID)
-                && (user_can($wpUser, 'manage_options') || in_array('ap_staff', (array) $wpUser->roles, true));
-            if (!$ok) json_fail('شماره موبایل/ایمیل یا رمز عبور اشتباه است.', 401);
-            wp_clear_auth_cookie();
-            wp_set_current_user($wpUser->ID);
-            wp_set_auth_cookie($wpUser->ID, true);
-        } elseif (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash'])) {
+            $wpUser = null;
+            if (function_exists('get_user_by')) {
+                if (!empty($found['wp_user_id'])) $wpUser = get_user_by('id', (int) $found['wp_user_id']);
+                if (!$wpUser && !empty($found['is_owner'])) $wpUser = get_user_by('login', get_option('ap_owner_wp_login') ?: $found['phone']);
+            }
+            if ($wpUser && wp_check_password($password, $wpUser->user_pass, $wpUser->ID)) {
+                $found['password_hash'] = ap_hash_password($password);
+                foreach ($db['users'] as &$uRef) {
+                    if ((int) $uRef['id'] === (int) $found['id']) { $uRef['password_hash'] = $found['password_hash']; break; }
+                }
+                unset($uRef);
+                save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+            }
+        }
+        if (!$found || empty($found['password_hash']) || !password_verify($password, $found['password_hash'])) {
             json_fail('شماره موبایل/ایمیل یا رمز عبور اشتباه است.', 401);
         }
-        echo json_encode(['success' => true, 'user' => public_user($found)], JSON_UNESCAPED_UNICODE);
+        /* حساب‌هایی که با هزینه‌ی قبلی (cost=12) ساخته شدن، همون یک‌بار بعد از
+           ورودِ موفق با هزینه‌ی جدید بازنویسی می‌شن؛ از ورودِ بعدی به بعد سریعه. */
+        if (ap_password_needs_rehash($found['password_hash'])) {
+            $newHash = ap_hash_password($password);
+            foreach ($db['users'] as &$uRef) {
+                if ((int) $uRef['id'] === (int) $found['id']) { $uRef['password_hash'] = $newHash; break; }
+            }
+            unset($uRef);
+            $found['password_hash'] = $newHash;
+            save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+        }
+
+        // فقط برای مدیر لازمه سشنِ وردپرس ساخته بشه؛ کاربرِ عادی اصلاً وردپرس رو لود نمی‌کنه
+        $adminToken = null;
+        if (!empty($found['is_admin'])) {
+            $adminToken = ap_issue_admin_token($db, $found['id']);
+            save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+            ap_boot_wp();
+            if (function_exists('ap_bridge_wp_session')) { ap_bridge_wp_session($found['phone'], public_user($found)); }
+        }
+        echo json_encode(['success' => true, 'user' => public_user($found), 'adminToken' => $adminToken], JSON_UNESCAPED_UNICODE);
         break;
     }
 
@@ -792,6 +1051,14 @@ switch ($action) {
             json_fail('نام، نام‌خانوادگی و شماره تماس الزامی است.');
         }
         if (!preg_match('/^09\d{9}$/', $phone)) json_fail('شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.');
+
+        /* حسابِ ادمین‌ها فقط با توکنِ خودِ همون ادمین ویرایش می‌شه (کسی نتونه شماره‌ی مدیر رو عوض کنه) */
+        $ap_t = ap_user_index($id);
+        if ($ap_t !== null && !empty($db['users'][$ap_t]['is_admin'])) {
+            $ap_me = ap_admin_user();
+            if (!$ap_me || (int) $ap_me['id'] !== $id) json_fail('برای ویرایشِ حسابِ ادمین، یک بار خارج و دوباره وارد شوید.', 403);
+        }
+        if (ap_phone_taken($phone, $id)) json_fail('این شماره موبایل متعلق به حسابِ دیگری است.');
 
         $updated = null;
         foreach ($db['users'] as &$u) {
@@ -948,15 +1215,15 @@ switch ($action) {
            نه از مقداری که مرورگر فرستاده؛ این‌طوری کسی نمی‌تونه با دستکاریِ درخواست،
            محصول رو ارزون‌تر ثبت کنه. کلیدِ سبد ممکنه شاملِ متغیر (رنگ/حجم) باشه، پس
            شناسه‌ی پایه‌ی محصول از قبل از «::» جدا می‌شه. */
+        /* فقط همون محصولاتِ داخلِ سبد خونده می‌شن (قبلاً کلِ کاتالوگِ ۵۰۰+ محصولی ساخته
+           می‌شد و ثبت سفارش رو چند ثانیه کند می‌کرد). */
         $priceMap = [];
         $variantPriceMap = [];
-        $wpProductsForOrder = function_exists('ap_wp_products') ? ap_wp_products() : [];
-        if (is_array($wpProductsForOrder)) {
-            foreach ($wpProductsForOrder as $wpp) {
-                $priceMap[(string) $wpp['id']] = (int) $wpp['price'];
-                $vp = $wpp['variantPrices'] ?? null;
-                $variantPriceMap[(string) $wpp['id']] = is_array($vp) ? $vp : (array) $vp;
-            }
+        foreach ($items as $it) {
+            $bid = (int) explode('::', (string) ($it['id'] ?? ''))[0];
+            if (!$bid || isset($priceMap[(string) $bid]) || !function_exists('get_post_type') || get_post_type($bid) !== 'ap_product') continue;
+            $priceMap[(string) $bid] = (int) get_post_meta($bid, '_ap_price', true);
+            $variantPriceMap[(string) $bid] = function_exists('ap_variant_prices') ? ap_variant_prices($bid) : [];
         }
         $cleanItems = [];
         $computedTotal = 0;
@@ -992,10 +1259,18 @@ switch ($action) {
             'status' => 'pending',
             'created_at' => date('c'),
         ];
+        $order['statusHistory'] = [['status' => 'pending', 'at' => $order['created_at']]];
         $db['orders'][] = $order;
         $db['next_order_id']++;
+        ap_archive_order($ARCHIVE_DIR, $order, 'created');   // اول آرشیوِ دائمی
         save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+        if (function_exists('ap_mirror_order_to_wp')) { try { ap_mirror_order_to_wp($order); } catch (\Throwable $e) {} }   // نسخه‌ی سوم در دیتابیسِ وردپرس
+        /* اول جوابِ مشتری فرستاده می‌شه؛ اطلاع‌رسانی به مدیر بعدش و بدون معطل‌کردنِ مشتری */
         echo json_encode(['success' => true, 'order' => $order], JSON_UNESCAPED_UNICODE);
+        $ap_detached = false;
+        if (function_exists('fastcgi_finish_request')) { @fastcgi_finish_request(); $ap_detached = true; }
+        elseif (function_exists('litespeed_finish_request')) { @litespeed_finish_request(); $ap_detached = true; }
+        if (function_exists('ap_notify_new_order')) { @ap_notify_new_order($order, $ap_detached); }
         break;
     }
 
@@ -1011,7 +1286,7 @@ switch ($action) {
 
     /* ---------- پیشخوان مدیریت: فهرست سفارش‌ها (فقط ادمین) ---------- */
     case 'list_orders': {
-        ap_require_admin('ap_manage_orders');
+        ap_require_admin('orders');
         $orders = array_reverse($db['orders']);
         echo json_encode(['success' => true, 'orders' => $orders], JSON_UNESCAPED_UNICODE);
         break;
@@ -1022,7 +1297,8 @@ switch ($action) {
        ادمین از پیشخوان روش کلیک می‌کنه، توی تب جدید باز می‌شه، و از همون‌جا Ctrl+P یا
        دکمه‌ی چاپِ خودِ صفحه رو می‌زنه (خروجی چاپگر یا PDF، برای چسبوندن روی کارتن). */
     case 'invoice': {
-        if (!(function_exists('current_user_can') && (current_user_can('manage_options') || current_user_can('ap_manage_orders')))) { http_response_code(403); header('Content-Type: text/plain; charset=utf-8'); echo 'دسترسی غیرمجاز.'; break; }
+        $ap_inv_admin = ap_admin_user();
+        if (!($ap_inv_admin && in_array('orders', ap_admin_perms($ap_inv_admin), true)) && !(function_exists('current_user_can') && current_user_can('manage_options'))) { http_response_code(403); header('Content-Type: text/plain; charset=utf-8'); echo 'دسترسی غیرمجاز.'; break; }
 
         $orderId = (int) ($_GET['order_id'] ?? 0);
         $order = null;
@@ -1176,7 +1452,7 @@ switch ($action) {
        به مشتری بگه رمزش چیه)؛ توجه: این یعنی رمزها اینجا به‌صورت متن ساده
        هم نگه داشته می‌شن، پس این فهرست باید فقط دست ادمین باشه. */
     case 'list_customers': {
-        ap_require_admin();
+        ap_require_admin('customers');
         $customers = [];
         foreach ($db['users'] as $u) {
             if (!empty($u['is_admin'])) continue;
@@ -1197,38 +1473,233 @@ switch ($action) {
 
     /* ---------- پیشخوان مدیریت: تغییر وضعیت سفارش (فقط ادمین) ---------- */
     case 'update_order_status': {
-        ap_require_admin('ap_manage_orders');
+        ap_require_admin('order_status');
 
         $orderId = (int) ($input['orderId'] ?? 0);
         $status  = (string) ($input['status'] ?? '');
         $validStatuses = ['pending', 'confirmed', 'rejected', 'packing', 'courier', 'shipped'];
         if (!in_array($status, $validStatuses, true)) json_fail('وضعیت نامعتبر است.');
 
-        $found = false;
+        $found = null;
         foreach ($db['orders'] as &$o) {
-            if ((int) $o['id'] === $orderId) { $o['status'] = $status; $found = true; break; }
+            if ((int) $o['id'] === $orderId) {
+                $o['status'] = $status;
+                $o['statusHistory'] = array_merge((array) ($o['statusHistory'] ?? []), [['status' => $status, 'at' => date('c')]]);
+                $found = $o;
+                break;
+            }
         }
         unset($o);
         if (!$found) json_fail('سفارش پیدا نشد.', 404);
+        ap_archive_order($ARCHIVE_DIR, $found, 'status:' . $status);
         save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
-        echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
+        if (function_exists('ap_mirror_order_to_wp')) { try { ap_mirror_order_to_wp($found); } catch (\Throwable $e) {} }
+        echo json_encode(['success' => true, 'order' => $found], JSON_UNESCAPED_UNICODE);
         break;
     }
 
     /* ---------- حذفِ کاملِ یک سفارش (فقط مدیر) ---------- */
+    /* ---------- حذفِ سفارش غیرفعاله: سفارش‌ها هیچ‌وقت پاک نمی‌شن (به درخواستِ مدیر سایت) ---------- */
     case 'delete_order': {
-        ap_require_admin('ap_manage_orders');
-        $orderId = (int) ($input['orderId'] ?? 0);
-        $before = count($db['orders']);
-        $removedReceipt = null;
-        $db['orders'] = array_values(array_filter($db['orders'], function ($o) use ($orderId, &$removedReceipt) {
-            if ((int) $o['id'] === $orderId) { $removedReceipt = $o['receiptUrl'] ?? null; return false; }
-            return true;
-        }));
-        if (count($db['orders']) === $before) json_fail('سفارش پیدا نشد.', 404);
-        // فایلِ رسیدِ همون سفارش هم پاک می‌شه تا روی هاست تلنبار نشه
-        if ($removedReceipt) { @unlink($RECEIPTS_DIR . '/' . basename($removedReceipt)); }
+        ap_require_admin('orders');
+        json_fail('حذف سفارش غیرفعال است؛ سفارش‌ها برای همیشه نگه داشته می‌شوند. برای کنار گذاشتنِ یک سفارش، وضعیتش را «رد شد» کنید.', 403);
+        break;
+    }
+
+    /* ---------- اعلان‌ها (Web Push) ---------- */
+    /* کلیدِ عمومیِ اعلان (عمومیه و برای ثبتِ هر دستگاه لازمه) */
+    case 'push_vapid': {
+        ap_boot_wp();
+        $v = function_exists('ap_vapid') ? ap_vapid() : null;
+        if (!$v) json_fail('ساخت کلید اعلان روی این هاست ممکن نشد (OpenSSL).', 500);
+        echo json_encode(['success' => true, 'publicKey' => $v['public']], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* ثبتِ یک دستگاه؛ اگه درخواست با توکنِ معتبرِ مدیر بیاد، دستگاه «مدیر» ثبت می‌شه و اعلانِ سفارشِ جدید هم می‌گیره */
+    case 'push_subscribe': {
+        $ap_sub_admin = ap_admin_user();
+        $isAdmin = $ap_sub_admin && in_array('orders', ap_admin_perms($ap_sub_admin), true);
+        if (!empty($input['old']) && is_string($input['old'])) ap_pl_unsubscribe($DATA_DIR, $input['old']);
+        $uid = isset($input['userId']) && is_numeric($input['userId']) ? (int) $input['userId'] : null;
+        $s = ap_pl_subscribe($DATA_DIR, (array) ($input['subscription'] ?? []), $isAdmin, (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), $uid);
+        if (!$s) json_fail('ثبتِ این دستگاه ممکن نشد.');
+        echo json_encode(['success' => true, 'role' => $s['r']], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    case 'push_unsubscribe': {
+        ap_pl_unsubscribe($DATA_DIR, (string) ($input['endpoint'] ?? ''));
+        echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* سرویس‌ورکر وقتی اعلان بدونِ محتوا رسیده، آخرین پیامِ همون دستگاه رو از اینجا می‌گیره */
+    case 'push_pull': {
+        $m = ap_pl_pull($DATA_DIR, (string) ($input['endpoint'] ?? ''));
+        echo json_encode(['success' => true, 'message' => $m], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* آمارِ دستگاه‌ها برای صفحه‌ی «اعلان‌ها»ی مدیر */
+    case 'push_stats': {
+        ap_require_admin('notify');
+        $st = ap_pl_read($DATA_DIR);
+        $c = ap_pl_counts($DATA_DIR);
+        echo json_encode(['success' => true, 'counts' => $c, 'last' => $st['last'] ?? null], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* ارسالِ یک اعلان برای همه‌ی دستگاه‌هایی که اجازه‌ی اعلان دادن (فقط مدیر) */
+    case 'push_broadcast': {
+        ap_require_admin('notify'); ap_boot_wp();
+        $title = trim((string) ($input['title'] ?? ''));
+        $body  = trim((string) ($input['body'] ?? ''));
+        $url   = trim((string) ($input['url'] ?? ''));
+        if ($body === '') json_fail('متنِ اعلان رو بنویسید.');
+        if ($url !== '' && !preg_match('#^(https?://|/)#i', $url)) $url = '';
+        $v = function_exists('ap_vapid') ? ap_vapid() : null;
+        if (!$v) json_fail('کلیدِ اعلان روی این هاست ساخته نشد (OpenSSL).', 500);
+        @set_time_limit(300); @ignore_user_abort(true);
+        $r = ap_pl_send($DATA_DIR, $v, 'all', ['title' => $title !== '' ? $title : (function_exists('get_bloginfo') ? get_bloginfo('name') : ''), 'body' => $body, 'url' => $url, 'tag' => 'ap-news-' . time()], function_exists('ap_push_subject') ? ap_push_subject() : 'mailto:admin@nexv.ir');
+        if (!$r['total']) json_fail('هنوز هیچ دستگاهی اجازه‌ی اعلان نداده.');
+        echo json_encode(['success' => $r['sent'] > 0, 'result' => $r, 'error' => $r['sent'] > 0 ? null : 'ارسال ناموفق بود: ' . implode(' | ', $r['errors'])], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    case 'push_test': {
+        ap_require_admin('orders'); ap_boot_wp();
+        $v = function_exists('ap_vapid') ? ap_vapid() : null;
+        if (!$v) json_fail('کلیدِ اعلان روی این هاست ساخته نشد (OpenSSL).', 500);
+        $home = function_exists('home_url') ? home_url('/?ap_admin=orders') : '';
+        $r = ap_pl_send($DATA_DIR, $v, 'admins', ['title' => '🔔 اعلان آزمایشی ' . (function_exists('get_bloginfo') ? get_bloginfo('name') : ''), 'body' => 'اعلان‌های سفارشِ جدید روی این دستگاه فعاله ✅', 'url' => $home, 'tag' => 'ap-test'], function_exists('ap_push_subject') ? ap_push_subject() : 'mailto:admin@nexv.ir');
+        echo json_encode(['success' => $r['sent'] > 0, 'result' => $r, 'error' => $r['sent'] > 0 ? null : ($r['total'] ? 'ارسال به سرورِ اعلان ناموفق بود: ' . implode(' | ', $r['errors']) : 'هنوز هیچ دستگاهی برای مدیر ثبت نشده.')], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* سازگاری با نسخه‌ی قبلیِ سرویس‌ورکر */
+    case 'latest_order_brief': {
+        ap_require_admin('orders');
+        $last = $db['orders'] ? end($db['orders']) : null;
+        $brief = $last ? ['id' => $last['id'], 'customerName' => $last['customerName'] ?? '', 'grandTotal' => $last['grandTotal'] ?? 0,
+            'items' => implode('، ', array_map(function ($it) { return ($it['title'] ?? '') . ' ×' . (int) ($it['qty'] ?? 1); }, array_slice((array) ($last['items'] ?? []), 0, 3)))] : null;
+        echo json_encode(['success' => true, 'test' => false, 'order' => $brief ?: ['id' => 0, 'customerName' => '', 'grandTotal' => 0]], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* manifestِ نصبِ سایت روی صفحه‌ی گوشی (برای اعلان روی آیفون لازمه) */
+    case 'manifest': {
+        ap_boot_wp();
+        header('Content-Type: application/manifest+json; charset=utf-8', true);
+        header('Cache-Control: public, max-age=3600');
+        echo json_encode(function_exists('ap_manifest_data') ? ap_manifest_data() : ['name' => 'Store', 'short_name' => 'Store', 'start_url' => '/', 'display' => 'standalone'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        break;
+    }
+
+    /* =====================================================================
+       ادمین‌ها: حسابِ خودِ ادمین (رمز/شماره) + مدیریتِ ادمین‌های زیرمجموعه (فقط مدیرِ کل)
+       ===================================================================== */
+    case 'admin_me': {
+        $me = ap_require_admin();
+        if (empty($me['id'])) json_fail('برای این بخش یک بار از سایت خارج و دوباره وارد شوید.', 403);
+        echo json_encode(['success' => true, 'user' => public_user($me), 'labels' => ap_admin_perm_labels()], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* تغییرِ رمز و/یا شماره‌ی خودِ ادمین؛ رمزِ فعلی همیشه لازمه */
+    case 'admin_update_me': {
+        $me = ap_require_admin();
+        $i = empty($me['id']) ? null : ap_user_index($me['id']);
+        if ($i === null) json_fail('برای این بخش یک بار از سایت خارج و دوباره وارد شوید.', 403);
+        $cur = (string) ($input['currentPassword'] ?? '');
+        if ($cur === '' || empty($db['users'][$i]['password_hash']) || !password_verify($cur, $db['users'][$i]['password_hash'])) json_fail('رمزِ فعلی درست نیست.');
+        $newPhone = preg_replace('/[^0-9]/', '', (string) ($input['newPhone'] ?? ''));
+        $newPass = (string) ($input['newPassword'] ?? '');
+        if ($newPhone === '' && $newPass === '') json_fail('شماره یا رمزِ جدید رو وارد کنید.');
+        if ($newPhone !== '' && $newPhone !== $db['users'][$i]['phone']) {
+            if (!preg_match('/^09\d{9}$/', $newPhone)) json_fail('شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.');
+            if (ap_phone_taken($newPhone, $me['id'])) json_fail('این شماره متعلق به حسابِ دیگری است.');
+            $db['users'][$i]['phone'] = $newPhone;
+        }
+        $passChanged = false;
+        if ($newPass !== '') {
+            if (mb_strlen($newPass, 'UTF-8') < 8) json_fail('رمزِ جدید باید حداقل ۸ کاراکتر باشد.');
+            $db['users'][$i]['password_hash'] = ap_hash_password($newPass);
+            unset($db['users'][$i]['password_plain']);
+            /* بقیه‌ی دستگاه‌هایی که با رمزِ قبلی وارد شده بودن خارج می‌شن؛ همین دستگاه وارد می‌مونه */
+            $curH = hash('sha256', (string) ($_SERVER['HTTP_X_AP_ADMIN'] ?? ''));
+            $db['users'][$i]['admin_tokens'] = array_values(array_filter((array) ($db['users'][$i]['admin_tokens'] ?? []), function ($t) use ($curH) { return hash_equals((string) ($t['h'] ?? ''), $curH); }));
+            $passChanged = true;
+        }
         save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+        ap_boot_wp();
+        if ($passChanged && function_exists('ap_wp_admin_logout_others')) ap_wp_admin_logout_others(public_user($db['users'][$i]));
+        /* حسابِ وردپرسیِ مدیرِ کل: نام کاربری = شماره، رمز = همین رمز */
+        if (function_exists('ap_wp_owner_sync')) ap_wp_owner_sync(public_user($db['users'][$i]), $passChanged ? $newPass : '');
+        echo json_encode(['success' => true, 'user' => public_user($db['users'][$i])], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    case 'admin_list': {
+        ap_require_admin('owner');
+        $out = [];
+        foreach ($db['users'] as $u) {
+            if (empty($u['is_admin'])) continue;
+            $out[] = ['id' => $u['id'], 'firstName' => $u['firstName'] ?? '', 'lastName' => $u['lastName'] ?? '', 'phone' => $u['phone'] ?? '',
+                'is_owner' => !empty($u['is_owner']), 'perms' => ap_admin_perms($u), 'last_login' => $u['last_login'] ?? null, 'created_at' => $u['created_at'] ?? null];
+        }
+        usort($out, function ($a, $b) { return ($b['is_owner'] <=> $a['is_owner']) ?: ((int) $a['id'] <=> (int) $b['id']); });
+        echo json_encode(['success' => true, 'admins' => $out, 'labels' => ap_admin_perm_labels()], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* افزودن/ویرایشِ ادمینِ زیرمجموعه. اگه شماره مالِ یک مشتریِ موجود باشه، همون حساب ادمین می‌شه */
+    case 'admin_save': {
+        ap_require_admin('owner');
+        $id = (int) ($input['id'] ?? 0);
+        $phone = preg_replace('/[^0-9]/', '', (string) ($input['phone'] ?? ''));
+        $firstName = trim((string) ($input['firstName'] ?? ''));
+        $lastName = trim((string) ($input['lastName'] ?? ''));
+        $pass = (string) ($input['password'] ?? '');
+        $perms = array_values(array_intersect(array_keys(ap_admin_perm_labels()), array_map('strval', (array) ($input['perms'] ?? []))));
+        if (!$perms) json_fail('حداقل یک دسترسی برای این ادمین انتخاب کنید.');
+        if ($pass !== '' && mb_strlen($pass, 'UTF-8') < 8) json_fail('رمزِ ادمین باید حداقل ۸ کاراکتر باشد.');
+        if (!preg_match('/^09\d{9}$/', $phone)) json_fail('شماره موبایل باید ۱۱ رقم و به‌صورت 09xxxxxxxxx باشد.');
+        if ($id) {
+            $i = ap_user_index($id);
+            if ($i === null || empty($db['users'][$i]['is_admin'])) json_fail('این ادمین پیدا نشد.', 404);
+            if (!empty($db['users'][$i]['is_owner'])) json_fail('دسترسی‌های مدیرِ کل قابلِ تغییر نیست.');
+            if (ap_phone_taken($phone, $id)) json_fail('این شماره متعلق به حسابِ دیگری است.');
+        } else {
+            $i = null;
+            foreach ($db['users'] as $k => $u) { if (($u['phone'] ?? '') === $phone) { $i = $k; break; } }
+            if ($i !== null) {
+                if (!empty($db['users'][$i]['is_owner'])) json_fail('این شماره مالِ مدیرِ کله.');
+                if (!empty($db['users'][$i]['is_admin'])) json_fail('این شماره از قبل ادمینه؛ از لیست ویرایشش کنید.');
+                if ($pass === '' && empty($db['users'][$i]['password_hash'])) json_fail('برای این حساب یک رمز تعیین کنید.');
+            } else {
+                if ($pass === '') json_fail('برای ادمینِ جدید یک رمز (حداقل ۸ کاراکتر) تعیین کنید.');
+                $db['users'][] = ['id' => $db['next_user_id'], 'firstName' => $firstName ?: 'ادمین', 'lastName' => $lastName, 'phone' => $phone,
+                    'email' => null, 'google_id' => null, 'password_hash' => '', 'is_admin' => false, 'addresses' => [], 'created_at' => date('c')];
+                $db['next_user_id']++;
+                $i = count($db['users']) - 1;
+            }
+        }
+        $u = &$db['users'][$i];
+        $u['is_admin'] = true; $u['is_owner'] = false; $u['perms'] = $perms; $u['phone'] = $phone;
+        if ($firstName !== '') $u['firstName'] = $firstName;
+        if ($lastName !== '' || $id) $u['lastName'] = $lastName;
+        unset($u['password_plain']);
+        if ($pass !== '') { $u['password_hash'] = ap_hash_password($pass); $u['admin_tokens'] = []; }
+        $saved = $u; unset($u);
+        save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+        ap_boot_wp();
+        if (function_exists('ap_wp_admin_sync')) ap_wp_admin_sync(public_user($saved));
+        echo json_encode(['success' => true, 'admin' => public_user($saved)], JSON_UNESCAPED_UNICODE);
+        break;
+    }
+    /* برداشتنِ دسترسیِ ادمین: حساب به یک مشتریِ معمولی برمی‌گرده (سفارش‌ها و اطلاعاتش می‌مونه) */
+    case 'admin_remove': {
+        ap_require_admin('owner');
+        $i = ap_user_index((int) ($input['id'] ?? 0));
+        if ($i === null || empty($db['users'][$i]['is_admin'])) json_fail('این ادمین پیدا نشد.', 404);
+        if (!empty($db['users'][$i]['is_owner'])) json_fail('مدیرِ کل قابلِ حذف نیست.');
+        $db['users'][$i]['is_admin'] = false;
+        $db['users'][$i]['admin_tokens'] = [];
+        unset($db['users'][$i]['perms'], $db['users'][$i]['is_owner']);
+        $removed = $db['users'][$i];
+        save_db($DB_FILE, $BACKUP_DIR, $LATEST_JSON, $MAX_BACKUPS, $db);
+        ap_boot_wp();
+        if (function_exists('ap_wp_admin_sync')) ap_wp_admin_sync(public_user($removed));
         echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
         break;
     }
