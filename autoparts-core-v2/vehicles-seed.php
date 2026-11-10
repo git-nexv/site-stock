@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '8');
+define('AP_VEHICLE_SEED_VERSION', '9');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
@@ -53,14 +53,26 @@ function ap_vehicle_seed_data() {
             ['X5 (ایکس ۵)', 'x5', 1402, 1405],
         ]],
         ['CHANGAN (چانگان)', 'changan', [
-            ['CS35 (سی‌اس ۳۵)', 'cs35', 1394, 1400],
-            ['CS35 Plus (سی‌اس ۳۵ پلاس)', 'cs35-plus', 1399, 1401],
+            ['CS35 (سی‌اس ۳۵)', 'cs35', 1394, 1400, ['imported', 'montage']],
+            ['CS35 Plus (سی‌اس ۳۵ پلاس)', 'cs35-plus', 1399, 1402, ['tip-2', 'tip-3']],
             ['CS55 (سی‌اس ۵۵)', 'cs55', 1400, 1402],
             ['CS55 Plus (سی‌اس ۵۵ پلاس)', 'cs55-plus', 1402, 1405],
+            ['X5 Plus (ایکس ۵ پلاس)', 'x5-plus', 1403, 1405],
             ['Eado (ایدو)', 'eado', 1395, 1397],
+            ['Eado EV460 (ایدو EV460)', 'eado-ev460', 1398, 1400],
+            ['NEVO A05 (نوو A05)', 'nevo-a05', 1404, 1405],
+            ['Hunter Plus Pickup (پیکاپ هانتر پلاس)', 'hunter-plus', 1403, 1405],
             ['UNI-K (یونی کی)', 'uni-k', 1402, 1405],
-            ['UNI-T (یونی تی)', 'uni-t', 1402, 1405],
+            ['UNI-T (یونی تی)', 'uni-t', 1402, 1405, ['turbo-15']],
             ['UNI-V (یونی وی)', 'uni-v', 1403, 1405],
+        ]],
+        ['CHANGHE (چانگهه)', 'changhe', [
+            ['Karo Pickup (کارو)', 'karo', 1398, 1403, ['single-cab', 'double-cab']],
+        ]],
+        ['SSANGYONG (سانگ یانگ)', 'ssangyong', [
+            ['Chairman (چیرمن)', 'chairman', 1387, 1391],
+            ['Rexton Khan (خان)', 'khan', 1399, 1403],
+            ['Musso Grand Khan (موسو گرند خان)', 'musso-grand-khan', 1400, 1404, ['signature', 'sahara']],
         ]],
         ['BRILLIANCE (برلیانس)', 'brilliance', [
             ['H220 (اچ ۲۲۰)', 'h220', 1395, 1399, ['manual', 'automatic']],
@@ -144,7 +156,9 @@ function ap_vehicle_seed_term($name, $slug, $parent) {
 function ap_vehicle_variant_name($slug) {
     $map = ['manual' => 'دنده‌ای', 'automatic' => 'اتوماتیک',
         'phev-15' => '1.5 لیتر پلاگین هیبرید', 'phev-15-55km' => 'پلاگین هیبرید 1.5 لیتر 55 کیلومتر',
-        'turbo-15' => '1.5 لیتر توربو', 'fashion-ev' => 'فشن تمام برقی', 'plus-170' => '170 پلاس', 'fly' => 'فلای'];
+        'turbo-15' => '1.5 لیتر توربو', 'fashion-ev' => 'فشن تمام برقی', 'plus-170' => '170 پلاس', 'fly' => 'فلای',
+        'imported' => 'وارداتی', 'montage' => 'مونتاژ', 'tip-2' => 'تیپ 2', 'tip-3' => 'تیپ 3',
+        'single-cab' => 'تک کابین', 'double-cab' => 'دو کابین', 'signature' => 'سیگنچر', 'sahara' => 'ساهارا'];
     return $map[$slug] ?? $slug;
 }
 
