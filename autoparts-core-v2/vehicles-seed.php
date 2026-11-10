@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '10');
+define('AP_VEHICLE_SEED_VERSION', '11');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
@@ -124,13 +124,16 @@ function ap_vehicle_seed_data() {
             ['S7 (اس ۷)', 's7', 1394, 1397],
         ]],
         ['FIDELITY (فیدلیتی)', 'fidelity', [
-            ['Elite (الیت)', 'elite', 1402, 1405],
+            ['Prestige (پرستیژ)', 'fidelity-prestige', 1402, 1405, ['seats-5', 'seats-7']],
             ['Prime (پرایم)', 'prime', 1401, 1405],
+            ['Elite (الیت)', 'elite', 1402, 1405],
+            ['XB1 (ایکس بی ۱)', 'xb1', 1404, 1405],
         ]],
         ['RESPECT (رسپکت)', 'respect', [
             ['Respect 2 (رسپکت ۲)', 'respect-2', 1402, 1405],
         ]],
         ['DIGNITY (دیگنیتی)', 'dignity', [
+            ['Prime (پرایم)', 'dignity-prime', 1402, 1405],
             ['Prestige (پرستیژ)', 'prestige', 1401, 1405],
         ]],
         ['HAVAL (هاوال)', 'haval', [
@@ -141,6 +144,22 @@ function ap_vehicle_seed_data() {
         ]],
         ['LAMARI (لاماری)', 'lamari', [
             ['Eama (ایما)', 'eama', 1401, 1405],
+        ]],
+        ['INFINITI (اینفینیتی)', 'infiniti', [
+            ['FX35 (اف‌ایکس ۳۵)', 'fx35', 1386, 1391],
+            ['G35 Coupe (جی ۳۵ کوپه)', 'g35-coupe', 1385, 1388],
+            ['G37 Coupe (جی ۳۷ کوپه)', 'g37-coupe', 1388, 1392],
+            ['Q50 (کیو ۵۰)', 'q50', 1393, 1397],
+            ['QX80 (کیو‌ایکس ۸۰)', 'qx80', 1393, 1397],
+        ]],
+        ['KG MOBILITY (کی جی موبیلیتی)', 'kg-mobility', [
+            ['Actyon (اکتیون)', 'actyon', 1404, 1405],
+            ['Rexton (رکستون)', 'rexton', 1403, 1405],
+            ['Tivoli (تیوولی)', 'tivoli', 1403, 1405],
+            ['Torres (تورس)', 'torres', 1403, 1405],
+        ]],
+        ['HONDA (هوندا)', 'honda', [
+            ['City (سیتی)', 'city', 1401, 1404],
         ]],
     ];
 }
@@ -172,7 +191,7 @@ function ap_vehicle_variant_name($slug) {
         'imported' => 'وارداتی', 'montage' => 'مونتاژ', 'tip-2' => 'تیپ 2', 'tip-3' => 'تیپ 3',
         'single-cab' => 'تک کابین', 'double-cab' => 'دو کابین', 'signature' => 'سیگنچر', 'sahara' => 'ساهارا',
         'base' => 'استاندارد', 'excellent' => 'اکسلنت', 'luxury' => 'لاکچری', 'luxury-sport' => 'لاکچری اسپرت', 'turbo' => 'توربو',
-        'excellent-turbo' => 'اکسلنت توربو', 'manual-luxury' => 'دنده‌ای لاکچری', 'auto-luxury' => 'اتوماتیک لاکچری', 'auto-excellent' => 'اتوماتیک اکسلنت'];
+        'excellent-turbo' => 'اکسلنت توربو', 'manual-luxury' => 'دنده‌ای لاکچری', 'auto-luxury' => 'اتوماتیک لاکچری', 'auto-excellent' => 'اتوماتیک اکسلنت', 'seats-5' => '۵ نفره', 'seats-7' => '۷ نفره'];
     return $map[$slug] ?? $slug;
 }
 

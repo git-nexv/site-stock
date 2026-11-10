@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) { exit; }
  * محصولی که از قبل با همون پیوند وجود داره دوباره ساخته نمی‌شه.
  */
 
-define('AP_PARTS_SEED_VERSION', '5');
+define('AP_PARTS_SEED_VERSION', '6');
 define('AP_PARTS_SEED_BATCH', 40);
 
 /* [اسلاگ قطعه, نام فارسی, اسلاگ دسته, نام دسته, آیکون, توضیح کوتاه, پاراگراف توضیح] */
@@ -138,7 +138,7 @@ function ap_parts_seed_title($brand, $model, $pslug, $pname) {
     $modelEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', $model));
     $brandEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', $brand));
     if ($brandEn === strtoupper($brandEn) && strlen($brandEn) > 3) $brandEn = ucwords(strtolower($brandEn));   /* CHERY → Chery (MVM/JAC/KMC همون می‌مونن) */
-    $brandEn = strtr($brandEn, ['Ssangyong' => 'SsangYong']);
+    $brandEn = strtr($brandEn, ['Ssangyong' => 'SsangYong', 'Kg Mobility' => 'KG Mobility']);
     $en = ap_parts_seed_en()[$pslug] ?? '';
     $fa = "$pname $brandFa $modelEn";
     $enFull = trim((stripos($modelEn, $brandEn) === 0 ? '' : "$brandEn ") . "$modelEn $en");
@@ -345,7 +345,7 @@ add_action('admin_notices', function () {
 function ap_parts_strip_fa($name) {
     $en = trim(preg_replace('/\s*\(.+\)\s*/u', '', (string) $name));
     if ($en !== '' && $en === strtoupper($en) && strlen($en) > 3) $en = ucwords(strtolower($en));
-    return strtr($en, ['Ssangyong' => 'SsangYong']);
+    return strtr($en, ['Ssangyong' => 'SsangYong', 'Kg Mobility' => 'KG Mobility']);
 }
 function ap_parts_en_title_for($post_id, $title) {
     $best = null; $bestLen = 0;
