@@ -3256,32 +3256,7 @@ function ap_slug_from_title($title) {
     return ap_transliterate_title_to_slug($title);
 }
 
-/* اصلاحِ یک‌باره‌ی پیوندِ همه‌ی محصولات (به درخواستِ مدیر سایت). پیوندِ قدیمی در
-   _wp_old_slug ذخیره می‌شه تا با ۳۰۱ به پیوندِ جدید بره و اعتبارِ گوگل حفظ بشه. */
-add_action('admin_init', function () {
-    if (get_option('ap_product_slugs_en_v2') || !current_user_can('manage_options')) return;
-    @set_time_limit(0);
-    global $wpdb;
-    $rows = $wpdb->get_results("SELECT ID, post_title, post_name, post_status FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','pending','private','future') ORDER BY ID ASC");
-    $changed = 0; $same = 0; $examples = [];
-    foreach ($rows as $r) {
-        $want = ap_slug_from_title($r->post_title);
-        if ($want === '' ) continue;
-        $cur = urldecode($r->post_name);
-        if ($cur === $want) { $same++; continue; }
-        $new = wp_unique_post_slug($want, (int) $r->ID, 'publish', 'ap_product', 0);
-        if ($new === $cur) { $same++; continue; }
-        $wpdb->update($wpdb->posts, ['post_name' => $new], ['ID' => (int) $r->ID]);
-        if ($r->post_name !== '' && $r->post_status === 'publish') add_post_meta((int) $r->ID, '_wp_old_slug', $r->post_name);
-        clean_post_cache((int) $r->ID);
-        $changed++;
-        if (count($examples) < 6) $examples[] = $cur . ' → ' . $new;
-    }
-    delete_transient('ap_products_cache_v2');
-    flush_rewrite_rules();
-    update_option('ap_product_slugs_en_v2', 1, false);
-    set_transient('ap_slug_fix_report', ['changed' => $changed, 'same' => $same, 'examples' => $examples], DAY_IN_SECONDS);
-});
+/* (کارِ یک‌باره‌ی «بازسازیِ پیوندِ همه‌ی محصولات» سایتِ اپل اینجا حذف شد؛ پیوندِ محصولاتِ استوک از ساخت انگلیسیه.) */
 add_action('admin_notices', function () {
     $r = get_transient('ap_slug_fix_report');
     if (!$r || !current_user_can('manage_options')) return;

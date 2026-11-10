@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) { exit; }
  * محصولی که از قبل با همون پیوند وجود داره دوباره ساخته نمی‌شه.
  */
 
-define('AP_PARTS_SEED_VERSION', '2');
+define('AP_PARTS_SEED_VERSION', '3');
 define('AP_PARTS_SEED_BATCH', 40);
 
 /* [اسلاگ قطعه, نام فارسی, اسلاگ دسته, نام دسته, آیکون, توضیح کوتاه, پاراگراف توضیح] */
@@ -60,6 +60,54 @@ function ap_parts_seed_list() {
         ['spark-plugs', 'شمع موتور (دست کامل)', 'electric-parts', 'قطعات برقی', 'electric',
             'دست کامل شمع موتور با جرقه‌ی قوی و عمر کاری بالا.',
             'شمع موتور جرقه‌ی لازم برای احتراق سوخت را ایجاد می‌کند و شمع فرسوده باعث بدروشن‌شدن، لرزش و افزایش مصرف سوخت می‌شود. این بسته شامل دست کامل شمع با دهانه‌ی استاندارد و الکترود مقاوم است. تعداد شمع‌ها مطابق تعداد سیلندر خودرو است؛ شمع‌ها را با گشتاور استاندارد ببندید.'],
+        ['front-brake-discs', 'دیسک ترمز جلو', 'brake-discs', 'دیسک ترمز', 'disc',
+            'دیسک ترمز جلو با آلیاژ مقاوم در برابر حرارت و تاب‌برداشتن.',
+            'دیسک ترمز جلو همراه با لنت، نیروی توقف خودرو را تأمین می‌کند. این دیسک با ابعاد، ضخامت و محل پیچ‌های دقیقاً منطبق با توپی چرخ ساخته شده و آلیاژ آن در برابر حرارتِ ترمزهای پیاپی تاب برنمی‌دارد. لرزش فرمان هنگام ترمز نشانه‌ی تاب‌داشتن دیسک است؛ دیسک‌های هر محور را با هم تعویض کنید.'],
+        ['front-shock-absorbers', 'کمک فنر جلو', 'suspension', 'جلوبندی و تعلیق', 'disc',
+            'کمک فنر جلو گازی با عملکرد نرم و کنترل بهتر خودرو در دست‌انداز.',
+            'کمک فنر جلو نوسانات فنر را کنترل می‌کند و چسبندگی لاستیک به جاده، پایداری در پیچ و راحتی سرنشینان به آن وابسته است. این کمک فنر از نوع گازی است، طول و محل نصب آن مطابق قطعه‌ی اصلی است و در دست‌اندازها خودرو را نرم و بدون ضربه نگه می‌دارد. کمک فنرهای هر محور را با هم تعویض کنید.'],
+        ['rear-shock-absorbers', 'کمک فنر عقب', 'suspension', 'جلوبندی و تعلیق', 'disc',
+            'کمک فنر عقب با عمر کاری بالا و عملکرد یکنواخت زیر بار.',
+            'کمک فنر عقب در حفظ تعادل خودرو هنگام ترمز و حمل بار نقش مهمی دارد. این قطعه با ابعاد و محل نصب یکسان با قطعه‌ی اصلی ساخته شده و حتی با خودروی پربار نیز عملکرد یکنواخت دارد. کمک فنرهای هر محور را با هم تعویض کنید.'],
+        ['front-control-arm', 'طبق جلو', 'suspension', 'جلوبندی و تعلیق', 'disc',
+            'طبق جلو کامل با سیبک و بوش‌های نصب‌شده.',
+            'طبق جلو چرخ را به بدنه وصل می‌کند و زوایای فرمان و تعادل خودرو را حفظ می‌کند. این طبق به‌صورت کامل همراه با سیبک و بوش‌های لاستیکی عرضه می‌شود و محل نصب آن دقیقاً مطابق قطعه‌ی اصلی است. صدای تق‌تق در دست‌انداز و کشیدن خودرو به یک سمت از نشانه‌های خرابی طبق است؛ پس از تعویض، تنظیم فرمان (تنظیم باد) انجام دهید. سمت طبق را هنگام سفارش مشخص کنید.'],
+        ['fog-light', 'چراغ مه‌شکن', 'fog-light', 'چراغ مه‌شکن', 'light',
+            'چراغ مه‌شکن جلو با نور متمرکز و آب‌بندی کامل.',
+            'چراغ مه‌شکن در هوای مه‌آلود، بارانی و گردوغباری دید نزدیک جاده را بهتر می‌کند. این چراغ با محل نصب و سوکت یکسان با قطعه‌ی اصلی ساخته شده و آب‌بندی کامل دارد. هنگام سفارش، سمت چراغ را مشخص کنید.'],
+        ['ac-condenser', 'رادیاتور کولر', 'radiator', 'رادیاتور', 'radiator',
+            'رادیاتور کولر (کندانسور) آلومینیومی با اتصالات یکسان با قطعه‌ی اصلی.',
+            'رادیاتور کولر (کندانسور) گرمای گاز کولر را دفع می‌کند و بدون آن، کولر خودرو خنک نمی‌کند. این قطعه با هسته‌ی آلومینیومی و ابعاد و محل اتصالات دقیقاً مطابق قطعه‌ی اصلی ساخته شده است. پس از نصب، سیستم کولر باید وکیوم و شارژ گاز شود.'],
+        ['cabin-filter', 'فیلتر کابین', 'engine-parts', 'قطعات موتوری', 'filter',
+            'فیلتر هوای کابین برای هوای تمیزتر داخل خودرو و کارکرد بهتر کولر.',
+            'فیلتر کابین گردوغبار، گرده و آلودگی هوای ورودی به داخل خودرو را می‌گیرد و جریان هوای کولر و بخاری را حفظ می‌کند. این فیلتر با ابعاد دقیق محفظه‌ی فیلتر ساخته شده است. پیشنهاد می‌شود هر ۱۰ تا ۱۵ هزار کیلومتر تعویض شود؛ بوی نامطبوع و ضعیف‌شدن باد کولر نشانه‌ی کثیف‌شدن آن است.'],
+        ['car-battery', 'باتری خودرو', 'electric-parts', 'قطعات برقی', 'electric',
+            'باتری ۱۲ ولت با آمپر مناسب و استارت مطمئن در هوای سرد.',
+            'باتری خودرو برق لازم برای روشن‌شدن و سیستم‌های برقی را تأمین می‌کند. این باتری با آمپر، ابعاد و جهت قطب‌های مناسب این خودرو انتخاب شده و در هوای سرد هم استارت مطمئن می‌دهد. در خودروهای برقی و هیبرید، این همان باتری ۱۲ ولت کمکی است. هنگام سفارش، آمپر باتری فعلی را بررسی کنید.'],
+        ['wiper-blades', 'تیغه برف‌پاک‌کن', 'body-parts', 'قطعات بدنه', 'hood',
+            'جفت تیغه برف‌پاک‌کن جلو با لاستیک نرم و بدون صدا.',
+            'تیغه برف‌پاک‌کن برای دید کافی در باران و برف ضروری است. این بسته شامل جفت تیغه‌ی جلو با طول مناسب این خودرو و لاستیک نرمی است که شیشه را بدون خط و صدا تمیز می‌کند. تیغه‌ها را سالی یک‌بار یا با دیدن خط روی شیشه تعویض کنید.'],
+        ['fuel-filter', 'فیلتر بنزین', 'engine-parts', 'قطعات موتوری', 'filter',
+            'فیلتر بنزین با فیلتراسیون دقیق برای محافظت از انژکتورها.',
+            'فیلتر بنزین ذرات و آلودگی‌های سوخت را پیش از رسیدن به انژکتورها می‌گیرد. فیلتر گرفته باعث کاهش قدرت، بدروشن‌شدن و فشار آوردن به پمپ بنزین می‌شود. این فیلتر با اتصالات یکسان با قطعه‌ی اصلی ساخته شده است.'],
+        ['timing-belt-kit', 'کیت تسمه تایم', 'engine-parts', 'قطعات موتوری', 'engine',
+            'کیت کامل تسمه تایم شامل تسمه، بلبرینگ هرزگرد و تسمه‌سفت‌کن.',
+            'تسمه تایم حرکت میل‌لنگ و میل‌سوپاپ را هماهنگ می‌کند و پاره‌شدن آن می‌تواند به موتور آسیب جدی بزند. این کیت شامل تسمه، بلبرینگ هرزگرد و تسمه‌سفت‌کن است تا همه با هم تعویض شوند. زمان تعویض را طبق دفترچه‌ی خودرو رعایت کنید. (در موتورهای زنجیر تایم، زنجیر و متعلقاتش ارسال می‌شود.)'],
+        ['water-pump', 'واتر پمپ', 'engine-parts', 'قطعات موتوری', 'engine',
+            'واتر پمپ با پروانه‌ی مقاوم و آب‌بندی بدون نشتی.',
+            'واتر پمپ مایع خنک‌کننده را در موتور و رادیاتور به گردش درمی‌آورد. نشتی آب از زیر موتور و بالا رفتن دمای موتور از نشانه‌های خرابی واتر پمپ است. این قطعه با واشر و ابعاد یکسان با قطعه‌ی اصلی ساخته شده و معمولاً همراه با تسمه تایم تعویض می‌شود.'],
+        ['alternator', 'دینام', 'electric-parts', 'قطعات برقی', 'electric',
+            'دینام با خروجی ولتاژ پایدار برای شارژ باتری و تغذیه‌ی سیستم برق.',
+            'دینام هنگام کارکرد موتور باتری را شارژ و برق سیستم‌های خودرو را تأمین می‌کند. روشن‌شدن چراغ باتری روی آمپر و ضعیف‌شدن نور چراغ‌ها نشانه‌ی خرابی دینام است. این دینام با آمپر، محل نصب و سوکت یکسان با قطعه‌ی اصلی عرضه می‌شود.'],
+        ['starter-motor', 'استارت', 'electric-parts', 'قطعات برقی', 'electric',
+            'استارت با گشتاور بالا برای روشن‌شدن سریع موتور.',
+            'استارت موتور را هنگام روشن‌کردن خودرو به حرکت درمی‌آورد. صدای تق‌تق یا کند چرخیدن موتور هنگام استارت (با باتری سالم) نشانه‌ی خرابی آن است. این قطعه با محل نصب و اتصالات یکسان با قطعه‌ی اصلی ساخته شده است.'],
+        ['ignition-coil', 'کویل', 'electric-parts', 'قطعات برقی', 'electric',
+            'کویل جرقه با ولتاژ خروجی بالا و عایق مقاوم در برابر حرارت.',
+            'کویل ولتاژ لازم برای جرقه‌ی شمع‌ها را تولید می‌کند. لرزش موتور، افت قدرت و روشن‌شدن چراغ چک از نشانه‌های خرابی کویل است. این قطعه با سوکت و محل نصب یکسان با قطعه‌ی اصلی عرضه می‌شود.'],
+        ['clutch-kit', 'دیسک و صفحه کلاچ', 'engine-parts', 'قطعات موتوری', 'engine',
+            'کیت کلاچ شامل دیسک، صفحه و بلبرینگ کلاچ.',
+            'کلاچ انتقال نیرو از موتور به گیربکس را کنترل می‌کند. بالا آمدن دور موتور بدون افزایش سرعت (سُر خوردن کلاچ) و سنگین‌شدن پدال نشانه‌ی فرسودگی آن است. این کیت شامل دیسک، صفحه و بلبرینگ است تا همه با هم تعویض شوند. (مخصوص خودروهای دنده‌ای)'],
     ];
 }
 
@@ -72,6 +120,10 @@ function ap_parts_seed_en() {
         'front-fender' => 'Front Fender', 'hood' => 'Hood', 'grille' => 'Grille',
         'radiator' => 'Radiator', 'oil-filter' => 'Oil Filter', 'air-filter' => 'Air Filter',
         'spark-plugs' => 'Spark Plugs (Set)',
+        'front-brake-discs' => 'Front Brake Discs', 'front-shock-absorbers' => 'Front Shock Absorbers', 'rear-shock-absorbers' => 'Rear Shock Absorbers',
+        'front-control-arm' => 'Front Control Arm', 'fog-light' => 'Fog Light', 'ac-condenser' => 'A/C Condenser', 'cabin-filter' => 'Cabin Filter',
+        'car-battery' => 'Battery', 'wiper-blades' => 'Wiper Blades', 'fuel-filter' => 'Fuel Filter', 'timing-belt-kit' => 'Timing Belt Kit',
+        'water-pump' => 'Water Pump', 'alternator' => 'Alternator', 'starter-motor' => 'Starter Motor', 'ignition-coil' => 'Ignition Coil', 'clutch-kit' => 'Clutch Kit',
     ];
 }
 /* عنوانِ دوزبانه: «لنت ترمز جلو چری Tiggo 7 | Chery Tiggo 7 Front Brake Pads» */
@@ -93,12 +145,27 @@ function ap_parts_seed_cat($slug, $name) {
     return is_wp_error($r) ? 0 : (int) $r['term_id'];
 }
 
+/* خودروهای تمام‌برقی (بدون موتور بنزینی) */
+function ap_parts_is_ev($bslug, $mslug, $row = null) {
+    $ev = ['byd/atto-3', 'byd/dolphin', 'byd/seal', 'byd/seal-05', 'byd/seagull', 'kmc/ej7'];
+    if (in_array("$bslug/$mslug", $ev, true)) return true;
+    return is_array($row[4] ?? null) && in_array('fashion-ev', $row[4], true);
+}
+/* قطعه‌هایی که فقط در خودروهای دارای موتور احتراقی معنی دارن */
+function ap_parts_engine_only() {
+    return ['oil-filter', 'air-filter', 'spark-plugs', 'fuel-filter', 'timing-belt-kit', 'water-pump', 'alternator', 'starter-motor', 'ignition-coil', 'clutch-kit'];
+}
+
 /* همه‌ی کارهای ساخت (برند × مدل × قطعه) به ترتیب ثابت */
 function ap_parts_seed_jobs() {
     $jobs = [];
     foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
-        foreach ($models as [$model, $mslug, $from, $to]) {
+        foreach ($models as $model_row) {
+            [$model, $mslug, $from, $to] = $model_row;
+            $ev = ap_parts_is_ev($bslug, $mslug, $model_row ?? null);
             foreach (ap_parts_seed_list() as $part) {
+                /* قطعه‌های مخصوصِ موتورِ بنزینی برای خودروهای تمام‌برقی ساخته نمی‌شن */
+                if ($ev && in_array($part[0], ap_parts_engine_only(), true)) continue;
                 $jobs[] = [$brand, $bslug, $model, $mslug, $from, $to, $part];
             }
         }
@@ -117,12 +184,24 @@ function ap_parts_seed_model_term($bslug, $mslug) {
     return 0;
 }
 
+/* محصولِ این کار از قبل هست؟ با پیوند، یا با عنوانِ فارسی (با/بدونِ نیمه‌ی انگلیسی)، یا با کلیدِ ساخت.
+   قبلاً فقط با پیوند چک می‌شد و وقتی پیوندها عوض شده بودن، همه‌ی محصولات دوباره ساخته شدن. */
+function ap_parts_seed_exists($slug, $fa) {
+    global $wpdb;
+    $statuses = "('publish','draft','pending','private','future')";
+    if ($wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN $statuses AND post_name = %s LIMIT 1", $slug))) return true;
+    if ($wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_ap_seed_key' AND meta_value = %s LIMIT 1", $slug))) return true;
+    return (bool) $wpdb->get_var($wpdb->prepare(
+        "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN $statuses AND (post_title = %s OR post_title LIKE %s) LIMIT 1",
+        $fa, $wpdb->esc_like($fa . ' |') . '%'));
+}
+
 function ap_parts_seed_create($job) {
     [$brand, $bslug, $model, $mslug, $from, $to, $part] = $job;
     [$pslug, $pname, $cslug, $cname, $icon, $short, $para] = $part;
 
     $slug = sanitize_title($bslug . '-' . $mslug . '-' . $pslug);
-    if (get_page_by_path($slug, OBJECT, 'ap_product')) return;
+    if (ap_parts_seed_exists($slug, ap_parts_seed_title($brand, $model, $pslug, $pname)['fa'])) return;
 
     /* «CHERY (چری)» ← «چری» و «MVM X22 (ام‌وی‌ام ایکس ۲۲)» ← «MVM X22» */
     $brandFa = preg_match('/\((.+)\)/u', $brand, $m) ? $m[1] : $brand;
@@ -150,6 +229,7 @@ function ap_parts_seed_create($job) {
     ]);
     if (is_wp_error($pid) || !$pid) return;
 
+    update_post_meta($pid, '_ap_seed_key', $slug);
     update_post_meta($pid, '_ap_price', 0);
     update_post_meta($pid, '_ap_short_desc', $short);
     update_post_meta($pid, '_ap_spec', "مناسب $brandFa $modelEn ($yearsFa)");
@@ -169,6 +249,7 @@ add_action('admin_init', function () {
     if (!current_user_can('manage_options') || wp_doing_ajax()) return;
     /* اول باید برند/مدل‌ها ساخته شده باشن */
     if (get_option('ap_vehicle_seed') !== AP_VEHICLE_SEED_VERSION) return;
+    if (get_option('ap_dupe_cleanup_v1') !== 'done') return;   /* اول تکراری‌ها پاک بشن */
     $state = get_option('ap_parts_seed', ['v' => '', 'done' => 0]);
     if (($state['v'] ?? '') !== AP_PARTS_SEED_VERSION) $state = ['v' => AP_PARTS_SEED_VERSION, 'done' => 0];
     $jobs = ap_parts_seed_jobs();
@@ -224,7 +305,7 @@ function ap_parts_en_title_for($post_id, $title) {
     $model = isset($chain[1]) ? get_term($chain[1], 'ap_vehicle') : null;
     if (!$brand || is_wp_error($brand) || !$model || is_wp_error($model) || $partEn === '') return '';
     $brandEn = ap_parts_strip_fa($brand->name);
-    $modelEn = ap_parts_strip_fa($model->name);
+    $modelEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', (string) $model->name));   /* مدل همون‌طور که هست (MVM X22، نه Mvm X22) */
     if ($brandEn === '' || $modelEn === '' || preg_match('/[^\x00-\x7f]/', $brandEn . $modelEn)) return '';
     return trim((stripos($modelEn, $brandEn) === 0 ? '' : "$brandEn ") . "$modelEn $partEn");
 }
@@ -250,3 +331,95 @@ add_action('init', function () {
     if ($changed) delete_transient('ap_products_cache_v3');
     delete_transient('ap_parts_title_en_lock');
 }, 30);
+
+/* =========================================================================
+ * پاک‌سازیِ یک‌باره‌ی محصولاتِ تکراری (آبان ۱۴۰۵).
+ * علت: یک کارِ یک‌باره‌ی سایتِ اپل (بازسازیِ پیوندِ همه‌ی محصولات از بخشِ انگلیسیِ عنوان)
+ * وقتی اجرا شد که عنوان‌ها هنوز فقط فارسی بودن و پیوندهای انگلیسی رو به نویسه‌گردانیِ
+ * فارسی عوض کرد؛ بعد ساختِ دوباره‌ی محصولات، محصولِ قبلی رو با پیوند پیدا نکرد و از
+ * همه یک نسخه‌ی دوم ساخت.
+ * کار: محصولات بر اساسِ بخشِ فارسیِ عنوان گروه می‌شن؛ در هر گروه یکی نگه داشته می‌شه
+ * (قدیمی‌ترین، مگر اینکه فقط نسخه‌ی دیگه قیمت/عکس داشته باشه) و بقیه کاملاً حذف می‌شن.
+ * بعد پیوندِ انگلیسیِ تمیز به محصولِ باقی‌مونده برمی‌گرده (پیوندِ فعلی با ۳۰۱ ریدایرکت می‌شه).
+ * دسته‌دسته روی هر بازدید اجرا می‌شه تا تموم بشه.
+ * ========================================================================= */
+function ap_dupe_value($id) {
+    $v = 0;
+    if ((int) get_post_meta($id, '_ap_price', true) > 0) $v += 4;
+    if (get_post_meta($id, '_ap_variant_prices', true)) $v += 2;
+    if (get_post_thumbnail_id($id) || get_post_meta($id, '_ap_gallery', true)) $v += 2;
+    if ((int) get_comments_number($id) > 0) $v += 1;
+    return $v;
+}
+add_action('init', function () {
+    if (get_option('ap_dupe_cleanup_v1') === 'done' || (defined('DOING_AJAX') && DOING_AJAX)) return;
+    if (get_transient('ap_dupe_cleanup_lock')) return;
+    set_transient('ap_dupe_cleanup_lock', 1, 120);
+    @set_time_limit(120);
+    global $wpdb;
+    $rows = $wpdb->get_results("SELECT ID, post_title, post_name FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','pending','private','future') ORDER BY ID ASC");
+    $groups = [];
+    foreach ($rows as $r) {
+        $key = trim(explode('|', $r->post_title)[0]);
+        if ($key === '') continue;
+        $groups[$key][] = $r;
+    }
+    $deleted = 0; $budget = 80; $fixed = 0;
+    $log = get_option('ap_dupe_cleanup_log', ['deleted' => 0, 'slugs' => 0]);
+    foreach ($groups as $list) {
+        if ($budget <= 0) break;
+        /* نگه‌داشتنی: بیشترین «ارزش» (قیمت، عکس، ...)، در تساوی قدیمی‌ترین */
+        $keep = $list[0]; $best = ap_dupe_value((int) $keep->ID);
+        foreach (array_slice($list, 1) as $r) { $v = ap_dupe_value((int) $r->ID); if ($v > $best) { $best = $v; $keep = $r; } }
+        $cleanSlug = '';
+        foreach ($list as $r) {
+            if ((int) $r->ID === (int) $keep->ID) continue;
+            /* فقط نسخه‌هایی که خودکار ساخته شدن حذف می‌شن؛ محصولی که خودت ساختی هیچ‌وقت پاک نمی‌شه */
+            if (strpos((string) get_post_field('post_content', (int) $r->ID), '<h3>سازگاری</h3>') === false) continue;
+            /* پیوندِ نسخه‌ی حذف‌شده فقط وقتی به کار میاد که همون انگلیسیِ تمیزِ عنوانش باشه */
+            if (strpos($r->post_title, '|') !== false && ap_slug_from_title($r->post_title) === $r->post_name) $cleanSlug = $r->post_name;
+            wp_delete_post((int) $r->ID, true);
+            $deleted++; $budget--;
+        }
+        /* پیوندِ انگلیسیِ تمیز برای محصولِ باقی‌مونده */
+        $seedKey = (string) get_post_meta((int) $keep->ID, '_ap_seed_key', true);
+        $want = strpos($keep->post_title, '|') !== false ? ap_slug_from_title($keep->post_title) : $cleanSlug;
+        if ($want !== '' && $want !== $keep->post_name && count($list) > 1) {
+            $new = wp_unique_post_slug($want, (int) $keep->ID, 'publish', 'ap_product', 0);
+            if ($new === $want) {
+                $wpdb->update($wpdb->posts, ['post_name' => $new], ['ID' => (int) $keep->ID]);
+                if ($keep->post_name !== '') add_post_meta((int) $keep->ID, '_wp_old_slug', $keep->post_name);
+                clean_post_cache((int) $keep->ID);
+                $fixed++;
+            }
+        }
+        if ($seedKey === '' && $want !== '') update_post_meta((int) $keep->ID, '_ap_seed_key', $want);
+    }
+    $log['deleted'] += $deleted; $log['slugs'] += $fixed;
+    update_option('ap_dupe_cleanup_log', $log, false);
+    /* وقتی دیگه هیچ گروهی بیش از یک عضو نداشت، تمومه */
+    $left = 0; foreach ($groups as $list) if (count($list) > 1) $left++;
+    if ($left === 0 || ($deleted === 0 && $fixed === 0)) update_option('ap_dupe_cleanup_v1', 'done', false);
+    delete_transient('ap_products_cache_v3');
+    delete_transient('ap_dupe_cleanup_lock');
+}, 20);
+add_action('admin_notices', function () {
+    if (!current_user_can('manage_options')) return;
+    $log = get_option('ap_dupe_cleanup_log');
+    if (!$log) return;
+    $done = get_option('ap_dupe_cleanup_v1') === 'done';
+    if ($done && get_option('ap_dupe_cleanup_notice_shown')) return;
+    echo '<div class="notice notice-' . ($done ? 'success' : 'warning') . '"><p><strong>پاک‌سازیِ محصولاتِ تکراری:</strong> '
+        . (int) $log['deleted'] . ' نسخه‌ی تکراری حذف شد، پیوندِ ' . (int) $log['slugs'] . ' محصول به انگلیسیِ تمیز برگشت.'
+        . ($done ? ' تموم شد ✅' : ' در حال انجام… صفحه رو چند بار رفرش کنید.') . '</p></div>';
+    if ($done) update_option('ap_dupe_cleanup_notice_shown', 1, false);
+});
+
+/* یک‌بار: «Mvm» → «MVM» در عنوان‌هایی که با نسخه‌ی قبلی دوزبانه شده بودن */
+add_action('init', function () {
+    if (get_option('ap_title_mvm_fix_v1')) return;
+    global $wpdb;
+    $wpdb->query("UPDATE {$wpdb->posts} SET post_title = REPLACE(post_title, ' Mvm ', ' MVM ') WHERE post_type = 'ap_product' AND post_title LIKE '%| % Mvm %'");
+    update_option('ap_title_mvm_fix_v1', 1, false);
+    delete_transient('ap_products_cache_v3');
+}, 40);
