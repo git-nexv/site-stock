@@ -1759,6 +1759,9 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 .carpick-head small{display:block; margin-top:2px; font-size:12.5px; color:var(--text-dim);}
 .carpick-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; align-items:end;}
 .carpick-field{display:flex; flex-direction:column; gap:6px; min-width:0;}
+.carpick-field[hidden]{display:none;}
+.carpick-field.cp-in{animation:cpIn .32s cubic-bezier(.16,1,.3,1) both;}
+@keyframes cpIn{from{opacity:0; transform:translateY(6px) scale(.97);} to{opacity:1; transform:none;}}
 .carpick-field > span{font-size:12px; font-weight:600; color:var(--text-dim); padding-inline-start:4px;}
 .carpick-field select{width:100%; height:48px; padding:0 14px; border-radius:14px; font-family:inherit; font-size:13.5px;
   color:var(--text); background:var(--bg-elev-2); border:1px solid var(--border); appearance:none; cursor:pointer;
@@ -2039,7 +2042,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
       <label class="carpick-field"><span>مدل</span>
         <select id="cpModel" disabled><option value="">اول برند را انتخاب کنید</option></select>
       </label>
-      <label class="carpick-field" id="cpYearField"><span>سال ساخت</span>
+      <label class="carpick-field" id="cpYearField" hidden><span>سال ساخت</span>
         <select id="cpYear" disabled><option value="">اول مدل را انتخاب کنید</option></select>
       </label>
       <button type="button" class="carpick-go" id="cpGo" disabled>جستجوی قطعه</button>
@@ -3331,6 +3334,11 @@ function cpSetLevel(i, items){
   const span = sel.parentElement.querySelector('span');
   if(span) span.textContent = title;
   fillSelect(sel, items, items.length ? 'انتخاب ' + title : (i === 0 ? 'اول مدل را انتخاب کنید' : 'موردی ثبت نشده'));
+  /* هر باکس فقط وقتی دیده می‌شه که اون مدل واقعاً این گزینه‌ها رو داشته باشه؛ پله‌پله ظاهر می‌شن */
+  const field = sel.parentElement;
+  const show = items.length > 0;
+  if(show && field.hidden){ field.hidden = false; field.classList.remove('cp-in'); void field.offsetWidth; field.classList.add('cp-in'); }
+  else if(!show) field.hidden = true;
 }
 function cpTrimLevels(keep){
   while(cpLevels.length > Math.max(keep, 1)){
@@ -3342,6 +3350,7 @@ function cpAddLevel(){
   const label = document.createElement('label');
   label.className = 'carpick-field';
   label.innerHTML = '<span></span><select disabled></select>';
+  label.hidden = true;
   const last = cpLevels[cpLevels.length - 1].parentElement;
   last.after(label);
   const sel = label.querySelector('select');
