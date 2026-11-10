@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) { exit; }
  * محصولی که از قبل با همون پیوند وجود داره دوباره ساخته نمی‌شه.
  */
 
-define('AP_PARTS_SEED_VERSION', '6');
+define('AP_PARTS_SEED_VERSION', '7');
 define('AP_PARTS_SEED_BATCH', 40);
 
 /* [اسلاگ قطعه, نام فارسی, اسلاگ دسته, نام دسته, آیکون, توضیح کوتاه, پاراگراف توضیح] */

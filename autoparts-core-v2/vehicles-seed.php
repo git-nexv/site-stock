@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '11');
+define('AP_VEHICLE_SEED_VERSION', '12');
 
 /* [نام نمایشی, اسلاگ, سال شروع, سال پایان] */
 function ap_vehicle_seed_data() {
@@ -125,8 +125,8 @@ function ap_vehicle_seed_data() {
         ]],
         ['FIDELITY (فیدلیتی)', 'fidelity', [
             ['Prestige (پرستیژ)', 'fidelity-prestige', 1402, 1405, ['seats-5', 'seats-7']],
-            ['Prime (پرایم)', 'prime', 1401, 1405],
-            ['Elite (الیت)', 'elite', 1402, 1405],
+            ['Prime (پرایم)', 'prime', 1401, 1405, ['seats-5', 'seats-7']],
+            ['Elite (الیت)', 'elite', 1402, 1405, ['seats-5', 'seats-7']],
             ['XB1 (ایکس بی ۱)', 'xb1', 1404, 1405],
         ]],
         ['RESPECT (رسپکت)', 'respect', [
@@ -153,9 +153,10 @@ function ap_vehicle_seed_data() {
             ['QX80 (کیو‌ایکس ۸۰)', 'qx80', 1393, 1397],
         ]],
         ['KG MOBILITY (کی جی موبیلیتی)', 'kg-mobility', [
-            ['Actyon (اکتیون)', 'actyon', 1404, 1405],
-            ['Rexton (رکستون)', 'rexton', 1403, 1405],
-            ['Tivoli (تیوولی)', 'tivoli', 1403, 1405],
+            ['Actyon (اکتیون)', 'actyon', 1404, 1405, ['turbo-15']],
+            ['Korando (کوراندو)', 'korando', 1403, 1405, ['turbo-15']],
+            ['Rexton (رکستون)', 'rexton', 1403, 1405, ['turbo-20']],
+            ['Tivoli (تیوولی)', 'tivoli', 1403, 1405, ['turbo-15']],
             ['Torres (تورس)', 'torres', 1403, 1405],
         ]],
         ['HONDA (هوندا)', 'honda', [
@@ -191,7 +192,7 @@ function ap_vehicle_variant_name($slug) {
         'imported' => 'وارداتی', 'montage' => 'مونتاژ', 'tip-2' => 'تیپ 2', 'tip-3' => 'تیپ 3',
         'single-cab' => 'تک کابین', 'double-cab' => 'دو کابین', 'signature' => 'سیگنچر', 'sahara' => 'ساهارا',
         'base' => 'استاندارد', 'excellent' => 'اکسلنت', 'luxury' => 'لاکچری', 'luxury-sport' => 'لاکچری اسپرت', 'turbo' => 'توربو',
-        'excellent-turbo' => 'اکسلنت توربو', 'manual-luxury' => 'دنده‌ای لاکچری', 'auto-luxury' => 'اتوماتیک لاکچری', 'auto-excellent' => 'اتوماتیک اکسلنت', 'seats-5' => '۵ نفره', 'seats-7' => '۷ نفره'];
+        'excellent-turbo' => 'اکسلنت توربو', 'manual-luxury' => 'دنده‌ای لاکچری', 'auto-luxury' => 'اتوماتیک لاکچری', 'auto-excellent' => 'اتوماتیک اکسلنت', 'seats-5' => '۵ نفره', 'seats-7' => '۷ نفره', 'turbo-20' => '2.0 لیتر توربو'];
     return $map[$slug] ?? $slug;
 }
 
