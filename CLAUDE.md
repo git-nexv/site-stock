@@ -50,6 +50,13 @@
 - یعنی push روی شاخه‌های `claude/...` روی سایت نمی‌رود تا به `main` merge شود.
 - ثابت‌های `AP_UPD_REPO`, `AP_UPD_BRANCH`, `AP_UPD_SUBDIR` را بدون دلیل عوض نکن؛ اگر پوشه را تغییر نام دادی آپدیت سایت می‌شکند.
 
+## پیوندهای سئو (URL)
+- محصول: `/product/<brand>-<model>-<part>/` — دسته: `/product-cat/<slug>/`
+- خودرو: `/car/<brand>/<model>/<type>/...` (تاکسونومی `ap_vehicle`، سلسله‌مراتبی)
+- خودرو + نوعِ قطعه: `/car/<brand>/<model>/part/<cat-slug>/` (`ap_part_combo()` در functions.php؛ بدون محصول = noindex)
+- آدرسِ مرورگر با انتخابِ خودرو/دسته هم‌گام می‌شه (`updateUrlForSelectedCategory` در site.html).
+- فهرستِ خودروها از دیوار (divar.ir ← خودرو ← برند و تیپ) گرفته شده؛ ۱۶ برندِ خارجیِ آخر فعلاً محصولِ خودکار ندارن (`$skip` در `ap_parts_seed_jobs`) چون فروشگاه همه‌ی محصولات رو یکجا بار می‌کنه.
+
 ## سرچ
 - `smartSearch()` در `site.html` (بعد از `normalizeSearchText`): غلط املایی، چسبیده/جدا، فارسی/انگلیسی، کیبورد اشتباه. فهرست کلمه‌های هم‌معنی در `SS_SYN_GROUPS` (مخصوص هر سایت).
 

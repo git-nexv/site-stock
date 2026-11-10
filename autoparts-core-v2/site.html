@@ -3089,7 +3089,19 @@ document.addEventListener('click', e=>{
   }catch(_){}
 });
 window.addEventListener('pageshow', ()=>{ try{ rememberShopUrl(); }catch(_){} });
+/* پیوندِ سئوی خودروی انتخاب‌شده (/car/chery/tiggo-7/) */
+function vehicleUrlFor(slug){
+  const v = (typeof VEHICLES !== 'undefined' ? VEHICLES : []).find(x => x.slug === slug);
+  return v && v.url ? v.url.replace(/\/?$/, '/') : null;
+}
 function updateUrlForSelectedCategory(replace){
+  /* خودرو انتخاب شده: /car/<خودرو>/ یا /car/<خودرو>/part/<دسته>/ */
+  const vUrl = (typeof selectedVehicle !== 'undefined' && selectedVehicle) ? vehicleUrlFor(selectedVehicle.slug) : null;
+  if(vUrl){
+    const catSlug = selectedCatPath.length ? selectedCatPath[selectedCatPath.length - 1] : '';
+    setUrl(catSlug ? vUrl + 'part/' + catSlug + '/' : vUrl, replace);
+    return;
+  }
   if(!selectedCatPath.length){ setUrl(HOME_URL, replace); return; }
   const slug = selectedCatPath[selectedCatPath.length - 1];
   const cat = CATS.find(c => c.slug === slug);
@@ -3423,6 +3435,7 @@ function cpRenderActive(){
     const activeChip = document.querySelector('#quickChips .chip.active');
     const cat = activeChip ? activeChip.dataset.cat : 'all';
     render(cat === 'all' ? pickHomeProducts() : PRODUCTS.filter(p => (p.cats||[p.cat]).includes(cat)));
+    updateUrlForSelectedCategory();
   });
 }
 cpGo?.addEventListener('click', ()=>{
@@ -3438,6 +3451,7 @@ cpGo?.addEventListener('click', ()=>{
      قطعاتِ سازگار نشون داده می‌شن. */
   const base = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => (p.cats||[p.cat]).includes(cat));
   render(base);
+  updateUrlForSelectedCategory();   /* آدرسِ بالا = پیوندِ سئوی همین خودرو (و دسته) */
   document.getElementById('products')?.scrollIntoView({behavior:'smooth'});
 });
 
@@ -3472,6 +3486,15 @@ function cpPreselectFromUrl(){
   cpSyncButton();
   selectedVehicle = { slug, label: window.AP_VEHICLE_LABEL || vehicleLabel(chain.map(c=>c.name)) };
   cpRenderActive();
+  /* پیوندِ «خودرو + قطعه» (/car/.../part/<دسته>/): دسته هم از اول انتخاب‌شده‌ست */
+  const partCat = window.AP_PART_CAT;
+  if(partCat && !SINGLE_VIEW_ID){
+    selectedCatPath = [partCat];
+    document.querySelectorAll('#quickChips .chip').forEach(c => c.classList.toggle('active', c.dataset.cat === partCat));
+    if(typeof renderAdvancedFilter === 'function') renderAdvancedFilter();
+    if(PRODUCTS.length) render(PRODUCTS.filter(p => (p.cats||[p.cat]).includes(partCat)));
+    return;
+  }
   if(!SINGLE_VIEW_ID && PRODUCTS.length){ render(PRODUCTS); }
 }
 

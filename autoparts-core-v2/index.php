@@ -605,7 +605,8 @@ if (function_exists('is_singular') && is_singular('ap_product')) {
         $chain[] = $vterm->name;
         $vehicle_label = ap_vehicle_label($chain);
 
-        $safe_title = esc_html('قطعات ' . $vehicle_label . ' | ' . get_bloginfo('name'));
+        $ap_combo = function_exists('ap_part_combo') ? ap_part_combo() : null;
+        $safe_title = esc_html($ap_combo ? ('خرید ' . $ap_combo['title'] . ' | ' . get_bloginfo('name')) : ('قطعات ' . $vehicle_label . ' | ' . get_bloginfo('name')));
         $html = preg_replace('#<title>.*?</title>#su', '<title>' . $safe_title . '</title>', $html, 1);
         $cat_seo_desc = trim((string) $vterm->description) !== ''
             ? $vterm->description
@@ -622,6 +623,7 @@ $inject .= "window.AP_SITE_NAME = " . json_encode($ap_site_name) . ";\n";
 if (!empty($vehicle_slug)) {
     $inject .= "window.AP_VEHICLE_SLUG = " . json_encode($vehicle_slug) . ";\n";
     $inject .= "window.AP_VEHICLE_LABEL = " . json_encode($vehicle_label, JSON_UNESCAPED_UNICODE) . ";\n";
+    if (!empty($ap_combo)) $inject .= "window.AP_PART_CAT = " . json_encode($ap_combo['cat']->slug) . ";\n";
 }
 /* شماره‌ی تماسِ همون نوارِ بالای سایت رو به جاوااسکریپت هم می‌فرستیم تا روی
    عبارت «برای دریافت قیمت تماس بگیرید» هم بشه با تپ مستقیم تماس گرفت. */
@@ -664,12 +666,16 @@ if (has_action('rank_math/head')) { ob_start(); do_action('rank_math/head'); $se
 $qid = function_exists('get_queried_object_id') ? get_queried_object_id() : 0;
 $is_prod = function_exists('is_singular') && is_singular('ap_product') && $qid;
 $is_cat  = function_exists('is_tax') && is_tax('ap_cat');
-$canon = $is_prod ? get_permalink($qid) : ($is_cat ? get_term_link(get_queried_object()) : (is_front_page() || is_home() ? home_url('/') : ''));
+$is_veh  = function_exists('is_tax') && is_tax('ap_vehicle');
+$ap_combo = ($is_veh && function_exists('ap_part_combo')) ? ap_part_combo() : null;
+$canon = $is_prod ? get_permalink($qid) : ($ap_combo ? $ap_combo['url'] : (($is_cat || $is_veh) ? get_term_link(get_queried_object()) : (is_front_page() || is_home() ? home_url('/') : '')));
 if (is_wp_error($canon)) $canon = '';
 if (stripos($seo_head, 'rel="canonical"') === false && $canon) $seo_head .= '<link rel="canonical" href="' . esc_url($canon) . '">';
 if (stripos($seo_head, 'name="description"') === false) {
     $desc = '';
     if ($is_prod) $desc = (string) get_post_meta($qid, '_ap_short_desc', true) ?: wp_strip_all_tags(get_post_field('post_content', $qid));
+    elseif ($ap_combo) $desc = 'خرید ' . $ap_combo['title'] . '؛ اورجینال و آفتر مارکت با گارانتی اصالت و قیمت روز.';
+    elseif ($is_veh && !empty($cat_seo_desc)) $desc = $cat_seo_desc;
     elseif (!$is_cat) $desc = 'فروشگاه تخصصی قطعات یدکی خودرو؛ قطعات موتوری، بدنه، برقی و جلوبندی خودروهای چینی و داخلی، اورجینال و آفتر مارکت.';
     if ($desc !== '') $seo_head .= '<meta name="description" content="' . esc_attr(wp_trim_words(wp_strip_all_tags($desc), 30, '...')) . '">';
 } else {
@@ -710,6 +716,21 @@ if ($is_prod) {
     if ($kids && !is_wp_error($kids)) foreach ($kids as $k) $ssr .= '<li><a href="' . esc_url(get_term_link($k)) . '">' . esc_html($k->name) . '</a></li>';
     foreach ($ids as $pid) $ssr .= '<li><a href="' . esc_url(get_permalink($pid)) . '">' . esc_html(get_the_title($pid)) . '</a></li>';
     $ssr .= '</ul></main>';
+} elseif ($is_veh) {
+    /* صفحه‌ی خودرو (و «خودرو + قطعه»): فهرستِ پیوندِ زیرمدل/تیپ‌ها، نوعِ قطعه‌ها و محصولات برای خزنده‌ها */
+    $vt = get_queried_object();
+    $vlink = get_term_link($vt);
+    $ssr = '<main id="apSsr"><h1>' . esc_html($ap_combo ? $ap_combo['title'] : ('قطعات ' . ($vehicle_label ?? $vt->name))) . '</h1>';
+    $kids = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => (int) $vt->term_id, 'hide_empty' => false]);
+    if (!$ap_combo && $kids && !is_wp_error($kids)) { $ssr .= '<ul>'; foreach ($kids as $k) $ssr .= '<li><a href="' . esc_url(get_term_link($k)) . '">' . esc_html($k->name) . '</a></li>'; $ssr .= '</ul>'; }
+    $ids = $ap_combo ? $ap_combo['ids'] : get_posts(['post_type' => 'ap_product', 'post_status' => 'publish', 'numberposts' => 200, 'fields' => 'ids',
+        'tax_query' => [['taxonomy' => 'ap_vehicle', 'terms' => (int) $vt->term_id, 'include_children' => true]]]);
+    if (!$ap_combo && $ids && !is_wp_error($vlink)) {
+        $catIds = [];
+        foreach ($ids as $pid) foreach ((array) wp_get_post_terms($pid, 'ap_cat', ['fields' => 'ids']) as $cid) $catIds[(int) $cid] = true;
+        if ($catIds) { $ssr .= '<ul>'; foreach (array_keys($catIds) as $cid) { $ct = get_term($cid, 'ap_cat'); if ($ct && !is_wp_error($ct)) $ssr .= '<li><a href="' . esc_url(trailingslashit($vlink) . 'part/' . $ct->slug . '/') . '">' . esc_html($ct->name . ' ' . ($vehicle_label ?? $vt->name)) . '</a></li>'; } $ssr .= '</ul>'; }
+    }
+    $ssr .= '<ul>'; foreach ($ids as $pid) $ssr .= '<li><a href="' . esc_url(get_permalink($pid)) . '">' . esc_html(get_the_title($pid)) . '</a></li>'; $ssr .= '</ul></main>';
 }
 if ($ssr !== '') {
     $ssr = '<style>#apSsr{max-width:900px;margin:30px auto;padding:0 16px;font-family:Vazirmatn,Tahoma,sans-serif}#apSsr img{max-width:100%;height:auto}</style>'

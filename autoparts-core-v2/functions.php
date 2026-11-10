@@ -2841,7 +2841,7 @@ add_filter('rank_math/sitemap/exclude_post_type', function ($exclude, $type) {
     return in_array($type, ['ap_product', 'ap_article'], true) ? false : $exclude;
 }, 20, 2);
 add_filter('rank_math/sitemap/exclude_taxonomy', function ($exclude, $type) {
-    return $type === 'ap_cat' ? false : $exclude;
+    return in_array($type, ['ap_cat', 'ap_vehicle'], true) ? false : $exclude;   /* برند/مدل/تیپِ خودرو هم توی سایت‌مپ */
 }, 20, 2);
 add_filter('rank_math/sitemap/entries_per_page', function () { return 1000; });
 add_filter('rank_math/sitemap/urlimages', function ($images, $post_id) {
@@ -3962,3 +3962,54 @@ add_action('init', function () {
     if (trim((string) get_theme_mod('ap_instagram_url', '')) === '') set_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
     update_option('ap_instagram_set_v1', 1, false);
 });
+
+/* =========================================================================
+ * پیوندِ سئو برای «خودرو + نوعِ قطعه»: /car/chery/tiggo-7/part/brake-pads/
+ * (برند/مدل/تیپ خودشون از قبل پیوند دارن: /car/chery/tiggo-7/excellent/)
+ * همون صفحه‌ی فروشگاه باز می‌شه، با خودرو و دسته‌ی انتخاب‌شده، عنوان/توضیح/canonicalِ
+ * مخصوصِ خودش. اگه محصولی نداشته باشه noindex می‌شه تا صفحه‌ی خالی ایندکس نشه.
+ * ========================================================================= */
+add_action('init', function () {
+    add_rewrite_tag('%ap_part_cat%', '([a-z0-9\-]+)');
+    add_rewrite_rule('^car/(.+?)/part/([a-z0-9\-]+)/?$', 'index.php?ap_vehicle=$matches[1]&ap_part_cat=$matches[2]', 'top');
+    if (get_option('ap_part_rewrite_v1') !== '1') { flush_rewrite_rules(false); update_option('ap_part_rewrite_v1', '1', false); }
+}, 20);
+add_filter('query_vars', function ($v) { $v[] = 'ap_part_cat'; return $v; });
+
+/* «خودرو + قطعه»ی فعلی، یا null */
+function ap_part_combo() {
+    static $c = false;
+    if ($c !== false) return $c;
+    $c = null;
+    if (!function_exists('is_tax') || !is_tax('ap_vehicle')) return $c;
+    $slug = sanitize_title((string) get_query_var('ap_part_cat'));
+    if ($slug === '') return $c;
+    $cat = get_term_by('slug', $slug, 'ap_cat');
+    $veh = get_queried_object();
+    if (!$cat || !$veh || is_wp_error($veh)) return $c;
+    $chain = [];
+    foreach (array_reverse(get_ancestors($veh->term_id, 'ap_vehicle')) as $aid) { $t = get_term($aid, 'ap_vehicle'); if ($t && !is_wp_error($t)) $chain[] = $t->name; }
+    $chain[] = $veh->name;
+    $label = function_exists('ap_vehicle_label') ? ap_vehicle_label($chain) : implode(' ', $chain);
+    $ids = get_posts(['post_type' => 'ap_product', 'post_status' => 'publish', 'numberposts' => 100, 'fields' => 'ids', 'tax_query' => [
+        'relation' => 'AND',
+        ['taxonomy' => 'ap_vehicle', 'terms' => (int) $veh->term_id, 'include_children' => true],
+        ['taxonomy' => 'ap_cat', 'terms' => (int) $cat->term_id, 'include_children' => true],
+    ]]);
+    $vlink = get_term_link($veh);
+    $c = ['cat' => $cat, 'veh' => $veh, 'label' => $label, 'ids' => $ids,
+          'url' => is_wp_error($vlink) ? home_url('/') : trailingslashit($vlink) . 'part/' . $cat->slug . '/',
+          'title' => $cat->name . ' ' . $label];
+    return $c;
+}
+add_filter('rank_math/frontend/canonical', function ($u) { $c = ap_part_combo(); return $c ? $c['url'] : $u; }, 99);
+add_filter('rank_math/frontend/title', function ($t) { $c = ap_part_combo(); return $c ? 'خرید ' . $c['title'] . ' | قیمت روز | ' . get_bloginfo('name') : $t; }, 99);
+add_filter('rank_math/frontend/description', function ($d) {
+    $c = ap_part_combo();
+    return $c ? 'خرید ' . $c['title'] . '؛ اورجینال و آفتر مارکت با گارانتی اصالت، قیمت روز و ارسال سریع به سراسر ایران.' : $d;
+}, 99);
+add_filter('rank_math/frontend/robots', function ($r) {
+    $c = ap_part_combo();
+    if ($c && !$c['ids']) { $r['index'] = 'noindex'; $r['follow'] = 'follow'; }
+    return $r;
+}, 99);

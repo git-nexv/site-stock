@@ -166,7 +166,10 @@ function ap_parts_engine_only() {
 /* همه‌ی کارهای ساخت (برند × مدل × قطعه) به ترتیب ثابت */
 function ap_parts_seed_jobs() {
     $jobs = [];
+    /* برندهایی که فعلاً محصولِ خودکار نمی‌گیرن (فقط فهرستِ خودرو)؛ با ۱۳ هزار محصول، بارگذاریِ یکجای فروشگاه از توانِ هاست بیرون می‌زنه */
+    $skip = ['mercedes-benz', 'bmw', 'volkswagen', 'toyota', 'lexus', 'nissan', 'mazda', 'mitsubishi', 'suzuki', 'hyundai', 'kia', 'renault', 'peugeot', 'mg', 'geely', 'jetour'];
     foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
+        if (in_array($bslug, $skip, true)) continue;
         foreach ($models as $model_row) {
             [$model, $mslug, $from, $to] = $model_row;
             $ev = ap_parts_is_ev($bslug, $mslug, $model_row ?? null);
