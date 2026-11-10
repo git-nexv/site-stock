@@ -63,6 +63,29 @@ function ap_parts_seed_list() {
     ];
 }
 
+/* نامِ انگلیسیِ هر قطعه برای نیمه‌ی انگلیسیِ عنوان («فارسی | English»، مثل سایت اپل) */
+function ap_parts_seed_en() {
+    return [
+        'front-brake-pads' => 'Front Brake Pads', 'rear-brake-pads' => 'Rear Brake Pads',
+        'front-bumper' => 'Front Bumper', 'rear-bumper' => 'Rear Bumper',
+        'headlight' => 'Headlight', 'taillight' => 'Taillight', 'side-mirror' => 'Side Mirror',
+        'front-fender' => 'Front Fender', 'hood' => 'Hood', 'grille' => 'Grille',
+        'radiator' => 'Radiator', 'oil-filter' => 'Oil Filter', 'air-filter' => 'Air Filter',
+        'spark-plugs' => 'Spark Plugs (Set)',
+    ];
+}
+/* عنوانِ دوزبانه: «لنت ترمز جلو چری Tiggo 7 | Chery Tiggo 7 Front Brake Pads» */
+function ap_parts_seed_title($brand, $model, $pslug, $pname) {
+    $brandFa = preg_match('/\((.+)\)/u', $brand, $m) ? $m[1] : $brand;
+    $modelEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', $model));
+    $brandEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', $brand));
+    if ($brandEn === strtoupper($brandEn) && strlen($brandEn) > 3) $brandEn = ucwords(strtolower($brandEn));   /* CHERY → Chery (MVM/JAC/KMC همون می‌مونن) */
+    $en = ap_parts_seed_en()[$pslug] ?? '';
+    $fa = "$pname $brandFa $modelEn";
+    $enFull = trim((stripos($modelEn, $brandEn) === 0 ? '' : "$brandEn ") . "$modelEn $en");
+    return ['fa' => $fa, 'full' => $en ? "$fa | $enFull" : $fa];
+}
+
 function ap_parts_seed_cat($slug, $name) {
     $t = get_term_by('slug', $slug, 'ap_cat');
     if ($t) return (int) $t->term_id;
@@ -107,7 +130,7 @@ function ap_parts_seed_create($job) {
     $brandEn = trim(preg_replace('/\s*\(.+\)\s*/u', '', $brand));
     $yearsFa = strtr("$from تا $to", ['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']);
 
-    $title = "$pname $brandFa $modelEn";
+    $title = ap_parts_seed_title($brand, $model, $pslug, $pname)['full'];
     $content = '<p>' . esc_html($para) . '</p>'
         . '<h3>سازگاری</h3><ul>'
         . '<li>برند: ' . esc_html("$brandEn ($brandFa)") . '</li>'
@@ -171,3 +194,29 @@ add_action('admin_notices', function () {
     printf('<div class="notice notice-info"><p>در حال ساخت محصولات: %d از %d. برای ادامه صفحه رو رفرش کن یا <a href="%s">این‌جا</a> بزن.</p></div>',
         $done, $total, esc_url(admin_url('admin.php?page=ap-dashboard')));
 });
+
+/* یک‌بار: عنوانِ محصولاتی که قبلاً با این فایل ساخته شدن دوزبانه می‌شه («فارسی | English»).
+   فقط عنوان عوض می‌شه (مستقیم در دیتابیس)؛ پیوند یکتا، قیمت و بقیه‌ی اطلاعات دست نمی‌خورن.
+   اگه عنوانِ یک محصول رو خودت از پیشخوان عوض کرده باشی، به اون دست زده نمی‌شه. */
+add_action('admin_init', function () {
+    if (!current_user_can('manage_options') || wp_doing_ajax()) return;
+    $st = get_option('ap_parts_title_en_v1', ['done' => 0, 'fin' => 0]);
+    if (!empty($st['fin'])) return;
+    global $wpdb;
+    $jobs = ap_parts_seed_jobs();
+    $end = min(count($jobs), (int) $st['done'] + 300);
+    for ($i = (int) $st['done']; $i < $end; $i++) {
+        [$brand, $bslug, $model, $mslug, , , $part] = $jobs[$i];
+        $slug = sanitize_title($bslug . '-' . $mslug . '-' . $part[0]);
+        $t = ap_parts_seed_title($brand, $model, $part[0], $part[1]);
+        $row = $wpdb->get_row($wpdb->prepare("SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_name = %s LIMIT 1", $slug));
+        if ($row && $row->post_title === $t['fa'] && $t['full'] !== $t['fa']) {
+            $wpdb->update($wpdb->posts, ['post_title' => $t['full']], ['ID' => (int) $row->ID]);
+            clean_post_cache((int) $row->ID);
+        }
+    }
+    $st['done'] = $end;
+    if ($end >= count($jobs)) $st['fin'] = 1;
+    update_option('ap_parts_title_en_v1', $st, false);
+    delete_transient('ap_products_cache_v3');
+}, 25);
