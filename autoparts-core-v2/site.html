@@ -1164,6 +1164,12 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
              top .3s var(--spring), bottom .3s var(--spring), background .25s ease, box-shadow .25s ease;
 }
 .dock-thumb.on{opacity:1;}
+/* اندروید: کروم حرکتِ افقیِ انگشت روی نوار رو «اسکرولِ صفحه» حساب می‌کرد و کشیدن رو لغو می‌کرد
+   (pointercancel)؛ با touch-action:none کل حرکت مالِ خودِ نواره. */
+.dock-pill{touch-action:none;}
+.dock-thumb{will-change:transform;}
+/* اندروید: فیلترِ شیشه‌ای روی لنزِ متحرک (روی blurِ خودِ نوار) هر فریم دوباره کشیده می‌شد و لگ داشت */
+.ap-dock.dock-lite .dock-thumb.lifted{-webkit-backdrop-filter:none; backdrop-filter:none;}
 .dock-thumb.lifted{
   z-index:3; top:-7px; bottom:-7px;
   background:var(--lens-tint);
@@ -5908,12 +5914,23 @@ if(stage){
   /* مختصات بر اساس offsetLeft گرفته می‌شه، چون خودِ کپسول padding داره و مبدأِ
      «left:0»ِ لنز با لبه‌ی بیرونیِ کپسول یکی نیست؛ با getBoundingClientRect لنز به‌اندازه‌ی
      همون padding جا می‌موند و به آخرین گزینه‌ی سمت راست نمی‌رسید. */
+  /* موقعیتِ گزینه‌ها حینِ لمس یک‌بار اندازه گرفته می‌شه (نه هر فریم)؛ خوندنِ offsetLeft بعد از
+     هر جابه‌جاییِ لنز، مرورگر رو مجبور به محاسبه‌ی دوباره‌ی چیدمان می‌کرد و روی اندروید لگ داشت. */
+  let slotCache = null, originCache = null;
   function slot(i){
+    if(slotCache) return slotCache[i];
     const el = items[i];
     return { x: el.offsetLeft, w: el.offsetWidth, c: el.offsetLeft + el.offsetWidth / 2 };
   }
+  function cacheGeometry(){
+    slotCache = null;
+    slotCache = items.map((_, i) => slot(i));
+    originCache = items[0].getBoundingClientRect().left - items[0].offsetLeft;
+  }
+  if(/Android/i.test(navigator.userAgent)) document.querySelector('.ap-dock')?.classList.add('dock-lite');
   // تبدیلِ مختصاتِ انگشت به همون مبدأ
   function toLocal(clientX){
+    if(originCache != null) return clientX - originCache;
     const first = items[0];
     return clientX - first.getBoundingClientRect().left + first.offsetLeft;
   }
@@ -5970,7 +5987,7 @@ if(stage){
 
   /* ---------- لمس، نگه‌داشتن و کشیدن ---------- */
   let pressing = false, dragging = false, pointerId = null;
-  let startX = 0, targetX = 0, curX = 0, lastX = 0, lensW = 0, raf = 0;
+  let startX = 0, targetX = 0, curX = 0, lastX = 0, lensW = 0, raf = 0, lastUnder = -1;
 
   function frame(){
     // دنبال‌کردنِ انگشت با کمی تأخیرِ نرم (حسِ مایع)
@@ -5981,7 +5998,7 @@ if(stage){
     thumb.style.setProperty('--sy', (1 - stretch * 0.55).toFixed(3));
     putThumb(curX);
     const under = nearestIndex(curX + lensW/2);
-    items.forEach((el,k)=> el.classList.toggle('under', k === under));
+    if(under !== lastUnder){ lastUnder = under; items.forEach((el,k)=> el.classList.toggle('under', k === under)); }
     if(pressing) raf = requestAnimationFrame(frame);
   }
 
@@ -5990,8 +6007,9 @@ if(stage){
     if(e.pointerType === 'mouse' && e.button !== 0) return;
     const btn = e.target.closest('.dock-item');
     if(!btn) return;
-    pressing = true; dragging = false; pointerId = e.pointerId;
+    pressing = true; dragging = false; pointerId = e.pointerId; lastUnder = -1;
     try{ pill.setPointerCapture(e.pointerId); }catch(_){}
+    cacheGeometry();
     const pr = pill.getBoundingClientRect();
     const i = items.indexOf(btn);
     const s = slot(i);
@@ -6011,7 +6029,6 @@ if(stage){
 
   pill.addEventListener('pointermove', e=>{
     if(!pressing || e.pointerId !== pointerId) return;
-    const pr = pill.getBoundingClientRect();
     if(!dragging && Math.abs(e.clientX - startX) > 6){
       dragging = true;
       // از لحظه‌ی کشیدن، لنز مستقیم با انگشت حرکت می‌کنه (بدون transition)
@@ -6034,13 +6051,13 @@ if(stage){
     if(!pressing || (e && e.pointerId !== pointerId)) return;
     pressing = false;
     cancelAnimationFrame(raf);
-    const pr = pill.getBoundingClientRect();
     let i;
     if(dragging) i = nearestIndex(curX + lensW/2);
     else i = items.indexOf((e && document.elementFromPoint(e.clientX, e.clientY)?.closest('.dock-item')) || null);
     items.forEach(el=> el.classList.remove('under'));
     thumb.classList.remove('lifted', 'dragging');
     thumb.style.setProperty('--sx', 1); thumb.style.setProperty('--sy', 1);
+    slotCache = null; originCache = null;
     if(cancelled || i < 0){ setActive(activeIdx); return; }
     setActive(i);
     thumb.classList.remove('release'); void thumb.offsetWidth; thumb.classList.add('release');
