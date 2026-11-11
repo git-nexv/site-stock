@@ -4013,3 +4013,111 @@ add_filter('rank_math/frontend/robots', function ($r) {
     if ($c && !$c['ids']) { $r['index'] = 'noindex'; $r['follow'] = 'follow'; }
     return $r;
 }, 99);
+
+/* =========================================================================
+ * سایت‌مپِ کامل برای سرچ کنسول (Rank Math): آدرسِ اصلی /sitemap_index.xml
+ * ۱) یک‌بار: ماژولِ سایت‌مپ روشن و نوع‌های درست انتخاب می‌شن (محصول، مقاله، برگه، دسته، خودرو).
+ * ۲) برند و مدلِ خودرو داخلِ سایت‌مپ (محصولات به «مدل» وصلن، پس برند در وردپرس خالی دیده
+ *    می‌شد و Rank Math حذفش می‌کرد)؛ تیپ و سالِ بدونِ محصول بیرون می‌مونن.
+ * ۳) سایت‌مپِ جدا برای صفحه‌های «خودرو + نوعِ قطعه» (/car/.../part/...) — فقط ترکیب‌هایی که
+ *    محصول دارن — که خودکار به فهرستِ اصلیِ Rank Math اضافه می‌شه.
+ * ========================================================================= */
+add_action('admin_init', function () {
+    if (get_option('ap_sitemap_setup_v1') || !current_user_can('manage_options')) return;
+    $mods = get_option('rank_math_modules', []);
+    if (is_array($mods) && $mods && !in_array('sitemap', $mods, true)) { $mods[] = 'sitemap'; update_option('rank_math_modules', $mods); }
+    $o = get_option('rank-math-options-sitemap', []);
+    if (!is_array($o)) $o = [];
+    $o = array_merge($o, [
+        'items_per_page' => 1000, 'include_images' => 'on', 'include_featured_image' => 'on',
+        'pt_ap_product_sitemap' => 'on', 'pt_ap_article_sitemap' => 'on', 'pt_page_sitemap' => 'on',
+        'pt_attachment_sitemap' => 'off',
+        'tax_ap_cat_sitemap' => 'on', 'tax_ap_vehicle_sitemap' => 'on',
+        'tax_category_sitemap' => 'off', 'tax_post_tag_sitemap' => 'off', 'tax_ap_brand_sitemap' => 'off',
+    ]);
+    update_option('rank-math-options-sitemap', $o);
+    if (function_exists('ap_flush_rank_math_sitemap')) ap_flush_rank_math_sitemap();
+    flush_rewrite_rules(false);
+    update_option('ap_sitemap_setup_v1', 1, false);
+}, 70);
+
+/* برند/مدلِ خودرو حتی وقتی در وردپرس «خالی» حساب می‌شن */
+add_filter('rank_math/sitemap/exclude_empty_terms', function ($exclude, $taxonomies = []) {
+    return in_array('ap_vehicle', (array) $taxonomies, true) ? false : $exclude;
+}, 20, 2);
+/* تیپ/سال (سطحِ سوم به بعد) فقط اگه واقعاً محصول داشته باشن */
+add_filter('rank_math/sitemap/entry', function ($url, $type, $object) {
+    if ($type === 'term' && $object instanceof WP_Term && $object->taxonomy === 'ap_vehicle') {
+        if (count(get_ancestors($object->term_id, 'ap_vehicle')) >= 2 && (int) $object->count === 0) return false;
+    }
+    return $url;
+}, 30, 3);
+
+/* ترکیب‌های «خودرو + نوعِ قطعه» که محصول دارن: [[url, lastmod], ...] (۱۲ ساعت کش) */
+function ap_car_part_sitemap_rows() {
+    $rows = get_transient('ap_car_part_sitemap_v1');
+    if (is_array($rows)) return $rows;
+    global $wpdb;
+    $pairs = $wpdb->get_results("
+        SELECT tv.term_id AS veh, tc.term_id AS cat, MAX(p.post_modified_gmt) AS mod_gmt
+        FROM {$wpdb->posts} p
+        JOIN {$wpdb->term_relationships} rv ON rv.object_id = p.ID
+        JOIN {$wpdb->term_taxonomy} tv ON tv.term_taxonomy_id = rv.term_taxonomy_id AND tv.taxonomy = 'ap_vehicle'
+        JOIN {$wpdb->term_relationships} rc ON rc.object_id = p.ID
+        JOIN {$wpdb->term_taxonomy} tc ON tc.term_taxonomy_id = rc.term_taxonomy_id AND tc.taxonomy = 'ap_cat'
+        WHERE p.post_type = 'ap_product' AND p.post_status = 'publish'
+        GROUP BY tv.term_id, tc.term_id");
+    $map = [];
+    foreach ((array) $pairs as $r) {
+        /* خودِ خودرو + همه‌ی والدهاش (برند هم صفحه‌ی «برند + قطعه» داره) */
+        $vehs = array_merge([(int) $r->veh], array_map('intval', get_ancestors((int) $r->veh, 'ap_vehicle')));
+        foreach ($vehs as $v) {
+            $k = $v . ':' . (int) $r->cat;
+            if (!isset($map[$k]) || $r->mod_gmt > $map[$k]) $map[$k] = $r->mod_gmt;
+        }
+    }
+    $rows = [];
+    foreach ($map as $k => $mod) {
+        [$v, $c] = array_map('intval', explode(':', $k));
+        $vt = get_term($v, 'ap_vehicle'); $ct = get_term($c, 'ap_cat');
+        if (!$vt || is_wp_error($vt) || !$ct || is_wp_error($ct)) continue;
+        $link = get_term_link($vt);
+        if (is_wp_error($link)) continue;
+        $rows[] = [trailingslashit($link) . 'part/' . $ct->slug . '/', $mod ? gmdate('c', strtotime($mod . ' UTC')) : ''];
+    }
+    usort($rows, function ($a, $b) { return strcmp($a[0], $b[0]); });
+    set_transient('ap_car_part_sitemap_v1', $rows, 12 * HOUR_IN_SECONDS);
+    return $rows;
+}
+add_action('save_post_ap_product', function () { delete_transient('ap_car_part_sitemap_v1'); });
+
+/* به فهرستِ اصلیِ سایت‌مپ (sitemap_index.xml) اضافه می‌شه */
+add_filter('rank_math/sitemap/index', function ($xml) {
+    $rows = ap_car_part_sitemap_rows();
+    $pages = (int) ceil(count($rows) / 1000);
+    for ($i = 1; $i <= $pages; $i++) {
+        $last = '';
+        foreach (array_slice($rows, ($i - 1) * 1000, 1000) as $r) if ($r[1] > $last) $last = $r[1];
+        $xml .= "\t<sitemap>\n\t\t<loc>" . esc_url(home_url('/car-parts-sitemap' . ($i > 1 ? $i : '') . '.xml')) . "</loc>\n"
+              . ($last ? "\t\t<lastmod>" . esc_html($last) . "</lastmod>\n" : '') . "\t</sitemap>\n";
+    }
+    return $xml;
+}, 20);
+
+/* خودِ فایلِ /car-parts-sitemap.xml (و car-parts-sitemap2.xml و ...) */
+add_action('wp_loaded', function () {
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (!preg_match('#/car-parts-sitemap(\d*)\.xml$#', $path, $m)) return;
+    $page = max(1, (int) ($m[1] ?: 1));
+    $rows = array_slice(ap_car_part_sitemap_rows(), ($page - 1) * 1000, 1000);
+    if (!$rows) { status_header(404); exit; }
+    status_header(200);
+    header('Content-Type: application/xml; charset=UTF-8');
+    header('X-Robots-Tag: noindex, follow');
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach ($rows as $r) {
+        echo "\t<url>\n\t\t<loc>" . esc_url($r[0]) . "</loc>\n" . ($r[1] ? "\t\t<lastmod>" . esc_html($r[1]) . "</lastmod>\n" : '') . "\t</url>\n";
+    }
+    echo '</urlset>';
+    exit;
+}, 1);

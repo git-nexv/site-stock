@@ -55,6 +55,7 @@
 - خودرو: `/car/<brand>/<model>/<type>/...` (تاکسونومی `ap_vehicle`، سلسله‌مراتبی)
 - خودرو + نوعِ قطعه: `/car/<brand>/<model>/part/<cat-slug>/` (`ap_part_combo()` در functions.php؛ بدون محصول = noindex)
 - آدرسِ مرورگر با انتخابِ خودرو/دسته هم‌گام می‌شه (`updateUrlForSelectedCategory` در site.html).
+- سایت‌مپ برای سرچ کنسول: `/sitemap_index.xml` (Rank Math) + سایت‌مپِ خودمون `/car-parts-sitemap.xml` برای «خودرو + قطعه» که با فیلترِ `rank_math/sitemap/index` به فهرستِ اصلی اضافه می‌شه (`ap_car_part_sitemap_rows()`).
 - فهرستِ خودروها از دیوار (divar.ir ← خودرو ← برند و تیپ) گرفته شده؛ ۱۶ برندِ خارجیِ آخر فعلاً محصولِ خودکار ندارن (`$skip` در `ap_parts_seed_jobs`) چون فروشگاه همه‌ی محصولات رو یکجا بار می‌کنه.
 
 ## سرچ
