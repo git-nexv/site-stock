@@ -4267,3 +4267,20 @@ add_action('init', function () {
     foreach (['ap_vehicles_cache_v2', 'ap_vehicle_sitemap_skip_v1', 'ap_car_part_sitemap_v1', 'ap_products_cache_v3'] as $k) delete_transient($k);
     update_option('ap_vehicle_orphans_done', $tag, false);
 }, 40);
+
+/* =========================================================================
+ * انتقال دامنه: auto.nexv.ir → دامنه‌ی جدید (cartehran.ir)
+ * وقتی «نشانی سایت» در پیشخوان (تنظیمات ← عمومی) به دامنه‌ی جدید عوض بشه، هر درخواستی
+ * که هنوز با دامنه‌ی قدیمی بیاد (لینک‌های گوگل، اینستاگرام، بوکمارک‌ها) با ۳۰۱ به همون
+ * صفحه روی دامنه‌ی جدید می‌ره؛ اعتبارِ سئو منتقل می‌شه. تا وقتی نشانی عوض نشده، کاری نمی‌کنه.
+ * ========================================================================= */
+add_action('init', function () {
+    if ((defined('WP_CLI') && WP_CLI) || (defined('DOING_CRON') && DOING_CRON)) return;
+    $req  = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $req  = preg_replace('/:\d+$/', '', $req);
+    $old  = ['auto.nexv.ir', 'www.auto.nexv.ir'];
+    $home = strtolower((string) parse_url(home_url('/'), PHP_URL_HOST));
+    if (!in_array($req, $old, true) || $home === '' || in_array($home, $old, true)) return;
+    wp_redirect('https://' . $home . ($_SERVER['REQUEST_URI'] ?? '/'), 301);
+    exit;
+}, 0);
