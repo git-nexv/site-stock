@@ -26,13 +26,15 @@
   --text:#111113;
   --text-dim:#6b6b70;
   --border:rgba(10,10,15,0.09);
-  --accent:#ff3b4e;
-  --accent-2:#ff9f2e; /* قبلاً سبز بود؛ آبیِ یاسیِ ملایم */
-  --accent-soft:rgba(255,59,78,0.12);
-  --danger:#ff4d5e;
+  /* پالتِ «گرافیت + قرمزِ تیره»: دکمه‌ها و نوارها گرافیت، تأکیدها (برچسب، شمارنده، گرادیان) قرمزِ تیره */
+  --accent:#2B2D31;
+  --accent-2:#C8102E;
+  --accent-grad2:#4A4D55;
+  --accent-soft:rgba(43,45,49,0.14);
+  --danger:#C8102E;
   --shadow:0 20px 50px rgba(60,12,20,0.08);
   --radius:22px;
-  --glow: radial-gradient(circle at 30% 20%, rgba(255,59,78,.35), transparent 60%);
+  --glow: radial-gradient(circle at 30% 20%, rgba(200,16,46,.16), transparent 60%);
 }
 [data-theme="dark"]{
   --bg:#07070b;
@@ -47,11 +49,14 @@
   --text:#f3f3f6;
   --text-dim:#94949c;
   --border:rgba(255,255,255,0.08);
-  --accent:#ff5563;
-  --accent-2:#ffb547;
-  --accent-soft:rgba(255,85,99,0.16);
+  /* حالتِ شب: پس‌زمینه خودش گرافیتیه، پس تأکید قرمزِ تیره‌ست */
+  --accent:#D2283F;
+  --accent-2:#F0485C;
+  --accent-grad2:#E8475B;
+  --accent-soft:rgba(210,40,63,0.18);
+  --danger:#F0485C;
   --shadow:0 25px 60px rgba(0,0,0,0.45);
-  --glow: radial-gradient(circle at 30% 20%, rgba(255,85,99,.28), transparent 60%);
+  --glow: radial-gradient(circle at 30% 20%, rgba(210,40,63,.22), transparent 60%);
 }
 *{box-sizing:border-box; margin:0; padding:0;}
 html{scroll-behavior:smooth;}
@@ -178,7 +183,7 @@ body.search-active #quickChips{display:none !important;}
   padding:11px 22px; border-radius:100px; font-size:14px; font-weight:600; transition:all .3s ease; white-space:nowrap;
   display:inline-flex; align-items:center; gap:8px;
 }
-.btn-primary{background:linear-gradient(135deg,var(--accent),#ff8590); color:#fff; box-shadow:0 10px 25px var(--accent-soft);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-grad2)); color:#fff; box-shadow:0 10px 25px var(--accent-soft);}
 .btn-primary:hover{transform:translateY(-2px); box-shadow:0 16px 32px var(--accent-soft);}
 .btn-ghost{background:var(--bg-elev-2); color:var(--text); border:1px solid var(--border);}
 .btn-outline{background:transparent; color:var(--accent); border:1px solid var(--accent);}
@@ -254,7 +259,7 @@ section{padding:80px 0;}
   color:var(--text-dim); transition:all .3s ease;
 }
 .chip:hover{color:var(--text); border-color:var(--accent);}
-.chip.active{background:linear-gradient(135deg,var(--accent),#ff8590); color:#fff; border-color:transparent;}
+.chip.active{background:linear-gradient(135deg,var(--accent),var(--accent-grad2)); color:#fff; border-color:transparent;}
 
 /* ---------- Product grid ---------- */
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:22px;}
@@ -331,7 +336,7 @@ section{padding:80px 0;}
 @media (hover:hover){ .card:hover .card-glow{opacity:.18;} }
 .card-badges{position:absolute; top:18px; left:18px; z-index:2; display:flex; flex-wrap:wrap; gap:5px; max-width:calc(100% - 36px);}
 .card-badge{
-  font-size:11px; font-weight:700; background:var(--accent-2); color:#3a1a05;
+  font-size:11px; font-weight:700; background:var(--accent-2); color:#fff;
   padding:4px 10px; border-radius:100px; white-space:nowrap;
 }
 .card-badges .card-badge:nth-child(2){background:var(--accent); color:#fff;}
@@ -399,7 +404,7 @@ section{padding:80px 0;}
 .ap-loading-overlay.hidden{opacity:0;}
 .ap-loading-overlay p{font-size:13px; color:var(--text-dim);}
 .ap-loading-logo{
-  width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--accent),#ff7a85);
+  width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--accent),var(--accent-2));
   display:flex; align-items:center; justify-content:center; animation:ap-spin 1.1s linear infinite;
 }
 .ap-loading-logo span{width:10px; height:10px; border-radius:50%; background:#fff;}
@@ -445,7 +450,7 @@ section{padding:80px 0;}
 
 /* ---------- Banner ---------- */
 .banner{
-  border-radius:32px; padding:70px 50px; background:linear-gradient(120deg, var(--accent), #c01f2e 60%, var(--accent-2));
+  border-radius:32px; padding:70px 50px; background:linear-gradient(120deg, #1F2023, var(--accent) 55%, var(--accent-2));
   color:#fff; text-align:center; position:relative; overflow:hidden;
 }
 .banner::before{content:''; position:absolute; inset:0; background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="1.4" fill="white" opacity="0.25"/></svg>'); opacity:.5;}
@@ -999,15 +1004,15 @@ body{background:var(--bg);}
   animation:var(--anim) var(--dur) ease-in-out infinite alternate;
 }
 /* رنگ‌های ملایم و بدون سبز: قرمز، مرجانی، هلویی، کهربایی و صورتیِ پودری */
-#apBg .b1{--c:rgba(255,90,105,.26); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
-#apBg .b2{--c:rgba(255,130,120,.20); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
-#apBg .b3{--c:rgba(255,190,160,.24); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
-#apBg .b4{--c:rgba(255,175,95,.18); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
-#apBg .b5{--c:rgba(244,170,185,.16); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
-[data-theme="dark"] #apBg .b1{--c:rgba(220,60,80,.24);}
-[data-theme="dark"] #apBg .b2{--c:rgba(255,95,110,.14);}
-[data-theme="dark"] #apBg .b3{--c:rgba(240,120,80,.15);}
-[data-theme="dark"] #apBg .b4{--c:rgba(255,150,70,.13);}
+#apBg .b1{--c:rgba(200,16,46,.13); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
+#apBg .b2{--c:rgba(120,124,135,.20); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
+#apBg .b3{--c:rgba(170,174,184,.22); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
+#apBg .b4{--c:rgba(200,16,46,.08); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
+#apBg .b5{--c:rgba(90,94,104,.12); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
+[data-theme="dark"] #apBg .b1{--c:rgba(200,16,46,.20);}
+[data-theme="dark"] #apBg .b2{--c:rgba(120,124,135,.12);}
+[data-theme="dark"] #apBg .b3{--c:rgba(90,94,104,.14);}
+[data-theme="dark"] #apBg .b4{--c:rgba(200,16,46,.10);}
 [data-theme="dark"] #apBg .b5{--c:rgba(210,120,170,.07);}
 /* لایه‌ی نورِ نرم برای عمق و خوانایی متن */
 #apBg::after{
@@ -1372,9 +1377,9 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 [data-theme="dark"] .hx-glass{
   background:
     radial-gradient(70% 38% at 30% 14%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
-    radial-gradient(80% 80% at 70% 90%, rgba(255,85,99,.26), transparent 70%),
+    radial-gradient(80% 80% at 70% 90%, rgba(200,16,46,.26), transparent 70%),
     #fbdadd;
-  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 -18px 40px rgba(255,85,99,.18),
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 -18px 40px rgba(200,16,46,.18),
              inset 0 0 0 1px rgba(255,255,255,.35), 0 30px 60px -20px rgba(0,0,0,.6);
 }
 @keyframes hxSpin{to{transform:rotate(360deg);}}
@@ -1386,13 +1391,13 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
   /* پس‌زمینه‌ی خودِ باکس؛ عکس‌ها روی همین رنگ multiply میشن تا سفیدیشون دقیقاً همرنگِ باکس بشه */
   background:
     radial-gradient(80% 80% at 70% 90%, #fbc2c7 0%, rgba(251,194,199,0) 70%),
-    radial-gradient(70% 60% at 25% 20%, #fff1f0 0%, rgba(255,241,240,0) 75%),
+    radial-gradient(70% 60% at 25% 20%, #f2f2f4 0%, rgba(242,242,244,0) 75%),
     #fbdadd;
 }
 .hx-devices::after{ /* براقیِ شیشه روی عکس */
   content:""; position:absolute; inset:0; pointer-events:none; z-index:5; border-radius:inherit;
   background:linear-gradient(160deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 32%);
-  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 -18px 40px rgba(255,85,99,.16);
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 -18px 40px rgba(200,16,46,.16);
 }
 .hx-dev{grid-area:1/1; width:34%; height:34%; opacity:0; transform:scale(.8) translateY(8px); filter:blur(10px);
   transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1), filter .9s cubic-bezier(.16,1,.3,1);}
@@ -1679,7 +1684,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 }
 .bb:hover{transform:translateY(-4px);}
 .bb:active{transform:scale(.985);}
-.bb-deal{background:linear-gradient(125deg, #e01f34 0%, #ff5563 45%, #ff8f5a 100%);}
+.bb-deal{background:linear-gradient(125deg, #1F2023 0%, #2B2D31 45%, #C8102E 100%);}
 .bb-help{background:linear-gradient(135deg, #2a1015 0%, #5c1a24 55%, #8f2130 100%);}
 
 /* شفقِ متحرکِ پس‌زمینه */
@@ -1687,8 +1692,8 @@ body{ animation:apEnter .38s var(--ease-out) both; }
   position:absolute; inset:-40%; z-index:-2; pointer-events:none; opacity:.55;
   background:
     radial-gradient(38% 38% at 30% 30%, rgba(255,255,255,.55), transparent 70%),
-    radial-gradient(32% 32% at 72% 68%, rgba(255,215,200,.45), transparent 70%),
-    radial-gradient(28% 28% at 60% 20%, rgba(255,190,140,.4), transparent 70%);
+    radial-gradient(32% 32% at 72% 68%, rgba(220,222,228,.45), transparent 70%),
+    radial-gradient(28% 28% at 60% 20%, rgba(200,16,46,.14), transparent 70%);
   animation:bbAurora 14s ease-in-out infinite alternate;
 }
 .bb-help .bb-aurora{opacity:.35;}
@@ -1759,7 +1764,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
   box-shadow:var(--glass-hl), var(--glass-shadow);}
 .carpick-head{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
 .carpick-head .ic{flex:none; width:42px; height:42px; border-radius:14px; display:grid; place-items:center; color:#fff;
-  background:linear-gradient(135deg, var(--accent), #ff7b86); box-shadow:0 10px 22px var(--accent-soft);}
+  background:linear-gradient(135deg, var(--accent), var(--accent-grad2)); box-shadow:0 10px 22px var(--accent-soft);}
 .carpick-head .ic svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
 .carpick-head strong{display:block; font-size:15.5px; font-weight:800; letter-spacing:-.2px;}
 .carpick-head small{display:block; margin-top:2px; font-size:12.5px; color:var(--text-dim);}
@@ -1785,7 +1790,7 @@ body.landing-view #carPick{margin-top:18px;}
 .carpick-field select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft);}
 .carpick-field select:disabled{opacity:.45; cursor:not-allowed;}
 .carpick-go{height:48px; padding:0 26px; border-radius:14px; border:0; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:700;
-  color:#fff; background:linear-gradient(135deg, var(--accent), #ff7b86); box-shadow:0 12px 26px var(--accent-soft);
+  color:#fff; background:linear-gradient(135deg, var(--accent), var(--accent-grad2)); box-shadow:0 12px 26px var(--accent-soft);
   transition:transform .2s var(--ease-out, ease), box-shadow .2s ease;}
 .carpick-go:hover{transform:translateY(-2px); box-shadow:0 16px 32px var(--accent-soft);}
 .carpick-go:disabled{opacity:.5; cursor:not-allowed; transform:none;}
@@ -3996,9 +4001,9 @@ function parseCartKey(key){
    اصلاح می‌شه، ولی تا وقتی کشِ ۱۰ دقیقه‌ایِ لیست محصولات تازه بشه، اینجا هم
    بنفش‌ها به قرمزِ برند تبدیل می‌شن تا مشتری هیچ‌وقت کارتِ بنفش نبینه. */
 function brandCardColor(raw){
-  const red = '#ff3b4e';
+  const red = '#2B2D31';   /* رنگِ پیش‌فرضِ کارت: گرافیت */
   const c = String(raw || '').trim().toLowerCase();
-  if(!c) return red;
+  if(!c || c === '#ff3b4e' || c === '#ff5563') return red;   /* قرمزِ قبلیِ پوسته هم گرافیت */
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/.exec(c);
   if(m){
     const r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);
