@@ -4341,13 +4341,6 @@ add_action('admin_notices', function () {
     echo '</ul></div>';
 });
 
-/* سایت‌مپ: حذفِ «XSLT» (استایلِ مرورگر) که کروم داره پشتیبانیش رو برمی‌داره و بالای صفحه هشدار می‌داد.
-   گوگل به استایل نیازی نداره؛ مرورگر همون XMLِ خام رو نشون می‌ده. */
-add_action('wp_loaded', function () {
-    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    if (!preg_match('#(sitemap[^/]*\.xml|sitemap\.xsl)$#i', $path)) return;
-    ob_start(function ($buf) { return preg_replace('#<\?xml-stylesheet[^>]*\?>\s*#i', '', $buf); });
-}, 0);
 
 /* یک‌بار: نامِ سایت (عنوانِ وردپرس که آخرِ عنوانِ همه‌ی صفحه‌ها میاد) از NEXV به CarTehran */
 add_action('init', function () {
