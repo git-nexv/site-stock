@@ -1766,6 +1766,14 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 .carpick-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; align-items:end;}
 .carpick-field{display:flex; flex-direction:column; gap:6px; min-width:0;}
 .carpick-field[hidden]{display:none;}
+/* صفحه‌ی فهرست (دسته/خودرو): فاصله از بالا و مسیرِ راهنما */
+body.landing-view #carPick{margin-top:18px;}
+.landing-crumbs{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; font-size:12.5px; color:var(--text-dim); margin-bottom:10px;}
+.landing-crumbs a{color:var(--text-dim); text-decoration:none;}
+.landing-crumbs a:hover{color:var(--accent);}
+.landing-crumbs [aria-current]{color:var(--text); font-weight:700;}
+.landing-crumbs .lc-sep{opacity:.5;}
+.landing-title{font-size:clamp(22px, 4vw, 32px);}
 .carpick-field.cp-in{animation:cpIn .32s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cpIn{from{opacity:0; transform:translateY(6px) scale(.97);} to{opacity:1; transform:none;}}
 .carpick-field > span{font-size:12px; font-weight:600; color:var(--text-dim); padding-inline-start:4px;}
@@ -3171,6 +3179,25 @@ function renderTagView(tag){
   }
   window.scrollTo(0, 0);
 }
+
+/* ---------- صفحه‌های دسته / خودرو / «خودرو + قطعه» شبیهِ یک صفحه‌ی فهرستِ واقعی ----------
+   بخش‌های مخصوصِ صفحه‌ی اصلی (اسلایدر، ویژگی‌ها، ویترین، وبلاگ) کنار می‌رن و بالای فهرست
+   مسیرِ راهنما + سرتیترِ همون صفحه میاد؛ انتخابِ خودرو و فیلترها می‌مونن. */
+function renderLandingHead(){
+  const ph = window.AP_PAGE_HEAD;
+  if(!ph || SINGLE_VIEW_ID || TAG_VIEW) return;
+  document.body.classList.add('landing-view');
+  ['.hero', '#features', '#featured', '#articles', '#recoRow'].forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
+  const head = document.querySelector('#products .section-head');
+  if(!head) return;
+  const crumbs = (ph.crumbs || []).map((c, i, a) => i === a.length - 1
+    ? `<span aria-current="page">${escHtml(c.name)}</span>`
+    : `<a href="${escHtml(c.url || HOME_URL)}">${escHtml(c.name)}</a>`).join('<span class="lc-sep">›</span>');
+  head.innerHTML = `<nav class="landing-crumbs" aria-label="مسیر">${crumbs}</nav>
+    <h1 class="section-title landing-title">${escHtml(ph.h1 || '')}</h1>
+    ${ph.desc ? `<p class="section-sub">${escHtml(ph.desc)}</p>` : ''}`;
+}
+renderLandingHead();
 
 /* دکمه‌ی Back/Forward مرورگر: محتوای صفحه دقیقاً با آدرسِ جدید هماهنگ می‌شه */
 window.addEventListener('popstate', ()=>{

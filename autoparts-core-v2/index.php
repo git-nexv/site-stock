@@ -650,6 +650,27 @@ $inject .= "window.AP_BILLBOARDS = " . json_encode([
 if ($cat_seo_slug) {
     $inject .= "window.AP_CAT_SLUG = " . json_encode($cat_seo_slug) . ";\n";
 }
+/* صفحه‌های دسته / خودرو / «خودرو + قطعه»: سرتیتر و مسیرِ راهنما (breadcrumb) تا صفحه شبیهِ
+   یک صفحه‌ی فهرستِ واقعی باشه، نه صفحه‌ی اصلی. */
+$ap_page_head = null;
+if (function_exists('is_tax') && (is_tax('ap_cat') || is_tax('ap_vehicle')) && empty($single_product)) {
+    $qt = get_queried_object();
+    if ($qt && !is_wp_error($qt)) {
+        $crumbs = [['name' => 'صفحه اصلی', 'url' => home_url('/')]];
+        $tax = $qt->taxonomy;
+        foreach (array_reverse(get_ancestors($qt->term_id, $tax)) as $aid) {
+            $at = get_term($aid, $tax);
+            if ($at && !is_wp_error($at)) { $l = get_term_link($at); $crumbs[] = ['name' => $at->name, 'url' => is_wp_error($l) ? '' : $l]; }
+        }
+        $self = get_term_link($qt);
+        $crumbs[] = ['name' => $qt->name, 'url' => is_wp_error($self) ? '' : $self];
+        $combo = ($tax === 'ap_vehicle' && function_exists('ap_part_combo')) ? ap_part_combo() : null;
+        if ($combo) $crumbs[] = ['name' => $combo['cat']->name, 'url' => $combo['url']];
+        $h1 = $combo ? $combo['title'] : ($tax === 'ap_vehicle' ? 'قطعات ' . (!empty($vehicle_label) ? $vehicle_label : $qt->name) : $qt->name);
+        $ap_page_head = ['h1' => $h1, 'crumbs' => $crumbs, 'desc' => $cat_seo_desc];
+    }
+}
+if ($ap_page_head) $inject .= "window.AP_PAGE_HEAD = " . json_encode($ap_page_head, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ";\n";
 $inject .= "</script>";
 if ($cat_seo_desc !== '') {
     $inject .= '<meta name="description" content="' . esc_attr(wp_trim_words($cat_seo_desc, 30, '...')) . '">';

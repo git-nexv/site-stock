@@ -4284,3 +4284,78 @@ add_action('init', function () {
     wp_redirect('https://' . $home . ($_SERVER['REQUEST_URI'] ?? '/'), 301);
     exit;
 }, 0);
+
+/* =========================================================================
+ * اصلاحِ پیوندِ محصولاتی که هنوز پیوندِ انگلیسیِ درست ندارن (مثل brake-pad-rear-by-vay-dy-han).
+ * پیوندِ درست: از بخشِ انگلیسیِ عنوان («فارسی | English») یا کلیدِ ساختِ خودکار.
+ * فقط پیوندهای «بد» عوض می‌شن: فارسی/کدشده، پسوندِ -2، یا عمدتاً نویسه‌گردانیِ فارسی؛ پیوندی که
+ * خودش انگلیسیِ درستیه دست نمی‌خوره. پیوندِ قبلی با ۳۰۱ ریدایرکت می‌شه. محصولی که فقط عنوانِ فارسی
+ * داره و نمی‌شه براش پیوندِ انگلیسی ساخت، در پیشخوان فهرست می‌شه.
+ * ========================================================================= */
+function ap_expected_product_slug($id, $title) {
+    if (strpos($title, '|') !== false && function_exists('ap_slug_from_title')) {
+        $en = trim(substr($title, strrpos($title, '|') + 1));
+        if (preg_match('/[A-Za-z]/', $en) && !preg_match('/[^\x00-\x7f]/', $en)) return ap_slug_from_title($title);
+    }
+    $k = (string) get_post_meta($id, '_ap_seed_key', true);
+    return preg_match('/^[a-z0-9-]+$/', $k) ? $k : '';
+}
+function ap_slug_is_bad($slug, $want) {
+    $slug = urldecode((string) $slug);
+    if ($slug === '' || preg_match('/[^a-z0-9-]/', $slug) || preg_match('/-\d+$/', $slug) && !preg_match('/-\d+$/', $want)) return true;
+    if ($want === '' || $slug === $want) return false;
+    $have = array_filter(explode('-', $slug)); $ok = array_flip(array_filter(explode('-', $want)));
+    $hit = 0; foreach ($have as $t) if (isset($ok[$t])) $hit++;
+    return $have && ($hit / count($have)) < 0.5;     /* بیشترِ کلمه‌ها ربطی به نامِ انگلیسی ندارن = نویسه‌گردانی */
+}
+add_action('init', function () {
+    if (get_option('ap_product_slug_fix_v1') === 'done' || (defined('DOING_AJAX') && DOING_AJAX)) return;
+    if (get_transient('ap_slug_fix_lock')) return;
+    set_transient('ap_slug_fix_lock', 1, 60);
+    global $wpdb;
+    $last = (int) get_option('ap_product_slug_fix_last', 0);
+    $rows = $wpdb->get_results($wpdb->prepare("SELECT ID, post_title, post_name, post_status FROM {$wpdb->posts} WHERE post_type = 'ap_product' AND post_status IN ('publish','draft','pending','private') AND ID > %d ORDER BY ID ASC LIMIT 300", $last));
+    if (!$rows) { update_option('ap_product_slug_fix_v1', 'done', false); delete_transient('ap_slug_fix_lock'); delete_transient('ap_products_cache_v3'); return; }
+    $manual = get_option('ap_product_slug_manual', []);
+    foreach ($rows as $r) {
+        $last = (int) $r->ID;
+        $want = ap_expected_product_slug((int) $r->ID, (string) $r->post_title);
+        if ($want === '') { if (ap_slug_is_bad($r->post_name, '')) $manual[] = (int) $r->ID; continue; }
+        if (!ap_slug_is_bad($r->post_name, $want)) continue;
+        $new = wp_unique_post_slug($want, (int) $r->ID, 'publish', 'ap_product', 0);
+        if ($new !== $want) { $manual[] = (int) $r->ID; continue; }   /* پیوندِ درست دستِ محصولِ دیگه‌ست؛ دستی بررسی بشه */
+        $wpdb->update($wpdb->posts, ['post_name' => $new], ['ID' => (int) $r->ID]);
+        if ($r->post_name !== '') add_post_meta((int) $r->ID, '_wp_old_slug', $r->post_name);
+        clean_post_cache((int) $r->ID);
+    }
+    update_option('ap_product_slug_manual', array_values(array_unique($manual)), false);
+    update_option('ap_product_slug_fix_last', $last, false);
+    delete_transient('ap_slug_fix_lock');
+}, 45);
+add_action('admin_notices', function () {
+    if (!current_user_can('manage_options') || get_option('ap_product_slug_fix_v1') !== 'done') return;
+    $ids = array_filter((array) get_option('ap_product_slug_manual', []), function ($id) { return get_post_status($id); });
+    if (!$ids) return;
+    echo '<div class="notice notice-warning"><p><strong>محصولاتی که پیوندِ انگلیسی ندارن (' . count($ids) . '):</strong> به عنوانشون بخشِ انگلیسی اضافه کنید («نام فارسی | English name») تا پیوندِ انگلیسی بگیرن.</p><ul style="list-style:disc;padding-right:20px">';
+    foreach (array_slice($ids, 0, 30) as $id) echo '<li><a href="' . esc_url(get_edit_post_link($id)) . '">' . esc_html(get_the_title($id)) . '</a> — <code dir="ltr">' . esc_html(urldecode(get_post_field('post_name', $id))) . '</code></li>';
+    echo '</ul></div>';
+});
+
+/* سایت‌مپ: حذفِ «XSLT» (استایلِ مرورگر) که کروم داره پشتیبانیش رو برمی‌داره و بالای صفحه هشدار می‌داد.
+   گوگل به استایل نیازی نداره؛ مرورگر همون XMLِ خام رو نشون می‌ده. */
+add_action('wp_loaded', function () {
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (!preg_match('#(sitemap[^/]*\.xml|sitemap\.xsl)$#i', $path)) return;
+    ob_start(function ($buf) { return preg_replace('#<\?xml-stylesheet[^>]*\?>\s*#i', '', $buf); });
+}, 0);
+
+/* یک‌بار: نامِ سایت (عنوانِ وردپرس که آخرِ عنوانِ همه‌ی صفحه‌ها میاد) از NEXV به CarTehran */
+add_action('init', function () {
+    if (get_option('ap_brand_rename_v1')) return;
+    foreach (['blogname', 'blogdescription'] as $opt) {
+        $v = (string) get_option($opt, '');
+        $n = str_replace(['نکس‌وی', 'نکس وی', 'NEXV', 'Nexv', 'nexv'], ['کارتهران', 'کارتهران', 'CarTehran', 'CarTehran', 'CarTehran'], $v);
+        if ($n !== $v) update_option($opt, $n);
+    }
+    update_option('ap_brand_rename_v1', 1, false);
+});
