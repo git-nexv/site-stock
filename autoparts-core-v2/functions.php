@@ -2946,7 +2946,7 @@ add_action('template_redirect', function () {
 /* =========================================================================
  * لوگوی سایت (logo.png در پوشه‌ی قالب) — برای صفحه‌های مستقل و آیکونِ تب
  * ========================================================================= */
-define('AP_ICON_VER', '20261101');
+define('AP_ICON_VER', '20261116');
 /* آیکون‌های سایت در پوشه‌ی icons قالب (از نسخه‌ی ۴۰۹۶ پیکسلی، با کیفیتِ کامل کوچیک شدن) */
 function ap_icon_url($file) { return get_template_directory_uri() . '/icons/' . $file . '?v=' . AP_ICON_VER; }
 /* اگه بعداً از پیشخوان یک «نماد سایت» دیگه انتخاب بشه، همون استفاده می‌شه؛ وگرنه آیکون‌های قالب */
@@ -3904,7 +3904,7 @@ add_action('init', function () {
 
 /* ---------- لوگوی سایت در وردپرس: صفحه‌ی ورود، نوار مدیریت و فاویکون پیشخوان ---------- */
 function ap_logo_url($file = 'logo.png') {
-    return get_template_directory_uri() . '/assets/' . $file;
+    return get_template_directory_uri() . '/assets/' . $file . '?v=' . (defined('AP_ICON_VER') ? AP_ICON_VER : '1');
 }
 add_action('login_enqueue_scripts', function () {
     echo '<style>#login h1 a{background-image:url(' . esc_url(ap_logo_url()) . ') !important;background-size:contain !important;width:96px !important;height:96px !important;border-radius:22px;}</style>';
@@ -4419,3 +4419,22 @@ add_action('init', function () {
     delete_transient('ap_products_cache_v3');
     update_option('ap_palette_wine_v1', 1, false);
 }, 12);
+
+/* یک‌بار: لوگوی جدیدِ CarTehran («C») به‌عنوانِ «لوگوی سایت» وردپرس هم ثبت بشه (آیکونِ سایت با
+   AP_ICON_VER خودش به‌روز می‌شه؛ این برای custom_logo و لوگوی سازمان در Rank Math‌ه). */
+add_action('admin_init', function () {
+    if (get_option('ap_logo_c_v1') === AP_ICON_VER || !current_user_can('manage_options')) return;
+    $src = get_template_directory() . '/assets/logo.png';
+    if (!file_exists($src)) return;
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    $tmp = wp_tempnam('cartehran-logo.png');
+    @copy($src, $tmp);
+    $id = media_handle_sideload(['name' => 'cartehran-logo-' . AP_ICON_VER . '.png', 'tmp_name' => $tmp], 0, 'لوگوی CarTehran');
+    if (is_wp_error($id)) { @unlink($tmp); return; }
+    set_theme_mod('custom_logo', $id);
+    $rm = get_option('rank-math-options-titles');
+    if (is_array($rm)) { $rm['knowledgegraph_logo'] = wp_get_attachment_url($id); $rm['knowledgegraph_logo_id'] = $id; update_option('rank-math-options-titles', $rm); }
+    update_option('ap_logo_c_v1', AP_ICON_VER, false);
+}, 30);

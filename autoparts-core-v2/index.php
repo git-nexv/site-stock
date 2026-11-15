@@ -372,7 +372,7 @@ $html    = file_get_contents(__DIR__ . '/site.html');
 $ap_site_name = get_bloginfo('name');
 if (trim((string) $ap_site_name) === '') { $ap_site_name = 'قطعات یدکی'; }
 $html = str_replace('{{SITE_NAME}}', esc_html($ap_site_name), $html);
-$html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/assets/logo.png'), $html);
+$html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/assets/logo.png?v=' . (defined('AP_ICON_VER') ? AP_ICON_VER : '1')), $html);
 /* آیکونِ تب و آیکونِ صفحه‌ی گوشی (همه‌ی اندازه‌ها؛ نگاه کن به ap_favicon_tags) */
 $ap_icon_tags = ap_favicon_tags();
 /* PWA: نصب روی صفحه‌ی اصلیِ گوشی (برای اعلانِ سفارشِ جدید روی آیفون لازمه) */

@@ -35,7 +35,7 @@
 | `api.php` | API با `switch` روی `action`: products, categories, vehicles, articles, register, login, ... create_order, list_orders, invoice, list_customers, update_order_status, push_*, manifest, admin_me, admin_update_me, admin_list, admin_save, admin_remove, config. ادمین‌ها با هدر `X-AP-Admin` (توکن ۹۰ روزه) احراز می‌شوند. |
 | `functions.php` | CPT/تاکسونومی‌ها، اسلاگ انگلیسی، ایمپورت/اکسپورت CSV، متاباکس محصول، لوگوی برند، کش‌ها، حساب وردپرسی ادمین‌ها، سئو، صفحه‌ی سفارش‌ها در پیشخوان، PWA/اعلان. در انتها `updater.php` و `push-lib.php` را require می‌کند، و مهاجرت یک‌باره‌ی ادمین‌های سیستم قدیمی (`ap_staff_to_admins_v1`) را دارد. |
 | `push-lib.php` | Web Push با VAPID خودمیزبان + سرویس‌ورکر. |
-| `icons/` | آیکون‌های PWA/اعلان (از `assets/logo.png` ساخته شده‌اند). |
+| `icons/` | آیکون‌های PWA/اعلان، ساخته‌شده از لوگوی «C» کار تهران (`assets/logo.png`)؛ با عوض‌کردنِ لوگو `AP_ICON_VER` رو بالا ببر. |
 | `updater.php` | به‌روزرسانی خودکار قالب از گیت‌هاب. |
 | `vehicles-seed.php` | لیست برندها/مدل‌ها/سال‌های خودرو (چینی و ...؛ نام‌ها به شکل `EN (FA)`)، به‌روزرسانی درجا. |
 | `parts-seed.php` | محصولات پایه برای هر مدل با اسلاگ انگلیسی و SEO. |
