@@ -4390,3 +4390,14 @@ add_action('admin_init', function () {
     if (function_exists('ap_flush_rank_math_sitemap')) ap_flush_rank_math_sitemap();
     update_option('ap_utility_pages_v1', 1, false);
 }, 80);
+
+/* فایلِ تأییدِ مالکیت در گوگل سرچ کنسول (روشِ HTML file) برای cartehran.ir:
+   /google44c74bef18ebe9bc.html — گوگل همیشه این فایل رو چک می‌کنه، پس پاک نشه. */
+add_action('wp_loaded', function () {
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if ($path !== '/google44c74bef18ebe9bc.html') return;
+    status_header(200);
+    header('Content-Type: text/html; charset=UTF-8');
+    echo 'google-site-verification: google44c74bef18ebe9bc.html';
+    exit;
+}, 0);
