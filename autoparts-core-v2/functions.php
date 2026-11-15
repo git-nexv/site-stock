@@ -4359,3 +4359,14 @@ add_action('init', function () {
     }
     update_option('ap_brand_rename_v1', 1, false);
 });
+
+/* یک‌بار: «کارتهران» → «کار تهران» (با فاصله) در نامِ سایت */
+add_action('init', function () {
+    if (get_option('ap_brand_rename_v2')) return;
+    foreach (['blogname', 'blogdescription'] as $opt) {
+        $v = (string) get_option($opt, '');
+        $n = str_replace(['کارتهران', 'کار‌تهران'], 'کار تهران', $v);
+        if ($n !== $v) update_option($opt, $n);
+    }
+    update_option('ap_brand_rename_v2', 1, false);
+});
