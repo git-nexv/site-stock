@@ -215,11 +215,11 @@ if (function_exists('is_page') && is_page('terms')) {
             .rule{padding:20px 0; border-top:1px solid #eee;}
             .rule:first-of-type{border-top:none; padding-top:4px;}
             .rule h2{display:flex; align-items:center; gap:10px; font-size:15.5px; margin:0 0 8px;}
-            .rule h2 i{flex:none; width:26px; height:26px; border-radius:9px; background:#f1f1f3; color:#C8102E;
+            .rule h2 i{flex:none; width:26px; height:26px; border-radius:9px; background:#fbeff1; color:#B3122E;
                 font-size:12.5px; font-weight:800; font-style:normal; display:grid; place-items:center;}
             .rule p{margin:0; font-size:14px; line-height:2.05; color:#4c4a5c;}
             .rule p b{color:#201f2b;}
-            .terms-note{margin-top:26px; padding:16px 18px; border-radius:14px; background:#f1f1f3; color:#2B2D31; font-size:13.5px; line-height:1.95;}
+            .terms-note{margin-top:26px; padding:16px 18px; border-radius:14px; background:#fbeff1; color:#7A0C1F; font-size:13.5px; line-height:1.95;}
             .terms-note a{color:#9f1223; font-weight:800; text-decoration:none;}
             .terms-back{display:inline-block; margin-top:22px; font-size:12.5px; color:#7a7788; text-decoration:none;}
             /* حالت شب */
@@ -230,7 +230,7 @@ if (function_exists('is_page') && is_page('terms')) {
             html[data-theme="dark"] .rule p{color:#b9b6c9;}
             html[data-theme="dark"] .rule p b{color:#ececf4;}
             html[data-theme="dark"] .rule h2 i{background:#2a1418; color:#ff9aa8;}
-            html[data-theme="dark"] .terms-note{background:#22232a; color:#e6e7ea;}
+            html[data-theme="dark"] .terms-note{background:#2a1418; color:#ffc9d1;}
             html[data-theme="dark"] .terms-note a{color:#ff9aa8;}
             @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
             body{animation:apEnter .38s cubic-bezier(.16,1,.3,1) both;}
@@ -301,7 +301,7 @@ if (function_exists('is_page') && is_page('about')) {
             html[data-theme="dark"] .about-row{border-top-color:#26242f;}
             html[data-theme="dark"] .about-row span, html[data-theme="dark"] .about-row a{color:#ececf4;}
             .about-links{display:flex; gap:10px; justify-content:center; margin-top:24px;}
-            .about-links a{padding:10px 18px; border-radius:10px; background:#f1f1f3; color:#C8102E; font-size:13.5px; text-decoration:none; font-weight:700;}
+            .about-links a{padding:10px 18px; border-radius:10px; background:#fbeff1; color:#B3122E; font-size:13.5px; text-decoration:none; font-weight:700;}
             .about-back{display:inline-block; margin-top:22px; font-size:12.5px; color:#7a7788; text-decoration:none;}
             /* ورودِ نرمِ صفحه، هماهنگ با بقیه‌ی سایت */
             @keyframes apEnter{from{opacity:.35;} to{opacity:1;}} /* فقط opacity؛ transform روی body باعث می‌شد نوارِ پایین و پس‌زمینه پین نمونن */
@@ -377,7 +377,7 @@ $html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/ass
 $ap_icon_tags = ap_favicon_tags();
 /* PWA: نصب روی صفحه‌ی اصلیِ گوشی (برای اعلانِ سفارشِ جدید روی آیفون لازمه) */
 $ap_icon_tags .= '<link rel="manifest" href="' . esc_url(get_template_directory_uri() . '/api.php?action=manifest') . '">'
-    . '<meta name="theme-color" content="#2B2D31"><meta name="apple-mobile-web-app-capable" content="yes">'
+    . '<meta name="theme-color" content="#B3122E"><meta name="apple-mobile-web-app-capable" content="yes">'
     . '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="' . esc_attr($ap_site_name) . '">'
     . '<meta name="apple-mobile-web-app-status-bar-style" content="default">';
 $html = preg_replace('#</head>#i', $ap_icon_tags . '</head>', $html, 1);
@@ -390,7 +390,7 @@ $home_url = esc_url_raw(home_url('/'));
    و کل اون wrapper با هم sticky می‌شه؛ این‌جوری همیشه دقیقاً بهم چسبیده‌ن،
    بدون نیاز به هیچ اندازه‌گیری جاوااسکریپتی یا مقدار پیکسلِ حدسی. */
 $topbar_enabled = get_theme_mod('ap_topbar_enabled', true);
-$topbar_bg      = get_theme_mod('ap_topbar_bg', '#2B2D31');
+$topbar_bg      = get_theme_mod('ap_topbar_bg', '#B3122E');
 $contact_phone  = get_theme_mod('ap_contact_phone', '09109973428');
 $contact_wa     = get_theme_mod('ap_contact_whatsapp', '09109973428');
 $instagram_url  = get_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
@@ -527,7 +527,7 @@ if (function_exists('is_singular') && is_singular('ap_product')) {
             'spec'  => $spec ? $spec : '',
             'price' => $price,
             'priceUpdated' => $priceUpdated,
-            'color' => function_exists('ap_brand_card_color') ? ap_brand_card_color($color) : ($color ?: '#2b2d31'),
+            'color' => function_exists('ap_brand_card_color') ? ap_brand_card_color($color) : ($color ?: '#b3122e'),
             'ic'    => $ic ? $ic : 'disc',
             'badge' => $badge ? $badge : null,
             'cat'   => $cat_slug,

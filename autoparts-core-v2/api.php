@@ -116,11 +116,11 @@ if (!function_exists('ap_variant_price_for_key')) {
 
 if (!function_exists('ap_brand_card_color')) {
     function ap_brand_card_color($raw) {
-        $red = '#2b2d31';   /* پیش‌فرض: گرافیت */
+        $red = '#b3122e';   /* پیش‌فرض: زرشکی */
         $raw = strtolower(trim((string) $raw));
         if ($raw === '') { return $red; }
         $legacy = ['#6a4dff', '#8b6bff', '#8f6bff', '#a68bff', '#7c5cff', '#5b3df5', '#8b5cf6', '#7c9dff', '#6a4eff'];
-        if (in_array($raw, $legacy, true) || in_array($raw, ['#ff3b4e', '#ff5563'], true)) { return $red; }   /* قرمزِ قدیمی هم گرافیت */
+        if (in_array($raw, $legacy, true) || in_array($raw, ['#ff3b4e', '#ff5563', '#2b2d31'], true)) { return $red; }   /* رنگ‌های قبلی هم زرشکی */
         /* هر بنفشِ دیگه‌ای هم (آبیِ پررنگ‌تر از قرمز و سبز) قرمز می‌شه */
         if (preg_match('/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/', $raw, $m)) {
             $r = hexdec($m[1]); $g = hexdec($m[2]); $b = hexdec($m[3]);
@@ -841,7 +841,7 @@ switch ($action) {
         if (empty($p['title']) || !isset($p['price'])) json_fail('عنوان و قیمت الزامی است.');
         $id = $p['id'] ?? ('p' . substr(md5(uniqid('', true)), 0, 8));
         $db['products'][] = [
-            'id' => $id, 'cat' => $p['cat'] ?? 'acc', 'color' => $p['color'] ?? '#2b2d31',
+            'id' => $id, 'cat' => $p['cat'] ?? 'acc', 'color' => $p['color'] ?? '#b3122e',
             'ic' => $p['ic'] ?? 'disc', 'title' => $p['title'], 'spec' => $p['spec'] ?? '',
             'price' => (int) $p['price'], 'badge' => $p['badge'] ?? null,
         ];
@@ -1372,8 +1372,8 @@ switch ($action) {
     font-family: 'Vazirmatn', Tahoma, sans-serif; margin: 0; padding: 14px; color: #201f2b; font-size: 12.5px;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  .head { display: flex; align-items: center; gap: 10px; justify-content: flex-start; border-bottom: 3px solid #2B2D31; padding-bottom: 12px; margin-bottom: 16px; }
-  .head .logo-dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#2B2D31,#C8102E); flex-shrink: 0; }
+  .head { display: flex; align-items: center; gap: 10px; justify-content: flex-start; border-bottom: 3px solid #B3122E; padding-bottom: 12px; margin-bottom: 16px; }
+  .head .logo-dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#B3122E,#D9354F); flex-shrink: 0; }
   .head .brand-en { font-family: 'Vazirmatn', Tahoma, sans-serif; font-size: 24px; font-weight: 800; letter-spacing: .3px; color: #201f2b; direction: ltr; line-height: 1.1; }
   .head .brand-en small { display: block; font-size: 10.5px; font-weight: 500; color: #7a7788; margin-top: 3px; direction: rtl; }
   h1 { font-size: 16px; margin: 0 0 12px; text-align: center; font-weight: 800; letter-spacing: .3px; }
@@ -1385,13 +1385,13 @@ switch ($action) {
   .addr-block .addr-line { font-weight: 700; }
   .addr-block .addr-line.detail { font-weight: 500; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 11.5px; }
-  th { background: #2B2D31; color: #fff; padding: 8px 6px; text-align: center; font-weight: 700; }
+  th { background: #B3122E; color: #fff; padding: 8px 6px; text-align: center; font-weight: 700; }
   th:first-child { border-radius: 6px 0 0 0; }
   th:last-child { border-radius: 0 6px 0 0; }
   td { padding: 7px 6px; border-bottom: 1px solid #eee; text-align: center; }
   td.c-title { text-align: right; font-weight: 600; }
   td.c-num, th.c-num { text-align: center; }
-  tfoot td { font-weight: 700; border-top: 2px solid #2B2D31; border-bottom: none; }
+  tfoot td { font-weight: 700; border-top: 2px solid #B3122E; border-bottom: none; }
   .totals { margin-top: -4px; margin-bottom: 14px; }
   .totals div { display: flex; justify-content: space-between; padding: 4px 4px; font-size: 12px; }
   .totals div.grand { font-weight: 800; font-size: 14.5px; color: #ff3b4e; border-top: 1px dashed #ccc; padding-top: 8px; margin-top: 4px; }

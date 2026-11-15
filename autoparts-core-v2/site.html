@@ -26,15 +26,15 @@
   --text:#111113;
   --text-dim:#6b6b70;
   --border:rgba(10,10,15,0.09);
-  /* پالتِ «گرافیت + قرمزِ تیره»: دکمه‌ها و نوارها گرافیت، تأکیدها (برچسب، شمارنده، گرادیان) قرمزِ تیره */
-  --accent:#2B2D31;
-  --accent-2:#C8102E;
-  --accent-grad2:#4A4D55;
-  --accent-soft:rgba(43,45,49,0.14);
-  --danger:#C8102E;
+  /* پالتِ «زرشکی» (به انتخابِ مالک سایت): رنگِ اصلی زرشکیِ تیره، تأکید و انتهای گرادیان زرشکیِ روشن‌تر */
+  --accent:#B3122E;
+  --accent-2:#D9354F;
+  --accent-grad2:#D9354F;
+  --accent-soft:rgba(179,18,46,0.14);
+  --danger:#B3122E;
   --shadow:0 20px 50px rgba(60,12,20,0.08);
   --radius:22px;
-  --glow: radial-gradient(circle at 30% 20%, rgba(200,16,46,.16), transparent 60%);
+  --glow: radial-gradient(circle at 30% 20%, rgba(179,18,46,.26), transparent 60%);
 }
 [data-theme="dark"]{
   --bg:#07070b;
@@ -49,14 +49,14 @@
   --text:#f3f3f6;
   --text-dim:#94949c;
   --border:rgba(255,255,255,0.08);
-  /* حالتِ شب: پس‌زمینه خودش گرافیتیه، پس تأکید قرمزِ تیره‌ست */
-  --accent:#D2283F;
-  --accent-2:#F0485C;
-  --accent-grad2:#E8475B;
-  --accent-soft:rgba(210,40,63,0.18);
-  --danger:#F0485C;
+  /* حالتِ شب: همون زرشکی کمی روشن‌تر تا روی پس‌زمینه‌ی تیره دیده بشه */
+  --accent:#D63A52;
+  --accent-2:#F0607A;
+  --accent-grad2:#EE5B72;
+  --accent-soft:rgba(214,58,82,0.18);
+  --danger:#F0607A;
   --shadow:0 25px 60px rgba(0,0,0,0.45);
-  --glow: radial-gradient(circle at 30% 20%, rgba(210,40,63,.22), transparent 60%);
+  --glow: radial-gradient(circle at 30% 20%, rgba(214,58,82,.24), transparent 60%);
 }
 *{box-sizing:border-box; margin:0; padding:0;}
 html{scroll-behavior:smooth;}
@@ -450,7 +450,7 @@ section{padding:80px 0;}
 
 /* ---------- Banner ---------- */
 .banner{
-  border-radius:32px; padding:70px 50px; background:linear-gradient(120deg, #1F2023, var(--accent) 55%, var(--accent-2));
+  border-radius:32px; padding:70px 50px; background:linear-gradient(120deg, #6E0A1C, var(--accent) 55%, var(--accent-2));
   color:#fff; text-align:center; position:relative; overflow:hidden;
 }
 .banner::before{content:''; position:absolute; inset:0; background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="1.4" fill="white" opacity="0.25"/></svg>'); opacity:.5;}
@@ -1004,15 +1004,15 @@ body{background:var(--bg);}
   animation:var(--anim) var(--dur) ease-in-out infinite alternate;
 }
 /* رنگ‌های ملایم و بدون سبز: قرمز، مرجانی، هلویی، کهربایی و صورتیِ پودری */
-#apBg .b1{--c:rgba(200,16,46,.13); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
-#apBg .b2{--c:rgba(120,124,135,.20); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
-#apBg .b3{--c:rgba(170,174,184,.22); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
-#apBg .b4{--c:rgba(200,16,46,.08); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
-#apBg .b5{--c:rgba(90,94,104,.12); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
-[data-theme="dark"] #apBg .b1{--c:rgba(200,16,46,.20);}
-[data-theme="dark"] #apBg .b2{--c:rgba(120,124,135,.12);}
-[data-theme="dark"] #apBg .b3{--c:rgba(90,94,104,.14);}
-[data-theme="dark"] #apBg .b4{--c:rgba(200,16,46,.10);}
+#apBg .b1{--c:rgba(179,18,46,.20); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
+#apBg .b2{--c:rgba(217,53,79,.14); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
+#apBg .b3{--c:rgba(240,170,180,.20); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
+#apBg .b4{--c:rgba(179,18,46,.08); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
+#apBg .b5{--c:rgba(200,120,140,.12); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
+[data-theme="dark"] #apBg .b1{--c:rgba(179,18,46,.24);}
+[data-theme="dark"] #apBg .b2{--c:rgba(217,53,79,.14);}
+[data-theme="dark"] #apBg .b3{--c:rgba(160,40,70,.15);}
+[data-theme="dark"] #apBg .b4{--c:rgba(179,18,46,.12);}
 [data-theme="dark"] #apBg .b5{--c:rgba(210,120,170,.07);}
 /* لایه‌ی نورِ نرم برای عمق و خوانایی متن */
 #apBg::after{
@@ -1377,9 +1377,9 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 [data-theme="dark"] .hx-glass{
   background:
     radial-gradient(70% 38% at 30% 14%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
-    radial-gradient(80% 80% at 70% 90%, rgba(200,16,46,.26), transparent 70%),
+    radial-gradient(80% 80% at 70% 90%, rgba(179,18,46,.26), transparent 70%),
     #fbdadd;
-  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 -18px 40px rgba(200,16,46,.18),
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 -18px 40px rgba(179,18,46,.18),
              inset 0 0 0 1px rgba(255,255,255,.35), 0 30px 60px -20px rgba(0,0,0,.6);
 }
 @keyframes hxSpin{to{transform:rotate(360deg);}}
@@ -1391,13 +1391,13 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
   /* پس‌زمینه‌ی خودِ باکس؛ عکس‌ها روی همین رنگ multiply میشن تا سفیدیشون دقیقاً همرنگِ باکس بشه */
   background:
     radial-gradient(80% 80% at 70% 90%, #fbc2c7 0%, rgba(251,194,199,0) 70%),
-    radial-gradient(70% 60% at 25% 20%, #f2f2f4 0%, rgba(242,242,244,0) 75%),
+    radial-gradient(70% 60% at 25% 20%, #fbeff1 0%, rgba(251,239,241,0) 75%),
     #fbdadd;
 }
 .hx-devices::after{ /* براقیِ شیشه روی عکس */
   content:""; position:absolute; inset:0; pointer-events:none; z-index:5; border-radius:inherit;
   background:linear-gradient(160deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 32%);
-  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 -18px 40px rgba(200,16,46,.16);
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.9), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 -18px 40px rgba(179,18,46,.16);
 }
 .hx-dev{grid-area:1/1; width:34%; height:34%; opacity:0; transform:scale(.8) translateY(8px); filter:blur(10px);
   transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1), filter .9s cubic-bezier(.16,1,.3,1);}
@@ -1684,7 +1684,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 }
 .bb:hover{transform:translateY(-4px);}
 .bb:active{transform:scale(.985);}
-.bb-deal{background:linear-gradient(125deg, #1F2023 0%, #2B2D31 45%, #C8102E 100%);}
+.bb-deal{background:linear-gradient(125deg, #6E0A1C 0%, #B3122E 45%, #E04A62 100%);}
 .bb-help{background:linear-gradient(135deg, #2a1015 0%, #5c1a24 55%, #8f2130 100%);}
 
 /* شفقِ متحرکِ پس‌زمینه */
@@ -1692,8 +1692,8 @@ body{ animation:apEnter .38s var(--ease-out) both; }
   position:absolute; inset:-40%; z-index:-2; pointer-events:none; opacity:.55;
   background:
     radial-gradient(38% 38% at 30% 30%, rgba(255,255,255,.55), transparent 70%),
-    radial-gradient(32% 32% at 72% 68%, rgba(220,222,228,.45), transparent 70%),
-    radial-gradient(28% 28% at 60% 20%, rgba(200,16,46,.14), transparent 70%);
+    radial-gradient(32% 32% at 72% 68%, rgba(245,205,212,.45), transparent 70%),
+    radial-gradient(28% 28% at 60% 20%, rgba(179,18,46,.14), transparent 70%);
   animation:bbAurora 14s ease-in-out infinite alternate;
 }
 .bb-help .bb-aurora{opacity:.35;}
@@ -4001,9 +4001,9 @@ function parseCartKey(key){
    اصلاح می‌شه، ولی تا وقتی کشِ ۱۰ دقیقه‌ایِ لیست محصولات تازه بشه، اینجا هم
    بنفش‌ها به قرمزِ برند تبدیل می‌شن تا مشتری هیچ‌وقت کارتِ بنفش نبینه. */
 function brandCardColor(raw){
-  const red = '#2B2D31';   /* رنگِ پیش‌فرضِ کارت: گرافیت */
+  const red = '#B3122E';   /* رنگِ پیش‌فرضِ کارت: زرشکی */
   const c = String(raw || '').trim().toLowerCase();
-  if(!c || c === '#ff3b4e' || c === '#ff5563') return red;   /* قرمزِ قبلیِ پوسته هم گرافیت */
+  if(!c || ['#ff3b4e', '#ff5563', '#2b2d31'].includes(c)) return red;   /* رنگ‌های قبلیِ پوسته هم زرشکی */
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/.exec(c);
   if(m){
     const r = parseInt(m[1],16), g = parseInt(m[2],16), b = parseInt(m[3],16);

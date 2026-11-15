@@ -34,9 +34,9 @@ add_action('wp_head', function () {
     if (!is_admin_bar_showing()) return;
     ?>
     <style>
-        #wpadminbar{background:#1a1a1a !important; border-bottom:2px solid #C8102E;}
+        #wpadminbar{background:#1a1a1a !important; border-bottom:2px solid #B3122E;}
         #wpadminbar .ab-item, #wpadminbar a.ab-item, #wpadminbar > #wp-toolbar span.ab-label, #wpadminbar > #wp-toolbar span.noticon{color:#e6e6e6 !important;}
-        #wpadminbar .ab-icon, #wpadminbar .ab-icon:before{color:#C8102E !important;}
+        #wpadminbar .ab-icon, #wpadminbar .ab-icon:before{color:#D9354F !important;}
         #wpadminbar .hover > .ab-item, #wpadminbar li:hover > .ab-item, #wpadminbar li.hover > .ab-item{background:#2a2a2a !important; color:#fff !important;}
         #wpadminbar #wp-admin-bar-my-account.with-avatar .avatar{border-radius:4px;}
         #wpadminbar #wp-admin-bar-top-secondary{direction:ltr;}
@@ -1909,11 +1909,11 @@ function ap_gallery_urls($post_id, $fallback_img = null) {
  * ========================================================================= */
 if (!function_exists('ap_brand_card_color')) {
     function ap_brand_card_color($raw) {
-        $red = '#2b2d31';   /* پیش‌فرض: گرافیت */
+        $red = '#b3122e';   /* پیش‌فرض: زرشکی */
         $raw = strtolower(trim((string) $raw));
         if ($raw === '') { return $red; }
         $legacy = ['#6a4dff', '#8b6bff', '#8f6bff', '#a68bff', '#7c5cff', '#5b3df5', '#8b5cf6', '#7c9dff', '#6a4eff'];
-        if (in_array($raw, $legacy, true) || in_array($raw, ['#ff3b4e', '#ff5563'], true)) { return $red; }   /* قرمزِ قدیمی هم گرافیت */
+        if (in_array($raw, $legacy, true) || in_array($raw, ['#ff3b4e', '#ff5563', '#2b2d31'], true)) { return $red; }   /* رنگ‌های قبلی هم زرشکی */
         /* هر بنفشِ دیگه‌ای هم (آبیِ پررنگ‌تر از قرمز و سبز) قرمز می‌شه */
         if (preg_match('/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/', $raw, $m)) {
             $r = hexdec($m[1]); $g = hexdec($m[2]); $b = hexdec($m[3]);
@@ -2393,7 +2393,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_topbar_bg', [
-        'default'           => '#2B2D31',
+        'default'           => '#B3122E',
         'sanitize_callback' => 'sanitize_hex_color',
     ]);
     $wp_customize->add_control(new WP_Customize_Color_Control($wp_customize, 'ap_topbar_bg', [
@@ -3081,15 +3081,15 @@ html[data-theme="dark"] #apBg{background:linear-gradient(165deg, #0a0912 0%, #08
   animation:var(--anim) var(--dur) ease-in-out infinite alternate;
 }
 /* رنگ‌های گرم و ملایم: قرمز، مرجانی، هلویی و صورتیِ پودری (هماهنگ با صفحه‌ی اصلی) */
-#apBg .b1{--c:rgba(200,16,46,.13); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
-#apBg .b2{--c:rgba(120,124,135,.20); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
-#apBg .b3{--c:rgba(170,174,184,.22); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
-#apBg .b4{--c:rgba(200,16,46,.08); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
-#apBg .b5{--c:rgba(90,94,104,.12); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
-html[data-theme="dark"] #apBg .b1{--c:rgba(200,16,46,.20);}
-html[data-theme="dark"] #apBg .b2{--c:rgba(120,124,135,.12);}
-html[data-theme="dark"] #apBg .b3{--c:rgba(90,94,104,.14);}
-html[data-theme="dark"] #apBg .b4{--c:rgba(200,16,46,.10);}
+#apBg .b1{--c:rgba(179,18,46,.20); width:78vmax; height:78vmax; left:-22vmax; top:-26vmax; --anim:apDance1; --dur:26s;}
+#apBg .b2{--c:rgba(217,53,79,.14); width:62vmax; height:62vmax; right:-20vmax; top:6vh;    --anim:apDance2; --dur:31s;}
+#apBg .b3{--c:rgba(240,170,180,.20); width:70vmax; height:70vmax; left:18vw;  bottom:-34vmax; --anim:apDance3; --dur:37s;}
+#apBg .b4{--c:rgba(179,18,46,.08); width:54vmax; height:54vmax; left:-16vmax; bottom:4vh;  --anim:apDance4; --dur:43s;}
+#apBg .b5{--c:rgba(200,120,140,.12); width:42vmax; height:42vmax; right:4vw;  top:44vh;       --anim:apDance5; --dur:29s;}
+html[data-theme="dark"] #apBg .b1{--c:rgba(179,18,46,.24);}
+html[data-theme="dark"] #apBg .b2{--c:rgba(217,53,79,.14);}
+html[data-theme="dark"] #apBg .b3{--c:rgba(160,40,70,.15);}
+html[data-theme="dark"] #apBg .b4{--c:rgba(179,18,46,.12);}
 html[data-theme="dark"] #apBg .b5{--c:rgba(210,120,170,.07);}
 /* لایه‌ی نورِ نرم برای عمق و خوانایی متن */
 #apBg::after{
@@ -3201,14 +3201,14 @@ function ap_related_products_html($ids, $title = 'محصولات مرتبط') {
   display:flex; flex-direction:column; box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 12px 28px rgba(20,10,60,.08); transition:transform .3s ease;}
 .rp-card:hover{transform:translateY(-4px);}
 .rp-img{width:100%; aspect-ratio:1/1; border-radius:14px; overflow:hidden; display:grid; place-items:center; margin-bottom:12px;
-  background:linear-gradient(160deg,#2B2D31 0%, rgba(43,45,49,.30) 120%);}
+  background:linear-gradient(160deg,#B3122E 0%, rgba(179,18,46,.25) 120%);}
 .rp-img img{width:100%; height:100%; object-fit:cover; display:block;}
 .rp-img.has{background:#f1f0f6;}
 .rp-img svg{width:46px; height:46px; stroke:#fff;}
 .rp-card h3{font-size:14px; line-height:1.6; margin:0 0 8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:3.2em;}
 .rp-price{margin-top:auto; font-weight:800; font-size:14.5px;}
 .rp-price small{font-size:11px; color:#7a7788; font-weight:400; margin-right:3px;}
-.rp-price .call{font-size:12px; color:#C8102E;}
+.rp-price .call{font-size:12px; color:#B3122E;}
 html[data-theme="dark"] .rp-card{background:#15141c; border-color:rgba(255,255,255,.08); box-shadow:0 12px 28px rgba(0,0,0,.45);}
 html[data-theme="dark"] .rp-img.has{background:#1f1e29;}
 </style>
@@ -3824,7 +3824,7 @@ function ap_manifest_data() {
     return [
         'name' => get_bloginfo('name') . ' — فروشگاه قطعات یدکی خودرو', 'short_name' => get_bloginfo('name'), 'lang' => 'fa', 'dir' => 'rtl', 'id' => home_url('/'),
         'start_url' => home_url('/?source=pwa'), 'scope' => home_url('/'), 'display' => 'standalone',
-        'background_color' => '#f4f4f6', 'theme_color' => '#2B2D31',
+        'background_color' => '#fbf4f5', 'theme_color' => '#B3122E',
         'icons' => [
             ['src' => ap_icon_url('icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
             ['src' => ap_icon_url('icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
@@ -4410,3 +4410,12 @@ add_action('init', function () {
     delete_transient('ap_products_cache_v3');
     update_option('ap_palette_graphite_v1', 1, false);
 });
+
+/* یک‌بار: پالتِ زرشکی — نوارِ بالای سایت اگه هنوز گرافیت/قرمزِ قبلی بود زرشکی می‌شه */
+add_action('init', function () {
+    if (get_option('ap_palette_wine_v1')) return;
+    $cur = strtolower(trim((string) get_theme_mod('ap_topbar_bg', '')));
+    if ($cur === '' || in_array($cur, ['#2b2d31', '#ff5563', '#ff3b4e', '#e01f34'], true)) set_theme_mod('ap_topbar_bg', '#B3122E');
+    delete_transient('ap_products_cache_v3');
+    update_option('ap_palette_wine_v1', 1, false);
+}, 12);
