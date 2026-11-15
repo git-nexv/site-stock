@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) { exit; }
  * برای تغییر: فهرست رو ویرایش کن و AP_VEHICLE_SEED_VERSION رو یکی بالا ببر.
  */
 
-define('AP_VEHICLE_SEED_VERSION', '14');
+define('AP_VEHICLE_SEED_VERSION', '15');
 
 function ap_vehicle_seed_data() {
     /* منبع: دیوار (divar.ir) ← خودرو ← برند و تیپ، آبان ۱۴۰۵. هر مدل: [نام نمایشی, اسلاگ, سال شروع, سال پایان, تیپ‌ها]
@@ -542,7 +542,15 @@ function ap_vehicle_seed_data() {
 }
 
 /* پیدا کردن با اسلاگ (یا اسلاگِ پیشوندخورده با والد) زیر همون والد؛ نبود، ساخته می‌شه؛ بود، اسمش به‌روز می‌شه. */
+/* «اسلاگِ کوتاه» هر سطح (همونی که توی فهرست نوشته شده، مثل 1392 یا auto-2000) برای پیوندِ تمیز:
+   وردپرس اسلاگ‌ها رو در کلِ تاکسونومی یکتا می‌خواد و برای سال‌ها چیزی مثل
+   1392-auto-2000-grand-vitara-montage می‌ساخت؛ پیوندِ صفحه از این اسلاگ‌های کوتاه ساخته می‌شه. */
 function ap_vehicle_seed_term($name, $slug, $parent) {
+    $id = ap_vehicle_seed_term_raw($name, $slug, $parent);
+    if ($id && get_term_meta($id, 'ap_short', true) !== (string) $slug) update_term_meta($id, 'ap_short', (string) $slug);
+    return $id;
+}
+function ap_vehicle_seed_term_raw($name, $slug, $parent) {
     $p = $parent ? get_term($parent, 'ap_vehicle') : null;
     $alt = ($p && !is_wp_error($p)) ? $p->slug . '-' . $slug : '';
     $kids = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => $parent, 'hide_empty' => false]);

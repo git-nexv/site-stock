@@ -4183,3 +4183,87 @@ add_filter('robots_txt', function ($out, $public) {
     if (strpos($out, $line) === false) $out = rtrim($out) . "\n" . $line . "\n";
     return $out;
 }, 99, 2);
+
+/* =========================================================================
+ * پیوندِ کوتاه و تمیز برای همه‌ی سطح‌های خودرو:
+ *   /car/suzuki/grand-vitara-montage/auto-2000/1392/  (نه  .../1392-auto-2000-grand-vitara-montage/)
+ * هر سطح «اسلاگِ کوتاهِ» خودش (term meta: ap_short) رو داره؛ پیوند از همین‌ها ساخته می‌شه و
+ * موقعِ باز شدنِ آدرس، مسیر سطح‌به‌سطح به خودروی درست برگردونده می‌شه. آدرس‌های قبلی (اسلاگِ
+ * بلند) با ۳۰۱ به آدرسِ کوتاه می‌رن.
+ * ========================================================================= */
+function ap_vehicle_short($term) {
+    $s = (string) get_term_meta($term->term_id, 'ap_short', true);
+    return $s !== '' ? sanitize_title($s) : $term->slug;
+}
+add_filter('term_link', function ($url, $term, $taxonomy) {
+    if ($taxonomy !== 'ap_vehicle' || !is_object($term)) return $url;
+    $parts = [ap_vehicle_short($term)];
+    $guard = 0; $cur = $term;
+    while ($cur->parent && $guard++ < 8) {
+        $cur = get_term((int) $cur->parent, 'ap_vehicle');
+        if (!$cur || is_wp_error($cur)) return $url;          /* والدِ حذف‌شده (یتیم) */
+        array_unshift($parts, ap_vehicle_short($cur));
+    }
+    return home_url('/car/' . implode('/', $parts) . '/');
+}, 10, 3);
+
+/* مسیرِ /car/a/b/c/ → خودروی درست (سطح‌به‌سطح با اسلاگِ کوتاه یا اسلاگِ واقعی) */
+function ap_vehicle_resolve_path($path) {
+    $segs = array_values(array_filter(explode('/', trim((string) $path, '/')), 'strlen'));
+    if (!$segs) return null;
+    $parent = 0; $found = null;
+    foreach ($segs as $seg) {
+        $seg = sanitize_title(urldecode($seg));
+        $kids = get_terms(['taxonomy' => 'ap_vehicle', 'parent' => $parent, 'hide_empty' => false]);
+        if (is_wp_error($kids) || !$kids) return null;
+        $found = null;
+        foreach ($kids as $k) { if (ap_vehicle_short($k) === $seg) { $found = $k; break; } }
+        if (!$found) foreach ($kids as $k) { if ($k->slug === $seg) { $found = $k; break; } }
+        if (!$found) return null;
+        $parent = (int) $found->term_id;
+    }
+    return $found;
+}
+add_filter('request', function ($vars) {
+    if (empty($vars['ap_vehicle']) || !is_string($vars['ap_vehicle'])) return $vars;
+    $t = ap_vehicle_resolve_path($vars['ap_vehicle']);
+    if ($t) $vars['ap_vehicle'] = $t->slug;
+    return $vars;
+});
+/* آدرس‌های قبلی/غیراستاندارد → ۳۰۱ به پیوندِ کوتاه */
+add_action('template_redirect', function () {
+    if (!is_tax('ap_vehicle') || is_admin() || ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
+    $t = get_queried_object();
+    if (!$t || is_wp_error($t)) return;
+    $want = get_term_link($t);
+    if (is_wp_error($want)) return;
+    $part = sanitize_title((string) get_query_var('ap_part_cat'));
+    if ($part !== '') $want = trailingslashit($want) . 'part/' . $part . '/';
+    $cur = trailingslashit(urldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH)));
+    $wantPath = trailingslashit((string) parse_url($want, PHP_URL_PATH));
+    if (strpos($cur, '/page/') !== false || $cur === $wantPath) return;
+    $qs = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
+    wp_safe_redirect($want . ($qs !== '' ? '?' . $qs : ''), 301);
+    exit;
+}, 5);
+
+/* یک‌بار (و بعد از هر به‌روزرسانیِ فهرستِ خودروها): سطح‌هایی که والدشون حذف شده پاک می‌شن
+   (همون‌ها که پیوندِ خراب /car//1395-... داشتن)؛ کشِ فهرستِ خودروها و سایت‌مپ پاک می‌شه. */
+add_action('init', function () {
+    $tag = defined('AP_VEHICLE_SEED_VERSION') ? AP_VEHICLE_SEED_VERSION : '0';
+    if (get_option('ap_vehicle_orphans_done') === $tag || get_option('ap_vehicle_seed') !== $tag) return;
+    $all = get_terms(['taxonomy' => 'ap_vehicle', 'hide_empty' => false, 'fields' => 'id=>parent']);
+    if (!is_wp_error($all)) {
+        $exists = array_flip(array_map('intval', array_keys($all)));
+        $removed = 0;
+        foreach ($all as $id => $parent) {
+            if ((int) $parent && !isset($exists[(int) $parent])) {
+                foreach ((array) get_term_children((int) $id, 'ap_vehicle') as $c) { if (!is_wp_error($c)) wp_delete_term((int) $c, 'ap_vehicle'); }
+                wp_delete_term((int) $id, 'ap_vehicle');
+                $removed++;
+            }
+        }
+    }
+    foreach (['ap_vehicles_cache_v2', 'ap_vehicle_sitemap_skip_v1', 'ap_car_part_sitemap_v1', 'ap_products_cache_v3'] as $k) delete_transient($k);
+    update_option('ap_vehicle_orphans_done', $tag, false);
+}, 40);

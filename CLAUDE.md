@@ -52,7 +52,7 @@
 
 ## پیوندهای سئو (URL)
 - محصول: `/product/<brand>-<model>-<part>/` — دسته: `/product-cat/<slug>/`
-- خودرو: `/car/<brand>/<model>/<type>/...` (تاکسونومی `ap_vehicle`، سلسله‌مراتبی)
+- خودرو: `/car/<brand>/<model>/<type>/<year>/` (تاکسونومی `ap_vehicle`). پیوند از «اسلاگِ کوتاهِ» هر سطح (term meta `ap_short`) ساخته می‌شه، نه اسلاگِ یکتای وردپرس (که برای سال‌ها بلند می‌شد)؛ فیلترهای `term_link` و `request` در functions.php، آدرس‌های قدیمی ۳۰۱ می‌شن.
 - خودرو + نوعِ قطعه: `/car/<brand>/<model>/part/<cat-slug>/` (`ap_part_combo()` در functions.php؛ بدون محصول = noindex)
 - آدرسِ مرورگر با انتخابِ خودرو/دسته هم‌گام می‌شه (`updateUrlForSelectedCategory` در site.html).
 - سایت‌مپ برای سرچ کنسول: `/sitemap_index.xml` (Rank Math) + سایت‌مپِ خودمون `/car-parts-sitemap.xml` برای «خودرو + قطعه» که با فیلترِ `rank_math/sitemap/index` به فهرستِ اصلی اضافه می‌شه (`ap_car_part_sitemap_rows()`).
