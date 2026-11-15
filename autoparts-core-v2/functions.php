@@ -4121,3 +4121,65 @@ add_action('wp_loaded', function () {
     echo '</urlset>';
     exit;
 }, 1);
+
+/* =========================================================================
+ * /sitemap_index.xml همیشه کار کنه: اگه ماژولِ سایت‌مپِ Rank Math روشن باشه همون جواب می‌ده؛
+ * وگرنه (مثلِ الان که robots.txt به wp-sitemap.xml وردپرس اشاره می‌کرد و این آدرس صفحه‌ی اصلی
+ * رو نشون می‌داد) خودِ قالب یک فهرستِ کامل می‌سازه: سایت‌مپ‌های داخلیِ وردپرس (محصول، مقاله،
+ * برگه، دسته، خودرو) + سایت‌مپِ «خودرو + قطعه». فهرستِ کاربران (نویسنده‌ها) حذف می‌شه.
+ * ========================================================================= */
+function ap_rank_math_sitemap_active() {
+    return class_exists('\RankMath\Helper') && method_exists('\RankMath\Helper', 'is_module_active') && \RankMath\Helper::is_module_active('sitemap');
+}
+/* سایت‌مپِ داخلیِ وردپرس: بدونِ فهرستِ کاربران و نوع‌های بی‌استفاده */
+add_filter('wp_sitemaps_add_provider', function ($provider, $name) { return $name === 'users' ? false : $provider; }, 10, 2);
+add_filter('wp_sitemaps_post_types', function ($types) { unset($types['post'], $types['attachment']); return $types; });
+add_filter('wp_sitemaps_taxonomies', function ($tax) { unset($tax['category'], $tax['post_tag'], $tax['ap_brand'], $tax['post_format']); return $tax; });
+/* برند و مدلِ خودرو حتی وقتی «خالی» حساب می‌شن (محصولات به مدل وصلن)؛ تیپ/سالِ بی‌محصول نه */
+add_filter('wp_sitemaps_taxonomies_query_args', function ($args, $taxonomy) {
+    if ($taxonomy !== 'ap_vehicle') return $args;
+    $args['hide_empty'] = false;
+    $skip = get_transient('ap_vehicle_sitemap_skip_v1');
+    if (!is_array($skip)) {
+        $skip = [];
+        foreach ((array) get_terms(['taxonomy' => 'ap_vehicle', 'hide_empty' => false, 'fields' => 'id=>parent']) as $id => $parent) {
+            if ($parent && (int) get_term_field('count', $id, 'ap_vehicle') === 0) {
+                $pt = get_term($parent, 'ap_vehicle');
+                if ($pt && !is_wp_error($pt) && $pt->parent) $skip[] = (int) $id;   /* سطحِ سوم به بعد و خالی */
+            }
+        }
+        set_transient('ap_vehicle_sitemap_skip_v1', $skip, 12 * HOUR_IN_SECONDS);
+    }
+    if ($skip) $args['exclude'] = $skip;
+    return $args;
+}, 10, 2);
+add_filter('wp_sitemaps_max_urls', function () { return 1000; });
+
+add_action('wp_loaded', function () {
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (!preg_match('#/sitemap_index\.xml$#', $path) || ap_rank_math_sitemap_active()) return;
+    $locs = [];
+    if (function_exists('wp_sitemaps_get_server')) {
+        $server = wp_sitemaps_get_server();
+        if ($server && isset($server->index)) foreach ((array) $server->index->get_sitemap_list() as $e) {
+            $loc = is_array($e) ? (string) ($e['loc'] ?? '') : '';
+            if ($loc !== '') $locs[] = $loc;
+        }
+    }
+    $rows = function_exists('ap_car_part_sitemap_rows') ? ap_car_part_sitemap_rows() : [];
+    for ($i = 1, $n = (int) ceil(count($rows) / 1000); $i <= $n; $i++) $locs[] = home_url('/car-parts-sitemap' . ($i > 1 ? $i : '') . '.xml');
+    status_header(200);
+    header('Content-Type: application/xml; charset=UTF-8');
+    header('X-Robots-Tag: noindex, follow');
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach (array_unique($locs) as $l) echo "\t<sitemap>\n\t\t<loc>" . esc_url($l) . "</loc>\n\t</sitemap>\n";
+    echo '</sitemapindex>';
+    exit;
+}, 2);
+/* robots.txt هم به همین فهرستِ کامل اشاره کنه */
+add_filter('robots_txt', function ($out, $public) {
+    if (!$public) return $out;
+    $line = 'Sitemap: ' . home_url('/sitemap_index.xml');
+    if (strpos($out, $line) === false) $out = rtrim($out) . "\n" . $line . "\n";
+    return $out;
+}, 99, 2);
