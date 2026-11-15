@@ -4363,3 +4363,30 @@ add_action('init', function () {
     }
     update_option('ap_brand_rename_v2', 1, false);
 });
+
+/* یک‌بار: برگه‌های «سبد خرید» (/cart/) و «حساب کاربری» (/my-account/) مثلِ سایتِ اپل وجود داشته
+   باشن، منتشرشده و قابلِ ایندکس، و داخلِ سایت‌مپِ برگه‌ها بیان (قبلاً روی این سایت نبودن). */
+add_action('admin_init', function () {
+    if (get_option('ap_utility_pages_v1') || !current_user_can('manage_options')) return;
+    $ids = [];
+    foreach (['cart' => 'سبد خرید', 'my-account' => 'حساب کاربری'] as $slug => $title) {
+        $p = get_page_by_path($slug, OBJECT, 'page');
+        if (!$p) {
+            $id = wp_insert_post(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_name' => $slug, 'post_content' => '']);
+            if (is_wp_error($id) || !$id) continue;
+            $p = get_post($id);
+        } elseif ($p->post_status !== 'publish') {
+            wp_update_post(['ID' => $p->ID, 'post_status' => 'publish']);
+        }
+        delete_post_meta($p->ID, 'rank_math_robots');
+        $ids[] = (int) $p->ID;
+    }
+    $opt = get_option('rank-math-options-sitemap', []);
+    if (is_array($opt) && !empty($opt['exclude_posts']) && $ids) {
+        $cur = array_filter(array_map('intval', preg_split('/\s*,\s*/', (string) $opt['exclude_posts'])));
+        $opt['exclude_posts'] = implode(',', array_values(array_diff($cur, $ids)));
+        update_option('rank-math-options-sitemap', $opt);
+    }
+    if (function_exists('ap_flush_rank_math_sitemap')) ap_flush_rank_math_sitemap();
+    update_option('ap_utility_pages_v1', 1, false);
+}, 80);
