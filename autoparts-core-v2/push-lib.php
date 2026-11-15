@@ -181,7 +181,8 @@ function ap_pl_http_many(array $reqs, $concurrency = 24) {
 
 /* یک پیام می‌سازه، در صفِ پیام‌ها نگه می‌داره (برای حالتِ بدونِ رمزنگاری) و برای
    همه‌ی دستگاه‌های مقصد می‌فرسته. $to: all | customers | admins */
-function ap_pl_send($dataDir, $vapid, $to, array $msg, $subject = 'mailto:admin@nexv.ir') {
+function ap_pl_send($dataDir, $vapid, $to, array $msg, $subject = '') {
+    if ($subject === '') $subject = 'mailto:admin@' . (function_exists('home_url') ? (parse_url(home_url(), PHP_URL_HOST) ?: 'localhost') : 'localhost');
     $msg = [
         'title' => mb_substr(trim((string) ($msg['title'] ?? '')), 0, 80, 'UTF-8') ?: (function_exists('get_bloginfo') ? get_bloginfo('name') : ''),
         'body'  => mb_substr(trim((string) ($msg['body'] ?? '')), 0, 600, 'UTF-8'),

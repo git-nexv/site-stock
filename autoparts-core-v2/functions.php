@@ -67,7 +67,7 @@ define('AP_OWNER_PHONE', '09109973428');
 /* حسابِ وردپرسیِ مدیرِ کل: نام کاربری = شماره‌ی مدیر */
 define('AP_OWNER_WP_LOGIN', '09109973428');
 
-/* $user: حسابِ NEXV (خروجیِ public_user در api.php). مدیرِ کل → حسابِ «ap-owner» با نقشِ
+/* $user: حسابِ فروشگاه (خروجیِ public_user در api.php). مدیرِ کل → حسابِ «ap-owner» با نقشِ
    مدیر کل وردپرس؛ ادمینِ زیرمجموعه با دسترسیِ «محصولات» → حسابِ جدا با نقشِ «ویرایشگر»
    (فقط محصولات/دسته‌ها/مقالات؛ نه تنظیمات، افزونه‌ها یا به‌روزرسانیِ قالب). بقیه سشنِ وردپرس نمی‌گیرن. */
 function ap_wp_user_for_admin($user, $create = false) {
@@ -3442,7 +3442,7 @@ function ap_card_thumb_url($post_id) {
 }
 
 /* =========================================================================
- * سفارش‌ها در پیشخوانِ وردپرس (NEXV ← سفارش‌ها) + اطلاع‌رسانیِ سفارشِ جدید
+ * سفارش‌ها در پیشخوانِ وردپرس (فروشگاه ← سفارش‌ها) + اطلاع‌رسانیِ سفارشِ جدید
  * این صفحه مستقیم از همون فایلِ سفارش‌های سایت می‌خونه؛ یعنی حتی اگه پنلِ داخلِ
  * سایت به هر دلیلی باز نشه، مدیر همیشه سفارش‌ها رو اینجا می‌بینه.
  * ========================================================================= */
@@ -3464,7 +3464,7 @@ function ap_order_status_labels() {
     return ['pending' => 'در انتظار بررسی', 'confirmed' => 'تأیید شد', 'rejected' => 'رد شد', 'packing' => 'در حال بسته‌بندی', 'courier' => 'تحویل به پیک/پست', 'shipped' => 'ارسال شد'];
 }
 
-/* اطلاع‌رسانیِ سفارشِ جدید: ایمیل به مدیر + شمارنده‌ی «سفارشِ جدید» روی منوی NEXV */
+/* اطلاع‌رسانیِ سفارشِ جدید: ایمیل به مدیر + شمارنده‌ی «سفارشِ جدید» روی منوی فروشگاه */
 function ap_notify_new_order($order, $detached = true) {
     update_option('ap_unseen_orders', (int) get_option('ap_unseen_orders', 0) + 1, false);
     /* اعلان روی گوشیِ مدیر (اگه دستگاهی ثبت شده باشه) */
@@ -3940,9 +3940,9 @@ add_action('admin_init', function () {
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/media.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
-    $tmp = wp_tempnam('nexv-logo.png');
+    $tmp = wp_tempnam('cartehran-logo.png');
     copy($src, $tmp);
-    $id = media_handle_sideload(['name' => 'nexv-logo.png', 'tmp_name' => $tmp], 0, 'لوگوی NEXV');
+    $id = media_handle_sideload(['name' => 'cartehran-logo.png', 'tmp_name' => $tmp], 0, 'لوگوی CarTehran');
     if (is_wp_error($id)) { @unlink($tmp); return; }
     update_option('site_icon', $id);
     set_theme_mod('custom_logo', $id);

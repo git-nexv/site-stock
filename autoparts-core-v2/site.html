@@ -1857,7 +1857,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 'ثبت‌نام با موفقیت انجام شد 🎉':'Signed up successfully 🎉','از حساب کاربری خارج شدید.':'You have signed out.','خطایی رخ داد، دوباره تلاش کنید.':'Something went wrong, please try again.',
 '✍️ ثبت نظر':'✍️ Write a review','هنوز نظری ثبت نشده؛ اولین نفری باشید که نظر می‌ده!':'No reviews yet — be the first!','برای ثبت نظر باید وارد حساب کاربری خود شوید.':'Sign in to write a review.',
 'درباره ما':'About us','قوانین و مقررات':'Terms & conditions','قوانین':'Terms','تماس با ما:':'Contact us:','تماس با ما: ':'Contact us: ','پیام در واتساپ':'WhatsApp us','اینستاگرام':'Instagram','تغییر حالت روشن و تاریک':'Toggle light/dark mode',
-'© ۱۴۰۵ NEXV — تمامی حقوق محفوظ است.':'© 2026 NEXV — All rights reserved.','عضو باشگاه مشتریان NEXV شوید':'Join the NEXV customer club',
+'© ۱۴۰۵ CarTehran — تمامی حقوق محفوظ است.':'© 2026 CarTehran — All rights reserved.','عضو باشگاه مشتریان CarTehran شوید':'Join the CarTehran customer club',
 'با ثبت‌نام، از تخفیف‌های ویژه، پیش‌فروش محصولات جدید و ارسال رایگان بهره‌مند شوید.':'Sign up for special discounts, pre-orders and free shipping.',
 'ارسال به سراسر کشور، تحویل اکسپرس در تهران در همان روز.':'Nationwide shipping, same-day express delivery in Tehran.','تمامی کالاها با کد رهگیری اپل و پلمب اصلی ارسال می‌شوند.':'All items ship sealed with Apple tracking codes.',
 'درگاه پرداخت رمزنگاری‌شده و امکان پرداخت قسطی.':'Encrypted payment gateway with installment options.','پوشش گارانتی تعویض و تعمیر روی همه‌ی دستگاه‌ها.':'Replacement and repair warranty on all devices.',
@@ -1866,7 +1866,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
 'زیردسته‌ای برای این دسته وجود نداره؛ از پایین می‌تونید فیلتر رو اعمال کنید.':'This category has no subcategories; apply the filter below.',
 'پیشخوان مدیریت':'Admin dashboard','پیشخوان مدیریت سفارش‌ها':'Order dashboard','سفارش‌ها و مشتری‌ها':'Orders & customers','مشتری‌ها':'Customers','ادمین‌ها':'Admins','اعلان‌ها':'Notifications','تغییر وضعیت':'Change status',
 '✅ تأیید سفارش':'✅ Confirm order','❌ رد سفارش':'❌ Reject order','تاریخ عضویت':'Joined','آخرین ورود:':'Last sign-in:','متوجه شدم':'Got it','بعداً':'Later','فعال‌سازی':'Enable','ذخیره‌ی تغییرات':'Save changes',
-'✦ نسل تازه‌ای از خرید اپل':'✦ A new way to buy Apple','تجربه‌ای':'A brighter','روشن‌تر':'experience','از':'From','دنیای':'the world of','ساعته':'hours','سریع':'Fast','٪ پیشنهاد ویژه':'% special offer','ال‌سی‌دی':'LCD','وبلاگ NEXV':'NEXV Blog',
+'✦ نسل تازه‌ای از خرید اپل':'✦ A new way to buy Apple','تجربه‌ای':'A brighter','روشن‌تر':'experience','از':'From','دنیای':'the world of','ساعته':'hours','سریع':'Fast','٪ پیشنهاد ویژه':'% special offer','ال‌سی‌دی':'LCD','وبلاگ CarTehran':'CarTehran Blog',
 'از آیفون تا مک، از ایرپاد تا اپل واچ؛ همه‌ی محصولات اصل اپل با گارانتی معتبر، ارسال سریع و قیمت شفاف، در یک فروشگاه.':'From iPhone to Mac, AirPods to Apple Watch — every genuine Apple product with a valid warranty, fast shipping and clear prices, in one store.',
 'ارسالِ اعلان برای همه‌ی مشتری‌ها':'Send a notification to all customers','عنوانِ اعلان':'Notification title','متنِ اعلان':'Notification text','لینک (اختیاری — با زدن روی اعلان باز می‌شه)':'Link (optional — opens when tapped)','متنِ اعلان اینجا نمایش داده می‌شه.':'Notification text appears here.',
 'ارسال برای همه':'Send to all','🔔 همین دستگاه':'🔔 This device','اعلانِ سفارشِ جدید روی این گوشی':'New-order alerts on this phone','ارسال آزمایشی':'Send test','به‌نام':'Holder','📎 ارسال رسید پرداخت':'📎 Upload payment receipt','ثبت نهایی سفارش':'Place order',
@@ -2199,7 +2199,7 @@ body{ animation:apEnter .38s var(--ease-out) both; }
         </button>
       </div>
     </div>
-    <div class="foot-made">Made with ❤️ from NEXV</div>
+    <div class="foot-made">Made with ❤️ from CarTehran</div>
   </div>
 </footer>
 
@@ -5700,7 +5700,11 @@ function renderSingleProduct(sp){
 
   const sectionHead = document.querySelector('#products .section-head');
   if(sectionHead){
-    sectionHead.innerHTML = `<h2 class="section-title" style="margin-top:6px;">محصولات مشابه</h2>`;
+    /* دکمه‌ی «بازگشت به فروشگاه» وسطِ صفحه (مثل سایتِ اپل) و به همون فیلتری برمی‌گرده که مشتری ازش اومده */
+    sectionHead.innerHTML = `<a href="${shopReturnUrl()}" id="pdBackToShop" class="btn btn-ghost" style="margin-bottom:16px; display:inline-flex;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M10 5l-7 7 7 7"/></svg>
+      بازگشت به فروشگاه
+    </a><h2 class="section-title" style="margin-top:6px;">محصولات مشابه</h2>`;
   }
 
   const images = (sp.images && sp.images.length) ? sp.images : (sp.image ? [sp.image] : []);
@@ -5713,10 +5717,6 @@ function renderSingleProduct(sp){
     </div>` : `<div class="pd-visual">${icon(sp.ic)}</div>`;
 
   const detailHtml = `
-    <a href="${HOME_URL}" class="btn btn-ghost" style="margin-bottom:16px; display:inline-flex;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M10 5l-7 7 7 7"/></svg>
-      بازگشت به فروشگاه
-    </a>
     <div class="product-detail reveal in" style="--card-color:${sp.color}">
       ${galleryHtml}
       <div class="pd-info">
