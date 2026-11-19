@@ -3975,6 +3975,8 @@ add_action('after_setup_theme', function () { add_theme_support('custom-logo'); 
 
 /* برند/مدل/سالِ خودروهای چینی رایج (vehicles-seed.php) */
 require_once __DIR__ . '/vehicles-seed.php';
+/* متغیرهای پیش‌فرضِ محصولات (سمت چپ/راست، کیفیت، نوع) */
+require_once __DIR__ . '/variants-seed.php';
 
 /* محصولات پایه برای همه‌ی مدل‌ها (parts-seed.php) */
 require_once __DIR__ . '/parts-seed.php';

@@ -254,6 +254,8 @@ function ap_parts_seed_create($job) {
     if ($cat) wp_set_post_terms($pid, [$cat], 'ap_cat');
     $mid = ap_parts_seed_model_term($bslug, $mslug);
     if ($mid) wp_set_post_terms($pid, [$mid], 'ap_vehicle');
+    /* متغیرهای پیش‌فرض (سمت چپ/راست، کیفیت، نوع) — variants-seed.php */
+    if (function_exists('ap_part_apply_variants')) ap_part_apply_variants($pid, $title, $pslug);
 }
 
 /* یک دسته از محصولات رو می‌سازه؛ true = هنوز کار مونده. با قفل، تا دو اجرا همزمان نشن. */
