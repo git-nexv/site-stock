@@ -3004,6 +3004,29 @@ add_action('admin_init', function () {
         }
     }
 });
+/* گوگل برای آیکونِ کنارِ نتیجه‌ی جستجو مستقیم /favicon.ico ریشه‌ی سایت رو هم می‌خونه (روی هاست ۴۰۴ می‌داد).
+   با هر نسخه‌ی جدیدِ آیکون، favicon.ico و apple-touch-icon.png قالب یک‌بار در ریشه‌ی سایت کپی می‌شن. */
+add_action('init', function () {
+    if (get_option('ap_root_favicon_v') === AP_ICON_VER) return;
+    $src = get_template_directory() . '/icons/';
+    $ok = file_exists($src . 'favicon.ico') && @copy($src . 'favicon.ico', ABSPATH . 'favicon.ico');
+    if (file_exists($src . 'apple-touch-icon.png')) @copy($src . 'apple-touch-icon.png', ABSPATH . 'apple-touch-icon.png');
+    /* اگه کپی نشد (دسترسیِ نوشتن نبود)، دوباره تلاش نمی‌شه تا هر بار کند نشه؛ درخواستِ /favicon.ico پایین جواب داده می‌شه */
+    update_option('ap_root_favicon_v', AP_ICON_VER, false);
+    update_option('ap_root_favicon_ok', $ok ? 1 : 0, false);
+}, 1);
+/* اگه درخواستِ /favicon.ico به وردپرس رسید، خودِ آیکونِ قالب برگردونده می‌شه (نه ۴۰۴ و نه آیکونِ قبلی) */
+add_action('parse_request', function () {
+    $path = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    if ($path !== '/favicon.ico') return;
+    $f = get_template_directory() . '/icons/favicon.ico';
+    if (!file_exists($f)) return;
+    status_header(200);
+    header('Content-Type: image/x-icon');
+    header('Cache-Control: public, max-age=604800');
+    readfile($f);
+    exit;
+}, 0);
 /* اگه در وردپرس «نماد سایت» تنظیم نشده، همین لوگو آیکونِ تب و گوگل می‌شه */
 add_action('wp_head', function () { if (!has_site_icon()) echo ap_favicon_tags(); }, 2);
 
