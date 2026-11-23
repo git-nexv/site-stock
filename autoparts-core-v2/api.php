@@ -18,6 +18,35 @@ if (($_GET['action'] ?? '') === 'sw' && file_exists(__DIR__ . '/push-lib.php')) 
 }
 
 header('Content-Type: application/json; charset=utf-8');
+/* مسیرِ سریع (آذر ۱۴۰۵): لیستِ عمومیِ محصولات/دسته‌ها/... از فایلِ آماده (و فشرده) خونده می‌شه، بدونِ
+   بارگذاریِ وردپرس؛ با ETag، بازدیدِ دوباره فقط «۳۰۴ تغییری نکرده» می‌گیره. با هر تغییرِ محصول/دسته/مقاله
+   یا آپدیتِ قالب فایل پاک و دوباره ساخته می‌شه (functions.php ← ap_pub_cache_clear). */
+define('AP_PUB_CACHE_DIR', dirname(__DIR__, 2) . '/uploads/ap-data/cache');
+function ap_pub_cache_store($action, $json) {
+    $dir = AP_PUB_CACHE_DIR;
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return;
+    $f = $dir . '/' . $action . '.json';
+    $tmp = $f . '.' . getmypid() . '.tmp';
+    if (@file_put_contents($tmp, $json) !== false) @rename($tmp, $f);
+    if (function_exists('gzencode') && ($gz = gzencode($json, 6)) !== false && @file_put_contents($tmp, $gz) !== false) @rename($tmp, $f . '.gz');
+}
+$ap_pub_ttl = ['products' => 900, 'categories' => 1800, 'vehicles' => 1800, 'articles' => 1800];
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && count($_GET) === 1 && isset($ap_pub_ttl[$_GET['action'] ?? ''])) {
+    $f = AP_PUB_CACHE_DIR . '/' . $_GET['action'] . '.json';
+    $mt = @filemtime($f);
+    if ($mt && time() - $mt < $ap_pub_ttl[$_GET['action']] && $mt > (int) @filemtime(__FILE__)) {
+        $etag = '"' . $mt . '-' . (int) @filesize($f) . '"';
+        header('ETag: ' . $etag);
+        header('Cache-Control: no-cache');
+        header('Vary: Accept-Encoding');
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) { http_response_code(304); exit; }
+        while (ob_get_level() > 0) @ob_end_clean();
+        if (stripos((string) ($_SERVER['HTTP_ACCEPT_ENCODING'] ?? ''), 'gzip') !== false && is_file($f . '.gz') && !ini_get('zlib.output_compression')) {
+            header('Content-Encoding: gzip'); header('Content-Length: ' . filesize($f . '.gz')); readfile($f . '.gz'); exit;
+        }
+        header('Content-Length: ' . filesize($f)); readfile($f); exit;
+    }
+}
 /* فشرده‌سازیِ پاسخ‌ها (لیست محصولات چند صد کیلوبایته؛ با gzip چند برابر کوچیک‌تر و سریع‌تر روی موبایل) */
 if (!ini_get('zlib.output_compression') && extension_loaded('zlib') && stripos((string) ($_SERVER['HTTP_ACCEPT_ENCODING'] ?? ''), 'gzip') !== false
     && in_array($_GET['action'] ?? '', ['products', 'categories', 'articles', 'list_orders', 'list_customers', 'list_my_orders'], true)) {
@@ -494,6 +523,22 @@ function ap_variant_price_from_cart_key($cartKey, $variantPrices) {
     return 0;
 }
 
+/* جواب رو همین الان به مرورگر می‌فرسته و اتصال رو می‌بنده؛ اسکریپت بعدش در پس‌زمینه ادامه می‌ده
+   (برای کارهای طولانی مثلِ ارسالِ اعلان به همه؛ مدیر لازم نیست صفحه رو باز نگه داره) */
+function ap_respond_and_continue($json) {
+    @ignore_user_abort(true); @set_time_limit(900);
+    while (ob_get_level() > 0) @ob_end_clean();
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Connection: close');
+        header('Content-Encoding: none');
+        header('Content-Length: ' . strlen($json));
+    }
+    echo $json;
+    if (function_exists('fastcgi_finish_request')) { fastcgi_finish_request(); return; }
+    if (function_exists('litespeed_finish_request')) { litespeed_finish_request(); return; }
+    @flush();
+}
 function json_fail($msg, $code = 400) {
     http_response_code($code);
     echo json_encode(['success' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
@@ -807,7 +852,9 @@ switch ($action) {
     case 'products': {
         $wpProducts = ap_wp_products();
         if (is_array($wpProducts) && count($wpProducts) > 0) {
-            echo json_encode(['success' => true, 'products' => $wpProducts, 'source' => 'wp'], JSON_UNESCAPED_UNICODE);
+            $json = json_encode(['success' => true, 'products' => $wpProducts, 'source' => 'wp'], JSON_UNESCAPED_UNICODE);
+            ap_pub_cache_store('products', $json);
+            echo $json;
         } else {
             // دیگه هیچ‌وقت محصولات Demo/پیش‌فرض جایگزین نمی‌شن؛ اگه محصولی از پیشخوان
             // وردپرس برنگشت، صادقانه یه آرایه‌ی خالی برمی‌گردونیم تا سمتِ سایت بفهمه
@@ -819,19 +866,25 @@ switch ($action) {
 
     case 'categories': {
         $tree = ap_wp_category_tree();
-        echo json_encode(['success' => true, 'categories' => $tree ?: []], JSON_UNESCAPED_UNICODE);
+        $json = json_encode(['success' => true, 'categories' => $tree ?: []], JSON_UNESCAPED_UNICODE);
+        if ($tree) ap_pub_cache_store('categories', $json);
+        echo $json;
         break;
     }
 
     case 'vehicles': {
         $tree = ap_wp_vehicle_tree();
-        echo json_encode(['success' => true, 'vehicles' => $tree ?: []], JSON_UNESCAPED_UNICODE);
+        $json = json_encode(['success' => true, 'vehicles' => $tree ?: []], JSON_UNESCAPED_UNICODE);
+        if ($tree) ap_pub_cache_store('vehicles', $json);
+        echo $json;
         break;
     }
 
     case 'articles': {
         $articles = ap_wp_articles();
-        echo json_encode(['success' => true, 'articles' => $articles ?: []], JSON_UNESCAPED_UNICODE);
+        $json = json_encode(['success' => true, 'articles' => $articles ?: []], JSON_UNESCAPED_UNICODE);
+        if ($articles) ap_pub_cache_store('articles', $json);
+        echo $json;
         break;
     }
 
@@ -1555,11 +1608,13 @@ switch ($action) {
         if ($url !== '' && !preg_match('#^(https?://|/)#i', $url)) $url = '';
         $v = function_exists('ap_vapid') ? ap_vapid() : null;
         if (!$v) json_fail('کلیدِ اعلان روی این هاست ساخته نشد (OpenSSL).', 500);
-        @set_time_limit(300); @ignore_user_abort(true);
-        $r = ap_pl_send($DATA_DIR, $v, 'all', ['title' => $title !== '' ? $title : (function_exists('get_bloginfo') ? get_bloginfo('name') : ''), 'body' => $body, 'url' => $url, 'tag' => 'ap-news-' . time()], function_exists('ap_push_subject') ? ap_push_subject() : 'mailto:admin@nexv.ir');
-        if (!$r['total']) json_fail('هنوز هیچ دستگاهی اجازه‌ی اعلان نداده.');
-        echo json_encode(['success' => $r['sent'] > 0, 'result' => $r, 'error' => $r['sent'] > 0 ? null : 'ارسال ناموفق بود: ' . implode(' | ', $r['errors'])], JSON_UNESCAPED_UNICODE);
-        break;
+        $pc = ap_pl_counts($DATA_DIR);
+        if (!$pc['total']) json_fail('هنوز هیچ دستگاهی اجازه‌ی اعلان نداده.');
+        /* تأییدیه همون لحظه برمی‌گرده؛ ارسال به تک‌تکِ دستگاه‌ها در پس‌زمینه انجام می‌شه و نتیجه‌ش
+           در «آخرین ارسال» (push_stats) ثبت می‌شه */
+        ap_respond_and_continue(json_encode(['success' => true, 'queued' => true, 'result' => ['sent' => 0, 'total' => (int) $pc['total'], 'removed' => 0]], JSON_UNESCAPED_UNICODE));
+        ap_pl_send($DATA_DIR, $v, 'all', ['title' => $title !== '' ? $title : (function_exists('get_bloginfo') ? get_bloginfo('name') : ''), 'body' => $body, 'url' => $url, 'tag' => 'ap-news-' . time()], function_exists('ap_push_subject') ? ap_push_subject() : 'mailto:admin@nexv.ir');
+        exit;
     }
     case 'push_test': {
         ap_require_admin('orders'); ap_boot_wp();

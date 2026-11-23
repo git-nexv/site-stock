@@ -4484,3 +4484,25 @@ add_action('admin_init', function () {
     if (is_array($rm)) { $rm['knowledgegraph_logo'] = wp_get_attachment_url($id); $rm['knowledgegraph_logo_id'] = $id; update_option('rank-math-options-titles', $rm); }
     update_option('ap_logo_c_v1', AP_ICON_VER, false);
 }, 30);
+
+/* پاک کردنِ فایل‌های آماده‌ی مسیرِ سریعِ api.php (لیستِ محصولات/دسته‌ها/مقاله‌ها) */
+function ap_pub_cache_clear($which = null) {
+    static $done = [];
+    $dir = dirname(get_template_directory(), 2) . '/uploads/ap-data/cache';
+    foreach ((array) ($which ?: ['products', 'categories', 'vehicles', 'articles']) as $a) {
+        if (isset($done[$a])) continue;
+        $done[$a] = true;
+        @unlink($dir . '/' . $a . '.json'); @unlink($dir . '/' . $a . '.json.gz');
+    }
+}
+add_action('delete_transient_ap_products_cache_v3', function () { ap_pub_cache_clear(['products']); });
+add_action('delete_transient_ap_categories_cache_v1', function () { ap_pub_cache_clear(['products', 'categories']); });
+add_action('delete_transient_ap_vehicles_cache_v2', function () { ap_pub_cache_clear(['vehicles']); });
+add_action('save_post_ap_product', function () { ap_pub_cache_clear(['products']); });
+add_action('save_post_ap_article', function () { ap_pub_cache_clear(['articles']); });
+add_action('deleted_post', function () { ap_pub_cache_clear(); });
+add_action('trashed_post', function () { ap_pub_cache_clear(); });
+add_action('edited_term', function () { ap_pub_cache_clear(); });
+add_action('created_term', function () { ap_pub_cache_clear(); });
+add_action('delete_term', function () { ap_pub_cache_clear(); });
+add_action('updated_post_meta', function ($mid, $pid) { if (in_array(get_post_type($pid), ['ap_product', 'ap_article'], true)) ap_pub_cache_clear(); }, 10, 2);

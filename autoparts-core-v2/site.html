@@ -183,6 +183,11 @@ body.search-active #quickChips{display:none !important;}
   padding:11px 22px; border-radius:100px; font-size:14px; font-weight:600; transition:all .3s ease; white-space:nowrap;
   display:inline-flex; align-items:center; gap:8px;
 }
+/* متن و دایره‌ی «در حال انجام» همیشه وسطِ دکمه (قبلاً در دکمه‌های تمام‌عرض کنارِ راست می‌افتادن) */
+.btn{justify-content:center; text-align:center;}
+.btn .spinner{flex:none; margin:0 auto;}
+.btn.loading{pointer-events:none;}
+.btn.loading .spinner + .btn-text{display:none;}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-grad2)); color:#fff; box-shadow:0 10px 25px var(--accent-soft);}
 .btn-primary:hover{transform:translateY(-2px); box-shadow:0 16px 32px var(--accent-soft);}
 .btn-ghost{background:var(--bg-elev-2); color:var(--text); border:1px solid var(--border);}
@@ -5318,8 +5323,14 @@ document.getElementById('notifyForm')?.addEventListener('submit', async e => {
       body: JSON.stringify({ title, body, url }) }).then(r => r.json());
     if(d && d.success){
       const r = d.result;
-      res.textContent = `✅ برای ${apFaNum(r.sent)} دستگاه از ${apFaNum(r.total)} فرستاده شد.` + (r.removed ? ` (${apFaNum(r.removed)} اشتراکِ منقضی حذف شد)` : '');
-      showToast('اعلان فرستاده شد 🔔');
+      if(d.queued){
+        res.textContent = `✅ اعلان ثبت شد و در پس‌زمینه برای ${apFaNum(r.total)} دستگاه فرستاده می‌شه؛ لازم نیست این صفحه باز بمونه.`;
+        showToast('اعلان ثبت شد؛ ارسال در پس‌زمینه 🔔');
+        setTimeout(()=>{ try{ loadNotifyStats(); }catch(_){} }, 8000);
+      }else{
+        res.textContent = `✅ برای ${apFaNum(r.sent)} دستگاه از ${apFaNum(r.total)} فرستاده شد.` + (r.removed ? ` (${apFaNum(r.removed)} اشتراکِ منقضی حذف شد)` : '');
+        showToast('اعلان فرستاده شد 🔔');
+      }
       document.getElementById('notifyBody').value = ''; updateNotifyPreview();
       loadNotifyStats();
     }else{ res.textContent = (d && d.error) || 'ارسال ناموفق بود.'; }

@@ -60,6 +60,10 @@
 - سایت‌مپ برای سرچ کنسول: `/sitemap_index.xml` (Rank Math) + سایت‌مپِ خودمون `/car-parts-sitemap.xml` برای «خودرو + قطعه» که با فیلترِ `rank_math/sitemap/index` به فهرستِ اصلی اضافه می‌شه (`ap_car_part_sitemap_rows()`).
 - فهرستِ خودروها از دیوار (divar.ir ← خودرو ← برند و تیپ) گرفته شده؛ ۱۶ برندِ خارجیِ آخر فعلاً محصولِ خودکار ندارن (`$skip` در `ap_parts_seed_jobs`) چون فروشگاه همه‌ی محصولات رو یکجا بار می‌کنه.
 
+## سرعت
+- لیستِ عمومیِ products/categories/vehicles/articles در `uploads/ap-data/cache/*.json(.gz)` ذخیره و در ابتدای api.php بدونِ بارگذاریِ وردپرس (با ETag/304) سرو می‌شه؛ با تغییرِ محصول/دسته/مقاله یا آپدیتِ قالب (`ap_pub_cache_clear`) پاک می‌شه.
+- ارسالِ اعلانِ همگانی (`push_broadcast`) همون لحظه تأیید می‌ده و در پس‌زمینه ارسال می‌کنه (`ap_respond_and_continue`).
+
 ## سرچ
 - `smartSearch()` در `site.html` (بعد از `normalizeSearchText`): غلط املایی، چسبیده/جدا، فارسی/انگلیسی، کیبورد اشتباه. فهرست کلمه‌های هم‌معنی در `SS_SYN_GROUPS` (مخصوص هر سایت).
 

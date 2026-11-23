@@ -614,7 +614,8 @@ if (function_exists('is_singular') && is_singular('ap_product')) {
     }
 }
 
-$inject = "<script>\nwindow.AP_API_URL = " . json_encode($api_url) . ";\n";
+/* دانلودِ لیستِ محصولات همزمان با صفحه شروع می‌شه (نه بعد از اجرای جاوااسکریپت) */
+$inject = '<link rel="preload" as="fetch" crossorigin="anonymous" href="' . $api_url . '?action=products">' . "<script>\nwindow.AP_API_URL = " . json_encode($api_url) . ";\n";
 $inject .= "window.AP_HOME_URL = " . json_encode($home_url) . ";\n";
 /* کلیدِ عمومیِ اعلان‌ها (برای پرسیدنِ اجازه‌ی اعلان از بازدیدکننده‌ها) */
 $ap_vapid_pub = function_exists('ap_vapid') ? (ap_vapid()['public'] ?? '') : '';
