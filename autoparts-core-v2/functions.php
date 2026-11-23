@@ -2360,7 +2360,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_contact_phone', [
-        'default'           => '09109973428',
+        'default'           => '09109220001',
         'sanitize_callback' => 'sanitize_text_field',
     ]);
     $wp_customize->add_control('ap_contact_phone', [
@@ -2371,7 +2371,7 @@ function ap_customize_register($wp_customize) {
     ]);
 
     $wp_customize->add_setting('ap_contact_whatsapp', [
-        'default'           => '09109973428',
+        'default'           => '09109220001',
         'sanitize_callback' => 'sanitize_text_field',
     ]);
     $wp_customize->add_control('ap_contact_whatsapp', [
@@ -2831,6 +2831,24 @@ add_action('init', function () {
     set_theme_mod('ap_contact_phone', '09109973428');
     set_theme_mod('ap_contact_whatsapp', '09109973428');
     update_option('ap_phone_migrated_v1', 1);
+});
+/* یک‌بار (آذر ۱۴۰۵): شماره‌ی تماس و واتساپِ سایت ← 09109220001. شماره‌ی ورودِ مدیر (نام کاربری) عوض نمی‌شه.
+   شماره‌ی قبلی توی متنِ برگه‌ها/مقاله‌ها/محصولات و توضیحِ سئوی Rank Math هم جایگزین می‌شه. */
+add_action('init', function () {
+    if (get_option('ap_phone_migrated_v2')) return;
+    update_option('ap_phone_migrated_v2', time(), false);
+    $old = '09109973428'; $new = '09109220001';
+    if (in_array(preg_replace('/[^0-9]/', '', (string) get_theme_mod('ap_contact_phone', '')), ['', '9109973428', $old], true)) set_theme_mod('ap_contact_phone', $new);
+    if (in_array(preg_replace('/[^0-9]/', '', (string) get_theme_mod('ap_contact_whatsapp', '')), ['', '9109973428', $old, '989109973428'], true)) set_theme_mod('ap_contact_whatsapp', $new);
+    $fa = function ($s) { return strtr($s, ['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); };
+    $pairs = [$old => $new, '0910 997 3428' => '0910 922 0001', '989109973428' => '989109220001', $fa($old) => $fa($new), $fa('0910 997 3428') => $fa('0910 922 0001')];
+    global $wpdb;
+    foreach ($pairs as $a => $b) {
+        $wpdb->query($wpdb->prepare("UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s), post_excerpt = REPLACE(post_excerpt, %s, %s) WHERE post_type IN ('page','post','ap_article','ap_product') AND (post_content LIKE %s OR post_excerpt LIKE %s)", $a, $b, $a, $b, '%' . $wpdb->esc_like($a) . '%', '%' . $wpdb->esc_like($a) . '%'));
+        $wpdb->query($wpdb->prepare("UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_key IN ('rank_math_description','rank_math_title','_ap_short_desc') AND meta_value LIKE %s", $a, $b, '%' . $wpdb->esc_like($a) . '%'));
+    }
+    delete_transient('ap_products_cache_v3');
+    if (function_exists('wp_cache_flush')) wp_cache_flush();
 });
 
 /* =========================================================================

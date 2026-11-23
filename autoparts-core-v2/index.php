@@ -149,7 +149,7 @@ if (function_exists('is_post_type_archive') && is_post_type_archive('ap_article'
    می‌تونه سفارش رو لغو کنه. این صفحه مستقل رندر می‌شه (مثل «درباره ما») تا
    اپلیکیشنِ اصلیِ سایت لود نشه و سریع باز بشه. */
 if (function_exists('is_page') && is_page('terms')) {
-    $phone = get_theme_mod('ap_contact_phone', '09109973428');
+    $phone = get_theme_mod('ap_contact_phone', '09109220001');
     $tel_href = 'tel:' . preg_replace('/[^0-9+]/', '', (string) $phone);
     $rules = [
         [
@@ -262,8 +262,8 @@ if (function_exists('is_page') && is_page('terms')) {
 }
 
 if (function_exists('is_page') && is_page('about')) {
-    $phone = get_theme_mod('ap_contact_phone', '09109973428');
-    $wa = get_theme_mod('ap_contact_whatsapp', '09109973428');
+    $phone = get_theme_mod('ap_contact_phone', '09109220001');
+    $wa = get_theme_mod('ap_contact_whatsapp', '09109220001');
     $ig = get_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
     $tel_href = 'tel:' . preg_replace('/[^0-9+]/', '', (string) $phone);
     $wa_href = 'https://wa.me/98' . ltrim(preg_replace('/[^0-9]/', '', (string) $wa), '0');
@@ -391,8 +391,8 @@ $home_url = esc_url_raw(home_url('/'));
    بدون نیاز به هیچ اندازه‌گیری جاوااسکریپتی یا مقدار پیکسلِ حدسی. */
 $topbar_enabled = get_theme_mod('ap_topbar_enabled', true);
 $topbar_bg      = get_theme_mod('ap_topbar_bg', '#B3122E');
-$contact_phone  = get_theme_mod('ap_contact_phone', '09109973428');
-$contact_wa     = get_theme_mod('ap_contact_whatsapp', '09109973428');
+$contact_phone  = get_theme_mod('ap_contact_phone', '09109220001');
+$contact_wa     = get_theme_mod('ap_contact_whatsapp', '09109220001');
 $instagram_url  = get_theme_mod('ap_instagram_url', 'https://www.instagram.com/auto.nexv.ir');
 
 $topbar_html  = '';
@@ -628,11 +628,11 @@ if (!empty($vehicle_slug)) {
 /* شماره‌ی تماسِ همون نوارِ بالای سایت رو به جاوااسکریپت هم می‌فرستیم تا روی
    عبارت «برای دریافت قیمت تماس بگیرید» هم بشه با تپ مستقیم تماس گرفت. */
 $inject .= "window.AP_ADMIN_URL = " . json_encode(admin_url()) . ";\n";
-$inject .= "window.AP_CONTACT_PHONE = " . json_encode(get_theme_mod('ap_contact_phone', '09109973428')) . ";\n";
+$inject .= "window.AP_CONTACT_PHONE = " . json_encode(get_theme_mod('ap_contact_phone', '09109220001')) . ";\n";
 $inject .= "window.AP_HERO_SLIDES = " . json_encode(function_exists('ap_hero_slides') ? ap_hero_slides() : [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ";\n";
 
 /* بیلبوردها: متن‌ها از سفارشی‌سازی؛ لینکِ واتساپ از همون شماره‌ی نوارِ بالای سایت */
-$bb_wa_digits = preg_replace('/[^0-9]/', '', (string) get_theme_mod('ap_contact_whatsapp', '09109973428'));
+$bb_wa_digits = preg_replace('/[^0-9]/', '', (string) get_theme_mod('ap_contact_whatsapp', '09109220001'));
 if (substr($bb_wa_digits, 0, 1) === '0') { $bb_wa_digits = '98' . substr($bb_wa_digits, 1); }
 $bb_ticker = array_values(array_filter(array_map('trim', preg_split('/[,،]/u', (string) get_theme_mod('ap_bb_ticker', 'سپر، چراغ، رادیاتور، آینه، گلگیر، قطعات موتوری، قطعات اورجینال')))));
 $inject .= "window.AP_BILLBOARDS = " . json_encode([
@@ -643,7 +643,7 @@ $inject .= "window.AP_BILLBOARDS = " . json_encode([
     'ticker'    => $bb_ticker,
     'helpTitle' => (string) get_theme_mod('ap_bb_help_title', ''),
     'helpText'  => (string) get_theme_mod('ap_bb_help_text', ''),
-    'helpLink'  => $bb_wa_digits !== '' ? 'https://wa.me/' . $bb_wa_digits : '',
+    'helpLink'  => $bb_wa_digits !== '' ? 'https://wa.me/' . (substr($bb_wa_digits, 0, 1) === '0' ? '98' . substr($bb_wa_digits, 1) : $bb_wa_digits) : '',
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ";\n";if ($single_product) {
     $inject .= "window.AP_SINGLE_PRODUCT = " . json_encode($single_product, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) . ";\n";
 }
@@ -782,7 +782,7 @@ if (function_exists('is_front_page') && is_front_page()) {
         ['@type' => 'WebSite', '@id' => home_url('/#website'), 'url' => home_url('/'), 'name' => $ap_site_name,
          'inLanguage' => 'fa-IR', 'potentialAction' => ['@type' => 'SearchAction', 'target' => home_url('/?ap_search={search_term_string}'), 'query-input' => 'required name=search_term_string']],
         ['@type' => 'Organization', '@id' => home_url('/#organization'), 'name' => $ap_site_name, 'url' => home_url('/'),
-         'logo' => function_exists('ap_logo_url') ? ap_logo_url() : '', 'telephone' => (string) get_theme_mod('ap_contact_phone', '09109973428')],
+         'logo' => function_exists('ap_logo_url') ? ap_logo_url() : '', 'telephone' => (string) get_theme_mod('ap_contact_phone', '09109220001')],
     ]];
     /* هرکدوم که Rank Math خودش چاپ نکرده باشه اضافه می‌شه (Organization با لوگو رو ابزارِ Rich Results گوگل تشخیص می‌ده) */
     $graph = [];
