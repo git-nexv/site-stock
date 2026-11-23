@@ -606,11 +606,11 @@ if (function_exists('is_singular') && is_singular('ap_product')) {
         $vehicle_label = ap_vehicle_label($chain);
 
         $ap_combo = function_exists('ap_part_combo') ? ap_part_combo() : null;
-        $safe_title = esc_html($ap_combo ? ('خرید ' . $ap_combo['title'] . ' | ' . get_bloginfo('name')) : ('قطعات ' . $vehicle_label . ' | ' . get_bloginfo('name')));
+        $safe_title = esc_html($ap_combo ? ('خرید ' . $ap_combo['title'] . ' | ' . get_bloginfo('name')) : ('قطعات و لوازم یدکی ' . $vehicle_label . ' | قیمت روز | ' . get_bloginfo('name')));
         $html = preg_replace('#<title>.*?</title>#su', '<title>' . $safe_title . '</title>', $html, 1);
         $cat_seo_desc = trim((string) $vterm->description) !== ''
             ? $vterm->description
-            : ('خرید قطعات یدکی سازگار با ' . $vehicle_label . ' — اورجینال و آفتر مارکت، با گارانتی اصالت و قیمت روز.');
+            : ('خرید قطعات و لوازم یدکی ' . $vehicle_label . ' از ' . get_bloginfo('name') . '؛ لنت، چراغ، سپر، فیلتر، کمک فنر و سایر قطعات اورجینال و درجه یک با قیمت روز و ارسال سریع.');
     }
 }
 
@@ -770,6 +770,13 @@ foreach ((is_array($ap_tops) ? $ap_tops : []) as $top) {
     if (!$links) $links[] = [get_term_link($top), $top->name];
     $groups[] = [$top->name, $links];
 }
+/* صفحه‌های فرودِ سئو و لیستِ قیمتِ برندهای پرمحصول (seo-landing.php) */
+if (function_exists('ap_lp_brands')) {
+    $groups[] = ['فروشگاه کار تهران', [[home_url('/spare-parts/'), 'لوازم یدکی خودرو'], [home_url('/car-parts/'), 'قطعات خودرو'], [home_url('/car-parts-tehran/'), 'لوازم یدکی در تهران'], [home_url('/chinese-car-parts/'), 'قطعات خودروهای چینی'], [home_url('/cartehran/'), 'درباره کار تهران']]];
+    $lpl = [[home_url('/parts-price/'), 'لیست قیمت قطعات خودرو']];
+    foreach (array_slice(ap_lp_brands(), 0, 7) as $lb) $lpl[] = [home_url('/parts-price/' . $lb['short'] . '/'), 'قیمت قطعات ' . $lb['fa']];
+    $groups[] = ['قیمت قطعات', $lpl];
+}
 $groups[] = [$ap_site_name, [[get_post_type_archive_link('ap_article') ?: home_url('/blog/'), 'مقالات آموزشی'], [home_url('/about/'), 'درباره ما'], [home_url('/terms/'), 'قوانین و مقررات']]];
 foreach ($groups as $g) {
     $foot .= '<div><h4>' . esc_html($g[0]) . '</h4><ul>';
@@ -785,6 +792,7 @@ if (function_exists('is_front_page') && is_front_page()) {
          'logo' => function_exists('ap_logo_url') ? ap_logo_url() : '', 'telephone' => (string) get_theme_mod('ap_contact_phone', '09109220001')],
     ]];
     /* هرکدوم که Rank Math خودش چاپ نکرده باشه اضافه می‌شه (Organization با لوگو رو ابزارِ Rich Results گوگل تشخیص می‌ده) */
+    if (function_exists('ap_lp_org_schema')) $site_schema['@graph'] = ap_lp_org_schema();
     $graph = [];
     if (stripos($seo_head, '"WebSite"') === false) $graph[] = $site_schema['@graph'][0];
     if (stripos($seo_head, '"Organization"') === false || stripos($seo_head, '"logo"') === false) $graph[] = $site_schema['@graph'][1];

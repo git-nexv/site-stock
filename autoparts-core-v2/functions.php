@@ -3995,6 +3995,8 @@ add_action('after_setup_theme', function () { add_theme_support('custom-logo'); 
 require_once __DIR__ . '/vehicles-seed.php';
 /* متغیرهای پیش‌فرضِ محصولات (سمت چپ/راست، کیفیت، نوع) */
 require_once __DIR__ . '/variants-seed.php';
+/* صفحه‌های فرودِ سئو (کار تهران، قطعات خودرو، لوازم یدکی، لیستِ قیمت) */
+require_once __DIR__ . '/seo-landing.php';
 
 /* محصولات پایه برای همه‌ی مدل‌ها (parts-seed.php) */
 require_once __DIR__ . '/parts-seed.php';
@@ -4211,6 +4213,7 @@ add_action('wp_loaded', function () {
     }
     $rows = function_exists('ap_car_part_sitemap_rows') ? ap_car_part_sitemap_rows() : [];
     for ($i = 1, $n = (int) ceil(count($rows) / 1000); $i <= $n; $i++) $locs[] = home_url('/car-parts-sitemap' . ($i > 1 ? $i : '') . '.xml');
+    if (function_exists('ap_lp_all_urls')) $locs[] = home_url('/landing-sitemap.xml');
     status_header(200);
     header('Content-Type: application/xml; charset=UTF-8');
     header('X-Robots-Tag: noindex, follow');
