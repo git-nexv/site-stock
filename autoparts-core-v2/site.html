@@ -6179,13 +6179,21 @@ if(stage){
   /* ---------- بالا آمدنِ نوار همراه با کیبوردِ موبایل ---------- */
   if(window.visualViewport){
     const vv = window.visualViewport;
+    const DOCK_IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let DOCK_FULL_H = window.innerHeight;
+    window.addEventListener('orientationchange', ()=> setTimeout(()=>{ DOCK_FULL_H = window.innerHeight; }, 400));
     /* نوار همیشه پایینِ صفحه پین می‌مونه؛ فقط وقتی کیبورد واقعاً باز است (فیلدی در حال
        تایپه) بالا میاد. قبلاً جمع/باز شدنِ نوارِ آدرسِ سافاری موقعِ اسکرول هم نوار رو جابه‌جا می‌کرد. */
     const onVV = ()=>{
       const ae = document.activeElement;
       const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
       const hidden = window.innerHeight - vv.height - vv.offsetTop;
-      dock.style.setProperty('--kb', (typing && hidden > 120 ? -hidden : 0) + 'px');
+      /* iOS: نوارِ شیشه‌ایِ بالای کیبورد (✓ و فلش‌ها) روی صفحه شناوره و جزوِ ارتفاعِ کیبورد حساب نمی‌شه؛
+         برای همین نوار یه کم بیشتر بالا می‌ره تا پشتش نمونه. اندروید/سامسونگ: نوارِ پیشنهادِ کیبورد جزوِ
+         کیبورده، فقط یه فاصله‌ی کوچیک. اگه مرورگر خودش صفحه رو کوتاه کرده باشه (hidden≈0) نوار سرِ جاشه. */
+      const extra = DOCK_IS_IOS ? 34 : 8;
+      dock.style.setProperty('--kb', (typing && hidden > 120 ? -(hidden + extra) : 0) + 'px');
+      dock.classList.toggle('kb-open', !!(typing && (hidden > 120 || window.innerHeight < DOCK_FULL_H - 120)));
     };
     document.addEventListener('focusout', ()=> setTimeout(onVV, 50));
     vv.addEventListener('resize', onVV);
