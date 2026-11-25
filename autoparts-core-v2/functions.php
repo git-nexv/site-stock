@@ -2381,6 +2381,18 @@ function ap_customize_register($wp_customize) {
         'type'        => 'text',
     ]);
 
+    /* آدرسِ فروشگاه: صفحه‌ی «درباره ما» و قسمتِ «فرستنده»ی فاکتورها */
+    $wp_customize->add_setting('ap_contact_address', [
+        'default'           => 'تهران، پاکدشت، انتهای بلوار سپاه، پلاک ۱۰، طبقه ۱',
+        'sanitize_callback' => 'sanitize_text_field',
+    ]);
+    $wp_customize->add_control('ap_contact_address', [
+        'label'       => 'آدرس فروشگاه',
+        'description' => 'در صفحه‌ی «درباره ما» و بخشِ فرستنده‌ی فاکتورها نمایش داده می‌شه.',
+        'section'     => 'ap_topbar',
+        'type'        => 'textarea',
+    ]);
+
     $wp_customize->add_setting('ap_instagram_url', [
         'default' => 'https://www.instagram.com/auto.nexv.ir',
         'sanitize_callback' => 'esc_url_raw',
@@ -3826,6 +3838,8 @@ function ap_orders_page_html() {
  * - روی آیفون فقط وقتی کار می‌کنه که سایت «Add to Home Screen» شده و از همون آیکون باز بشه
  * ========================================================================= */
 if (file_exists(get_template_directory() . '/push-lib.php')) require_once get_template_directory() . '/push-lib.php';
+/* فاکتورِ فروش + اطلاعاتِ فرستنده (مشترک با صفحه‌ی «درباره ما») */
+if (file_exists(get_template_directory() . '/invoice.php')) require_once get_template_directory() . '/invoice.php';
 function ap_b64u($bin) { return rtrim(strtr(base64_encode($bin), '+/', '-_'), '='); }
 function ap_vapid() {
     $v = get_option('ap_vapid');
