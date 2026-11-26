@@ -1464,6 +1464,12 @@ img.hx-dev.on{filter:none;}
 .hx-rim{border-radius:var(--cr);}
 .hx-halo{inset:-10% -6%;}
 .hx-shadow{width:70%; margin-top:18px;}
+/* لوگو + اسمِ سایت زیرِ پوسترهای صفحه‌ی اصلی (چپ‌چین، کارتِ سفیدِ نرم) */
+.hx-brand{align-self:flex-end; display:block; margin:14px 4px 0 0; padding:8px 14px; border-radius:18px; background:#fff;
+  box-shadow:0 10px 26px rgba(20,10,30,.10), inset 0 0 0 1px rgba(0,0,0,.04); transition:transform .25s ease;}
+.hx-brand:active{transform:scale(.97);}
+.hx-brand img{display:block; width:250px; height:auto;}
+@media (max-width:520px){ .hx-brand{margin-top:10px; padding:6px 12px; border-radius:16px;} .hx-brand img{width:200px;} }
 
 .hx-poster{
   position:absolute; inset:2.5px; border-radius:calc(var(--cr) - 2.5px); overflow:hidden; isolation:isolate;
@@ -2023,6 +2029,8 @@ body.landing-view #carPick{margin-top:18px;}
         </div>
       </div>
       <div class="hx-shadow" aria-hidden="true"></div>
+      <!-- لوگو و اسمِ سایت زیرِ پوسترها (سمتِ چپ) تا کاربر همون اول برند رو ببینه -->
+      <a class="hx-brand hx-in" style="--d:.95s" href="/cartehran/" aria-label="کار تهران | CarTehran"><img src="{{WORDMARK_URL}}" alt="کار تهران | CarTehran" width="560" height="180" decoding="async"></a>
     </div>
 
     <div class="hx-copy">

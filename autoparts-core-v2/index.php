@@ -402,6 +402,7 @@ $html = str_replace('{{SITE_NAME}}', esc_html($ap_site_name), $html);
 $ap_pc = (int) (wp_count_posts('ap_product')->publish ?? 0);
 $ap_pc = $ap_pc >= 10000 ? (int) (floor($ap_pc / 1000) * 1000) : ($ap_pc >= 1000 ? (int) (floor($ap_pc / 100) * 100) : ($ap_pc >= 100 ? (int) (floor($ap_pc / 10) * 10) : $ap_pc));
 $html = str_replace(['{{PRODUCT_COUNT}}', '{{PRODUCT_COUNT_FA}}'], [(string) $ap_pc, ap_fa_digits(number_format($ap_pc, 0, '.', '٬'))], $html);
+$html = str_replace('{{WORDMARK_URL}}', esc_url(get_template_directory_uri() . '/assets/wordmark.png?v=' . (defined('AP_ICON_VER') ? AP_ICON_VER : '1')), $html);
 $html = str_replace('{{LOGO_URL}}', esc_url(get_template_directory_uri() . '/assets/logo.png?v=' . (defined('AP_ICON_VER') ? AP_ICON_VER : '1')), $html);
 /* آیکونِ تب و آیکونِ صفحه‌ی گوشی (همه‌ی اندازه‌ها؛ نگاه کن به ap_favicon_tags) */
 $ap_icon_tags = ap_favicon_tags();
