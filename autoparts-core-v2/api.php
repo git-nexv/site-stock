@@ -282,9 +282,10 @@ if (function_exists('add_action')) {
 
 function ap_wp_articles() {
     if (!function_exists('get_posts')) { return null; }
+    /* فقط ۴۰ مقاله‌ی آخر (صفحه‌ی اصلی ۱۰ تا نشون می‌ده؛ با تولیدِ روزانه تعداد زیاد می‌شه) */
     $posts = get_posts([
         'post_type'      => 'ap_article',
-        'posts_per_page' => -1,
+        'posts_per_page' => 40,
         'post_status'    => 'publish',
         'orderby'        => 'date',
         'order'          => 'DESC',

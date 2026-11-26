@@ -4011,6 +4011,8 @@ require_once __DIR__ . '/vehicles-seed.php';
 require_once __DIR__ . '/variants-seed.php';
 /* صفحه‌های فرودِ سئو (کار تهران، قطعات خودرو، لوازم یدکی، لیستِ قیمت) */
 require_once __DIR__ . '/seo-landing.php';
+/* مقاله‌ها: ایمپورتِ seed، محصولاتِ مرتبط زیرِ مقاله، تولیدِ روزانه‌ی ساعتِ ۱۶ */
+require_once __DIR__ . '/articles-engine.php';
 
 /* محصولات پایه برای همه‌ی مدل‌ها (parts-seed.php) */
 require_once __DIR__ . '/parts-seed.php';
