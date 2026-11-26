@@ -4462,7 +4462,7 @@ add_action('wp_loaded', function () {
     exit;
 }, 0);
 
-/* اینماد (enamad.ir) برای cartehran.ir — کد ۱۶۶۶۲۶۴۳؛ تأیید با «فایل در ریشه» و «متاتگ در صفحه‌ی اصلی».
+/* اینماد (enamad.ir) برای cartehran.ir — کد ۱۶۶۶۲۶۴۳؛ تأیید با «فایلِ خالی در ریشه»، «متاتگ» و (موقت) «عنوان».
    فایلِ /16662643.txt هم از طریقِ وردپرس جواب داده می‌شه و هم یک‌بار به‌صورتِ فایلِ واقعی در ریشه‌ی سایت
    ساخته می‌شه (اگه هاست درخواستِ txt رو به وردپرس نرسونه). پاک نشه؛ اینماد ممکنه دوباره چک کنه. */
 define('AP_ENAMAD_CODE', '16662643');
@@ -4471,13 +4471,13 @@ add_action('wp_loaded', function () {
     if ($path !== '/' . AP_ENAMAD_CODE . '.txt') return;
     status_header(200);
     header('Content-Type: text/plain; charset=UTF-8');
-    echo AP_ENAMAD_CODE;
+    header('Content-Length: 0');   /* اینماد «فایلِ خالی» می‌خواد */
     exit;
 }, 0);
 /* یک‌بار: کشِ صفحه‌ها (اگه افزونه‌ی کش روی هاست باشه) پاک می‌شه تا صفحه‌ی اصلی با متاتگ/عنوانِ جدید سرو بشه */
 add_action('init', function () {
-    if (get_option('ap_enamad_purge_v2')) return;
-    update_option('ap_enamad_purge_v2', time(), false);
+    if (get_option('ap_enamad_purge_v3')) return;
+    update_option('ap_enamad_purge_v3', time(), false);
     do_action('litespeed_purge_all');
     if (function_exists('rocket_clean_domain')) rocket_clean_domain();
     if (function_exists('w3tc_flush_all')) w3tc_flush_all();
@@ -4485,9 +4485,9 @@ add_action('init', function () {
     if (function_exists('wp_cache_flush')) wp_cache_flush();
 }, 99);
 add_action('init', function () {
-    if (get_option('ap_enamad_file_v1') === AP_ENAMAD_CODE) return;
+    if (get_option('ap_enamad_file_v2') === AP_ENAMAD_CODE) return;
     $f = ABSPATH . AP_ENAMAD_CODE . '.txt';
-    if (is_file($f) || @file_put_contents($f, AP_ENAMAD_CODE) !== false) update_option('ap_enamad_file_v1', AP_ENAMAD_CODE, false);
+    if (@file_put_contents($f, '') !== false || (is_file($f) && filesize($f) === 0)) update_option('ap_enamad_file_v2', AP_ENAMAD_CODE, false);
 });
 
 /* یک‌بار: پالتِ جدید (گرافیت + قرمزِ تیره) — رنگِ نوارِ بالای سایت اگه هنوز قرمزِ قبلی بود گرافیت می‌شه */

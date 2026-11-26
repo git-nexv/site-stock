@@ -801,9 +801,9 @@ if (function_exists('is_front_page') && is_front_page()) {
 }
 /* متاتگِ اینماد (تأییدِ مالکیت برای نماد اعتماد الکترونیکی) */
 if (defined('AP_ENAMAD_CODE')) $seo_head = '<meta name="enamad" content="' . AP_ENAMAD_CODE . '" />' . $seo_head;
-/* صفحه‌ی اصلی: کدِ اینماد موقتاً آخرِ <title> (روشِ سومِ تأیید؛ ap_enamad_title_suffix در seo-landing.php) */
-if (function_exists('is_front_page') && is_front_page() && function_exists('ap_enamad_title_suffix') && ap_enamad_title_suffix() !== '') {
-    $html = preg_replace_callback('#<title>(.*?)</title>#su', function ($m) { return strpos($m[1], AP_ENAMAD_CODE) !== false ? $m[0] : '<title>' . $m[1] . ap_enamad_title_suffix() . '</title>'; }, $html, 1);
+/* صفحه‌ی اصلی: عنوان موقتاً دقیقاً کدِ اینماد (روشِ «تغییر عنوان»؛ ap_enamad_title_active در seo-landing.php) */
+if (function_exists('is_front_page') && is_front_page() && function_exists('ap_enamad_title_active') && ap_enamad_title_active()) {
+    $html = preg_replace('#<title>.*?</title>#su', '<title>' . AP_ENAMAD_CODE . '</title>', $html, 1);
 }
 $inject = $seo_head . $inject;
 $html = str_replace('<head>', "<head>\n" . $inject, $html);
