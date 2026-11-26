@@ -4474,6 +4474,16 @@ add_action('wp_loaded', function () {
     echo AP_ENAMAD_CODE;
     exit;
 }, 0);
+/* یک‌بار: کشِ صفحه‌ها (اگه افزونه‌ی کش روی هاست باشه) پاک می‌شه تا صفحه‌ی اصلی با متاتگ/عنوانِ جدید سرو بشه */
+add_action('init', function () {
+    if (get_option('ap_enamad_purge_v2')) return;
+    update_option('ap_enamad_purge_v2', time(), false);
+    do_action('litespeed_purge_all');
+    if (function_exists('rocket_clean_domain')) rocket_clean_domain();
+    if (function_exists('w3tc_flush_all')) w3tc_flush_all();
+    if (function_exists('wp_cache_clear_cache')) wp_cache_clear_cache();
+    if (function_exists('wp_cache_flush')) wp_cache_flush();
+}, 99);
 add_action('init', function () {
     if (get_option('ap_enamad_file_v1') === AP_ENAMAD_CODE) return;
     $f = ABSPATH . AP_ENAMAD_CODE . '.txt';

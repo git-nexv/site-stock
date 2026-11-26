@@ -449,7 +449,9 @@ add_action('wp_loaded', function () {
 }, 1);
 
 /* ---------- صفحه‌ی اصلی و صفحه‌های خودرو: عنوان/توضیحِ سئو + هویتِ برند در اسکیمای Rank Math ---------- */
-function ap_lp_home_title() { return 'کار تهران (CarTehran) | فروشگاه اینترنتی لوازم یدکی و قطعات خودرو در تهران'; }
+/* کدِ اینماد موقتاً (تا ۵ دی ۱۴۰۵) آخرِ عنوانِ صفحه‌ی اصلی هم هست (روشِ «تغییر عنوان»)؛ بعدش خودکار حذف می‌شه */
+function ap_enamad_title_suffix() { return (defined('AP_ENAMAD_CODE') && time() < strtotime('2026-12-26')) ? ' | ' . AP_ENAMAD_CODE : ''; }
+function ap_lp_home_title() { return 'کار تهران (CarTehran) | فروشگاه اینترنتی لوازم یدکی و قطعات خودرو در تهران' . ap_enamad_title_suffix(); }
 function ap_lp_home_desc() { return 'کار تهران (تهران کار، CarTehran)؛ خرید آنلاین لوازم یدکی و قطعات خودروهای چینی و داخلی — چری، ام وی ام، جک، هاوال و ... — اورجینال و درجه یک با قیمت روز و ارسال سریع.'; }
 add_filter('rank_math/frontend/title', function ($t) {
     if (function_exists('is_front_page') && is_front_page()) return ap_lp_home_title();
