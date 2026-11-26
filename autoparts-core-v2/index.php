@@ -352,6 +352,8 @@ if (function_exists('is_page') && is_page('about')) {
                 <a href="<?php echo esc_url($wa_href); ?>" target="_blank" rel="noopener">واتساپ</a>
                 <?php if ($ig): ?><a href="<?php echo esc_url($ig); ?>" target="_blank" rel="noopener">اینستاگرام</a><?php endif; ?>
             </div>
+            <!-- نماد اعتماد الکترونیکی (اینماد) — کد بدونِ تغییر -->
+            <div style="text-align:center;margin-top:18px"><a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0' alt='' style='cursor:pointer' code='EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'></a></div>
 
             <a class="about-back" onclick="try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){history.back();return false;}}catch(e){}" href="<?php echo esc_url(home_url('/')); ?>">← بازگشت به فروشگاه</a>
         </div>
