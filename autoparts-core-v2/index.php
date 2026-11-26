@@ -54,10 +54,14 @@ if (function_exists('is_singular') && is_singular('ap_article')) {
             .article-page{max-width:720px; margin:0 auto;}
             .article-page .back{display:inline-block; margin-bottom:18px; font-size:13px; color:#7a7788; text-decoration:none;}
             .article-page .cover{width:100%; border-radius:18px; margin-bottom:22px; max-height:360px; object-fit:cover;}
-            .article-page h1{font-size:24px; line-height:1.6; margin-bottom:18px;}
-            .article-page .body-content{background:#fff; border-radius:18px; padding:26px 22px; font-size:15px; line-height:2.1; color:#3a3846; box-shadow:0 14px 34px rgba(0,0,0,.06);}
+            .article-page h1{font-size:20px; line-height:1.7; margin-bottom:14px;}
+            .article-page .body-content{background:#fff; border-radius:18px; padding:20px 18px; font-size:14px; line-height:2; color:#3a3846; box-shadow:0 14px 34px rgba(0,0,0,.06);}
+            .article-page .body-content h2{font-size:16px; margin:18px 0 8px; line-height:1.7;}
+            .article-page .body-content h3{font-size:15px; margin:14px 0 6px;}
+            .article-page .body-content ul{padding-right:20px; margin:0 0 12px;}
+            .article-page .body-content li{margin-bottom:4px;}
             .article-page .body-content img{max-width:100%; border-radius:12px; margin:14px 0;}
-            .article-page .body-content p{margin-bottom:16px;}
+            .article-page .body-content p{margin-bottom:12px;}
             /* حالت شب: همون کلیدی که کلیدِ روشن/تاریکِ سایت ذخیره می‌کنه (ap_theme) */
             html[data-theme="dark"] body{background:#08080d; color:#ececf4;}
             html[data-theme="dark"] .article-page .back{color:#9a97ad;}

@@ -142,6 +142,7 @@ function ap_art_related_ids($aid, $limit = 8) {
 function ap_art_related_html($aid) {
     $ids = ap_art_related_ids($aid);
     if (!$ids) return '';
+    if (function_exists('ap_art_related_cards_html')) return ap_art_related_cards_html($ids);   /* همون کارتِ صفحه‌ی اصلی */
     $h = '<section class="art-rel"><h2>محصولاتِ مرتبط با این مقاله</h2><div class="art-rel-grid">';
     foreach ($ids as $pid) {
         $img = function_exists('ap_gallery_urls') ? (array) ap_gallery_urls($pid) : [];
@@ -330,3 +331,109 @@ add_action('shutdown', function () {
     if ($boot) { update_option('ap_art_boot_v1', time(), false); ap_art_run_batch(60); }
     else ap_art_run_batch();
 }, 998);
+
+/* =========================================================================
+ * کارتِ محصول دقیقاً مثلِ صفحه‌ی اصلی (برای «محصولاتِ مرتبط» زیرِ مقاله):
+ * CSS کارت‌ها (همه‌ی قانون‌های .card/.grid/... حتی داخلِ @media و حالتِ شب) و تابع‌های JS
+ * (cardHtml، badgesHtml، icon، fmt و ...) مستقیم از site.html برداشته می‌شن؛ پس هر تغییری
+ * در کارتِ صفحه‌ی اصلی، خودکار اینجا هم اعمال می‌شه. داده‌ی محصول‌ها هم همون لیستِ کش‌شده‌ی API.
+ * ========================================================================= */
+function ap_css_pick($css, $re) {
+    $out = ''; $i = 0; $n = strlen($css);
+    while ($i < $n) {
+        $o = strpos($css, '{', $i); if ($o === false) break;
+        $sel = trim(substr($css, $i, $o - $i));
+        $sel = trim(preg_replace('#/\*.*?\*/#s', '', $sel));
+        $d = 1; $j = $o + 1;
+        while ($j < $n && $d > 0) { if ($css[$j] === '{') $d++; elseif ($css[$j] === '}') $d--; $j++; }
+        $body = substr($css, $o + 1, $j - $o - 2);
+        if (stripos($sel, '@media') === 0 || stripos($sel, '@supports') === 0) {
+            $inner = ap_css_pick($body, $re);
+            if ($inner !== '') $out .= $sel . '{' . $inner . "}\n";
+        } elseif ($sel !== '' && $sel[0] !== '@' && preg_match($re, $sel)) {
+            $out .= $sel . '{' . $body . "}\n";
+        }
+        $i = $j;
+    }
+    return $out;
+}
+function ap_js_pick($h, $name) {
+    foreach (["\nfunction $name(", "\nconst $name ="] as $k) {
+        $a = strpos($h, $k); if ($a === false) continue;
+        $a++;
+        if (strpos($k, 'function') === 1) {
+            $o = strpos($h, '{', $a); $d = 1; $j = $o + 1; $n = strlen($h);
+            while ($j < $n && $d > 0) { if ($h[$j] === '{') $d++; elseif ($h[$j] === '}') $d--; $j++; }
+            return substr($h, $a, $j - $a) . "\n";
+        }
+        $eq = strpos($h, '=', $a); $rest = ltrim(substr($h, $eq + 1));
+        if ($rest !== '' && $rest[0] === '{') {
+            $o = strpos($h, '{', $eq); $d = 1; $j = $o + 1; $n = strlen($h);
+            while ($j < $n && $d > 0) { if ($h[$j] === '{') $d++; elseif ($h[$j] === '}') $d--; $j++; }
+            return substr($h, $a, $j - $a) . ";\n";
+        }
+        $e = strpos($h, ";\n", $a);
+        return substr($h, $a, $e - $a + 1) . "\n";
+    }
+    return '';
+}
+function ap_home_card_kit() {
+    static $kit = null;
+    if ($kit !== null) return $kit;
+    $f = get_template_directory() . '/site.html';
+    $key = 'ap_card_kit_' . (int) @filemtime($f) . '_' . (int) @filemtime(__FILE__);
+    $kit = get_transient($key);
+    if (is_array($kit)) return $kit;
+    $h = (string) @file_get_contents($f);
+    $css = '';
+    if (preg_match_all('#<style[^>]*>(.*?)</style>#s', $h, $m)) {
+        $css = ap_css_pick(implode("\n", $m[1]), '/\.(card|grid\b|price|add-btn|cv-row|cv-chip|cv-more|spec\b|reveal|ap-call-price)/');
+    }
+    $js = '';
+    foreach (['escHtml', 'badgesHtml', 'ICONS', 'icon', 'fmt', 'cardVariantsHtml', 'minVariantPrice', 'priceRange', 'brandCardColor', 'CONTACT_PHONE', 'CALL_PRICE_HTML', 'cardHtml'] as $nm) $js .= ap_js_pick($h, $nm);
+    $kit = ['css' => $css, 'js' => $js];
+    set_transient($key, $kit, WEEK_IN_SECONDS);
+    return $kit;
+}
+/* داده‌ی محصول‌ها با همون شکلِ API (از کشِ لیستِ محصولات)؛ اگه کش نبود، از متاها */
+function ap_art_items($ids) {
+    if (!$ids) return [];
+    $all = get_transient('ap_products_cache_v3');
+    if (!is_array($all)) {
+        $f = dirname(get_template_directory(), 2) . '/uploads/ap-data/cache/products.json';
+        $j = is_file($f) ? json_decode((string) file_get_contents($f), true) : null;
+        $all = is_array($j) ? (array) ($j['products'] ?? []) : [];
+    }
+    $by = [];
+    foreach ($all as $p) if (isset($p['id'])) $by[(string) $p['id']] = $p;
+    $out = [];
+    foreach ($ids as $id) {
+        if (isset($by[(string) $id])) { $out[] = $by[(string) $id]; continue; }
+        $g = function_exists('ap_gallery_urls') ? array_values(array_filter((array) ap_gallery_urls($id))) : [];
+        $img = $g ? $g[0] : get_the_post_thumbnail_url($id, 'medium');
+        $out[] = ['id' => (string) $id, 'title' => get_the_title($id), 'spec' => (string) get_post_meta($id, '_ap_spec', true),
+            'price' => (int) get_post_meta($id, '_ap_price', true), 'color' => (string) get_post_meta($id, '_ap_color', true),
+            'ic' => get_post_meta($id, '_ap_icon', true) ?: 'disc', 'badges' => [], 'url' => get_permalink($id),
+            'image' => $img ?: null, 'thumb' => $img ?: null, 'variantPrices' => (object) [], 'variantGroups' => [], 'colors' => [], 'storages' => []];
+    }
+    return $out;
+}
+function ap_art_related_cards_html($ids, $title = 'محصولاتِ مرتبط با این مقاله') {
+    $items = ap_art_items($ids);
+    if (!$items) return '';
+    $kit = ap_home_card_kit();
+    $phone = (string) get_theme_mod('ap_contact_phone', '');
+    /* همون ریستِ پایه‌ی صفحه‌ی اصلی (فقط داخلِ این بخش) تا کارت‌ها دقیقاً یکی بشن */
+    $reset = '.art-rel,.art-rel *,.art-rel *::before,.art-rel *::after{box-sizing:border-box;margin:0;padding:0}.art-rel a{color:inherit;text-decoration:none}'
+        . '.art-rel button{font-family:inherit;cursor:pointer;border:none}.art-rel img,.art-rel svg{display:block}.art-rel{font-family:Vazirmatn,Tahoma,sans-serif}';
+    return '<style>' . $reset . $kit['css'] . '.art-rel{max-width:760px;margin:26px auto 0}.art-rel h2{font-size:17px;margin:0 2px 12px !important;font-weight:800}'
+        . '.art-rel .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}@media (max-width:520px){.art-rel .grid{grid-template-columns:repeat(2,1fr)}}.art-rel .card{cursor:pointer}</style>'
+        . '<section class="art-rel"><h2>' . esc_html($title) . '</h2><div class="grid" id="artRelGrid"></div></section>'
+        . '<script>(function(){window.AP_CONTACT_PHONE=' . wp_json_encode($phone) . ';' . $kit['js']
+        . 'var items=' . wp_json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ';'
+        . 'items=items.map(function(p){p=Object.assign({badges:[],variantPrices:{},variantGroups:[],colors:[],storages:[]},p);p.price=Number(p.price)||0;'
+        . 'if(typeof brandCardColor==="function")p.color=brandCardColor(p.color);if(!p.badges.length&&p.badge)p.badges=[p.badge];return p;});'
+        . 'var g=document.getElementById("artRelGrid");g.innerHTML=items.map(cardHtml).join("");'
+        . 'g.addEventListener("click",function(e){if(e.target.closest("a[href^=\'tel:\']"))return;var c=e.target.closest(".card");if(c&&c.dataset.url)location.href=c.dataset.url;});'
+        . '})();</script>';
+}

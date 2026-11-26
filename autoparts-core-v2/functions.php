@@ -3117,6 +3117,14 @@ function ap_static_dock_html($active = '') {
 <?php echo $d['vars']; ?>
 <?php echo $d['dockCss']; ?>
 <?php echo $d['kf']; ?>
+/* همون ریستِ پایه‌ی صفحه‌ی اصلی (فقط برای نوار)، وگرنه padding روی اندازه‌ها اضافه می‌شد و نوار
+   بزرگ‌تر از صفحه‌ی اصلی دیده می‌شد */
+.ap-dock, .ap-dock *, .ap-dock *::before, .ap-dock *::after{box-sizing:border-box; margin:0; padding:0;}
+.ap-dock button{font-family:inherit; cursor:pointer; border:none;}
+.ap-dock img, .ap-dock svg{display:block;}
+.ap-dock a{color:inherit; text-decoration:none;}
+/* مثلِ صفحه‌ی اصلی: روی موبایل کلِ صفحه ۹۰٪ (body{zoom:.9} در site.html)؛ وگرنه نوار و کارت‌ها اینجا ۱۰٪ بزرگ‌تر دیده می‌شدن */
+@media (max-width:520px){ body{zoom:0.9;} }
 .ap-dock .search-results{display:none !important;}
 body{padding-bottom:calc(110px + env(safe-area-inset-bottom)) !important;}
 /* پس‌زمینه‌ی ثابت و متحرکِ صفحه‌ی اصلی؛ باکس‌ها به‌صورت شیشه‌ای روش اسکرول می‌شن */
