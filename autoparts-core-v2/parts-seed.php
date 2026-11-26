@@ -111,6 +111,27 @@ function ap_parts_seed_list() {
     ];
 }
 
+/* کالاهای مصرفی (آذر ۱۴۰۵): برای همه‌ی مدل‌ها؛ سایز/آمپر/گرانروی به‌عنوانِ متغیر انتخاب می‌شه (نه حدس)،
+   چون برای هر مدل و سال و تیپ ممکنه فرق کنه. باتری از قبل در فهرستِ اصلی هست (car-battery). */
+function ap_parts_consumables_list() {
+    return [
+        ['tires', 'لاستیک', 'tires', 'لاستیک', 'disc',
+            'لاستیک از بهترین برندهای بازار (میشلن، بریجستون، کنتیننتال، هانکوک، کومهو و برندهای ایرانی) با انتخابِ سایز و تعداد.',
+            'لاستیک تنها نقطه‌ی تماسِ خودرو با جاده است و ترمزگیری، پایداری در پیچ و مصرفِ سوخت مستقیماً به آن بستگی دارد. سایزِ لاستیک را از روی دیواره‌ی لاستیکِ فعلی (مثلاً 205/55R16) یا برچسبِ داخلِ درِ راننده بخوانید و همان را انتخاب کنید؛ سایزِ هر مدل بسته به سال و تیپ (اندازه‌ی رینگ) می‌تواند فرق کند. لاستیک‌های هر محور را با هم عوض کنید و پس از نصب، بالانس و تنظیم باد انجام دهید. تاریخِ تولید (چهار رقمِ DOT روی دیواره) نباید بیش از دو سال گذشته باشد.'],
+        ['engine-oil', 'روغن موتور', 'oils-fluids', 'روغن و مایعات', 'filter',
+            'روغن موتورِ اصل از برندهای معتبر (موبیل، کاسترول، شل، توتال، لیکومولی، ایرانول، بهران) با انتخابِ گرانروی و حجم.',
+            'روغن موتور قطعاتِ داخلیِ موتور را روان‌کاری و خنک می‌کند و تعویضِ به‌موقعِ آن مهم‌ترین عاملِ عمرِ طولانیِ موتور است. گرانروی (مثلاً 5W-30 یا 10W-40) و استانداردِ API/ACEA را دقیقاً مطابقِ دفترچه‌ی خودرو انتخاب کنید؛ موتورهای توربو معمولاً روغنِ تمام‌سنتتیک لازم دارند. هم‌زمان با روغن، فیلترِ روغن را هم تعویض کنید.'],
+        ['coolant', 'ضدیخ و ضدجوش', 'oils-fluids', 'روغن و مایعات', 'radiator',
+            'ضدیخ و ضدجوشِ باکیفیت (پرستون، لیکومولی، توتال، بهران، ایرانول) آماده‌ی مصرف یا غلیظ.',
+            'ضدیخ (کولانت) از یخ‌زدن در زمستان و جوش‌آوردنِ موتور در تابستان جلوگیری می‌کند و جلوی زنگ‌زدگیِ رادیاتور و واترپمپ را می‌گیرد. نوعِ آماده‌ی مصرف را مستقیم در مخزن بریزید و نوعِ غلیظ را با آبِ مقطر (معمولاً ۵۰/۵۰) رقیق کنید. ضدیخ‌های با رنگ و پایه‌ی متفاوت را با هم مخلوط نکنید و هر دو سال یک‌بار آن را عوض کنید.'],
+        ['brake-fluid', 'روغن ترمز', 'oils-fluids', 'روغن و مایعات', 'brake',
+            'روغن ترمزِ استاندارد DOT 4 و DOT 3 از برندهای معتبر (بوش، لیکومولی، کاسترول، بهران).',
+            'روغن ترمز نیروی پدال را به کالیپرها منتقل می‌کند و چون به‌مرور رطوبت جذب می‌کند، نقطه‌ی جوشش پایین می‌آید و ترمز در شیب‌های طولانی ضعیف می‌شود. استاندارد (DOT 4 یا DOT 3) را مطابقِ درِ مخزنِ روغن ترمز یا دفترچه انتخاب کنید؛ معمولاً هر دو سال یک‌بار تعویض و هواگیری شود.'],
+    ];
+}
+/* فهرستِ کامل (قطعه‌ها + کالاهای مصرفی) برای جاهایی که نوعِ قطعه رو از روی کلیدِ محصول تشخیص می‌دن */
+function ap_parts_all_list() { return array_merge(ap_parts_seed_list(), ap_parts_consumables_list()); }
+
 /* پیوندِ محصول: برند-مدل-قطعه؛ اگه اسلاگِ مدل خودش با برند شروع بشه (mvm-x22) تکرار نمی‌شه */
 function ap_parts_seed_slug($bslug, $mslug, $pslug) {
     $base = strpos($mslug, $bslug . '-') === 0 ? $mslug : $bslug . '-' . $mslug;
@@ -130,6 +151,7 @@ function ap_parts_seed_en() {
         'front-control-arm' => 'Front Control Arm', 'fog-light' => 'Fog Light', 'ac-condenser' => 'A/C Condenser', 'cabin-filter' => 'Cabin Filter',
         'car-battery' => 'Battery', 'wiper-blades' => 'Wiper Blades', 'fuel-filter' => 'Fuel Filter', 'timing-belt-kit' => 'Timing Belt Kit',
         'water-pump' => 'Water Pump', 'alternator' => 'Alternator', 'starter-motor' => 'Starter Motor', 'ignition-coil' => 'Ignition Coil', 'clutch-kit' => 'Clutch Kit',
+        'tires' => 'Tires', 'engine-oil' => 'Engine Oil', 'coolant' => 'Coolant (Antifreeze)', 'brake-fluid' => 'Brake Fluid',
     ];
 }
 /* عنوانِ دوزبانه: «لنت ترمز جلو چری Tiggo 7 | Chery Tiggo 7 Front Brake Pads» */
@@ -160,7 +182,7 @@ function ap_parts_is_ev($bslug, $mslug, $row = null) {
 }
 /* قطعه‌هایی که فقط در خودروهای دارای موتور احتراقی معنی دارن */
 function ap_parts_engine_only() {
-    return ['oil-filter', 'air-filter', 'spark-plugs', 'fuel-filter', 'timing-belt-kit', 'water-pump', 'alternator', 'starter-motor', 'ignition-coil', 'clutch-kit'];
+    return ['oil-filter', 'air-filter', 'spark-plugs', 'fuel-filter', 'timing-belt-kit', 'water-pump', 'alternator', 'starter-motor', 'ignition-coil', 'clutch-kit', 'engine-oil'];
 }
 
 /* همه‌ی کارهای ساخت (برند × مدل × قطعه) به ترتیب ثابت */
@@ -175,6 +197,21 @@ function ap_parts_seed_jobs() {
             $ev = ap_parts_is_ev($bslug, $mslug, $model_row ?? null);
             foreach (ap_parts_seed_list() as $part) {
                 /* قطعه‌های مخصوصِ موتورِ بنزینی برای خودروهای تمام‌برقی ساخته نمی‌شن */
+                if ($ev && in_array($part[0], ap_parts_engine_only(), true)) continue;
+                $jobs[] = [$brand, $bslug, $model, $mslug, $from, $to, $part];
+            }
+        }
+    }
+    /* کالاهای مصرفی بعد از همه‌ی کارهای قبلی اضافه می‌شن تا شمارنده‌ی پیشرفت از همون‌جا ادامه بده
+       (نسخه عوض نمی‌شه و محصولاتِ قبلی دوباره بررسی نمی‌شن) */
+    /* کالاهای مصرفی برای «همه‌ی» برندها (حتی برندهای $skip که قطعه‌ی خودکار ندارن)؛ برای اون‌ها باتری هم اینجا ساخته می‌شه */
+    $battery = null; foreach (ap_parts_seed_list() as $pp) if ($pp[0] === 'car-battery') $battery = $pp;
+    foreach (ap_vehicle_seed_data() as [$brand, $bslug, $models]) {
+        $extra = (in_array($bslug, $skip, true) && $battery) ? [$battery] : [];
+        foreach ($models as $model_row) {
+            [$model, $mslug, $from, $to] = $model_row;
+            $ev = ap_parts_is_ev($bslug, $mslug, $model_row ?? null);
+            foreach (array_merge(ap_parts_consumables_list(), $extra) as $part) {
                 if ($ev && in_array($part[0], ap_parts_engine_only(), true)) continue;
                 $jobs[] = [$brand, $bslug, $model, $mslug, $from, $to, $part];
             }
@@ -226,10 +263,18 @@ function ap_parts_seed_create($job) {
         . '<li>برند: ' . esc_html("$brandEn ($brandFa)") . '</li>'
         . '<li>مدل: ' . esc_html($model) . '</li>'
         . '<li>سال ساخت: ' . esc_html($yearsFa) . '</li></ul>'
-        . '<h3>نکات خرید</h3><ul>'
-        . '<li>پیش از سفارش، مدل و سال ساخت خودرو را با کارت خودرو تطبیق دهید.</li>'
-        . '<li>برای اطمینان از سازگاری، کد فنی (OEM) قطعه‌ی فعلی یا شماره‌ی شاسی را برای ما بفرستید.</li>'
-        . '<li>قیمت و موجودی بر اساس نوع قطعه (اورجینال یا آفترمارکت) متفاوت است؛ برای استعلام تماس بگیرید.</li></ul>';
+        . (in_array($pslug, array_column(ap_parts_consumables_list(), 0), true)
+            ? '<h3>انتخابِ گزینه‌ی درست</h3><ul>'
+              . '<li>' . esc_html($pslug === 'tires' ? 'سایز را از روی دیواره‌ی لاستیکِ فعلی یا برچسبِ داخلِ درِ راننده بخوانید؛ در ' . "$brandFa $modelEn" . ' بسته به سال و تیپ، سایزِ رینگ می‌تواند متفاوت باشد.'
+                  : ($pslug === 'car-battery' ? 'آمپر و جهتِ قطب‌ها را از روی برچسبِ باتریِ فعلی بخوانید و همان را انتخاب کنید.'
+                  : ($pslug === 'engine-oil' ? 'گرانروی و استانداردِ روغن را مطابقِ دفترچه‌ی ' . "$brandFa $modelEn" . ' انتخاب کنید.'
+                  : 'نوع و استاندارد را مطابقِ دفترچه یا برچسبِ روی مخزن انتخاب کنید.'))) . '</li>'
+              . '<li>اگه مطمئن نیستید، مدل، تیپ و سالِ خودرو یا عکسِ کالای فعلی را برای ما بفرستید تا گزینه‌ی درست را پیشنهاد بدیم.</li>'
+              . '<li>قیمت بر اساسِ برند و مشخصه‌ی انتخابی متفاوت است؛ برای استعلام تماس بگیرید.</li></ul>'
+            : '<h3>نکات خرید</h3><ul>'
+              . '<li>پیش از سفارش، مدل و سال ساخت خودرو را با کارت خودرو تطبیق دهید.</li>'
+              . '<li>برای اطمینان از سازگاری، کد فنی (OEM) قطعه‌ی فعلی یا شماره‌ی شاسی را برای ما بفرستید.</li>'
+              . '<li>قیمت و موجودی بر اساس نوع قطعه (اورجینال یا آفترمارکت) متفاوت است؛ برای استعلام تماس بگیرید.</li></ul>');
 
     $pid = wp_insert_post([
         'post_type'    => 'ap_product',
@@ -303,6 +348,12 @@ add_action('ap_parts_seed_tick', function () {
         if (function_exists('spawn_cron')) spawn_cron();   /* دسته‌ی بعدی بی‌معطلی */
     }
 });
+/* یک‌بار: کالاهای مصرفی اضافه شدن؛ ساختِ خودکار دوباره فعال بشه */
+add_action('init', function () {
+    if (get_option('ap_consumables_seed_v1')) return;
+    update_option('ap_consumables_seed_v1', time(), false);
+    update_option('ap_parts_seed_pending', 1, false);
+}, 6);
 /* وقتی نسخه‌ی فهرست بالا می‌ره (قطعه/مدل جدید)، دوباره فعال بشه */
 add_action('init', function () {
     if (get_option('ap_parts_seed_pending_v') !== AP_PARTS_SEED_VERSION) {
@@ -355,7 +406,7 @@ function ap_parts_strip_fa($name) {
 }
 function ap_parts_en_title_for($post_id, $title) {
     $best = null; $bestLen = 0;
-    foreach (ap_parts_seed_list() as $part) {
+    foreach (ap_parts_all_list() as $part) {
         $len = mb_strlen($part[1]);
         if ($len > $bestLen && mb_strpos($title, $part[1]) === 0) { $best = $part; $bestLen = $len; }
     }

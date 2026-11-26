@@ -45,6 +45,10 @@ function ap_art_part_knowledge() {
         'alternator'       => [['روشن شدنِ چراغِ باتری روی آمپر', 'ضعیف شدنِ نورِ چراغ‌ها', 'خالی شدنِ باتری در حینِ رانندگی'], 'هنگامِ خرابیِ ذغال، دیود یا بلبرینگ', 'قبل از تعویض، ولتاژِ شارژ (حدود ۱۴ ولت) رو اندازه بگیرید.'],
         'starter-motor'    => [['صدای تق بدونِ چرخیدنِ موتور', 'کند چرخیدن با باتریِ سالم', 'صدای سایش هنگامِ استارت'], 'هنگامِ خرابی؛ معمولاً بعد از ۱۵۰ هزار کیلومتر', 'اول باتری و اتصالاتِ برق رو چک کنید.'],
         'ignition-coil'    => [['لرزش و ریپِ موتور', 'روشن شدنِ چراغِ چک', 'افت قدرت و افزایشِ مصرف'], 'هنگامِ خرابی', 'معمولاً با دیاگ مشخص می‌شه کدوم کویل خرابه.'],
+        'tires'            => [['آج کمتر از ۱.۶ میلی‌متر یا رسیدن به شاخصِ سایش', 'ترک‌خوردگیِ دیواره یا باد کردگی (قلمبه شدن)', 'لرزشِ فرمان در سرعت', 'سایشِ نامنظم یا یک‌طرفه', 'گذشتنِ بیش از ۵ سال از تاریخِ تولید (DOT)'], 'معمولاً هر ۴۰ تا ۶۰ هزار کیلومتر یا هر ۵ سال، هر کدوم زودتر رسید', 'سایز رو از دیواره‌ی لاستیکِ فعلی بخونید؛ لاستیک‌های هر محور رو با هم عوض کنید و بعد از نصب بالانس و تنظیم باد انجام بدید.'],
+        'engine-oil'       => [['تیره و غلیظ شدنِ روغن', 'کم شدنِ سطحِ روغن بینِ دو سرویس', 'صدای بیشترِ موتور', 'روشن شدنِ چراغِ فشارِ روغن'], 'روغنِ معمولی هر ۵ هزار و تمام‌سنتتیک هر ۸ تا ۱۰ هزار کیلومتر', 'گرانروی و استانداردِ API رو دقیقاً طبقِ دفترچه انتخاب کنید و فیلترِ روغن رو هم همزمان عوض کنید.'],
+        'coolant'          => [['بالا رفتنِ آمپرِ دما', 'تغییرِ رنگ یا کدر شدنِ ضدیخ', 'رسوب در مخزن', 'کم شدنِ مداومِ سطحِ مخزن'], 'هر دو سال یک بار', 'ضدیخ‌های با رنگ و پایه‌ی متفاوت رو مخلوط نکنید؛ نوعِ غلیظ رو با آبِ مقطر رقیق کنید.'],
+        'brake-fluid'      => [['اسفنجی یا عمیق شدنِ پدال', 'تیره شدنِ روغن در مخزن', 'کم شدنِ سطحِ مخزن (نشانه‌ی نشتی یا تمام شدنِ لنت)'], 'معمولاً هر دو سال یک بار همراهِ هواگیری', 'استاندارد (DOT 4 یا DOT 3) رو از روی درِ مخزن ببینید و از ظرفِ پلمب استفاده کنید.'],
         'clutch-kit'       => [['بالا رفتنِ دور بدونِ افزایشِ سرعت', 'سفت شدنِ پدال', 'سخت جا رفتنِ دنده', 'بوی سوختگی'], 'معمولاً هر ۸۰ تا ۱۲۰ هزار کیلومتر', 'دیسک، صفحه و بلبرینگ رو با هم عوض کنید.'],
     ];
 }
@@ -95,7 +99,7 @@ function ap_art_guess_rel($title) {
             'گلگیر' => 'fender', 'کاپوت' => 'hood', 'درب موتور' => 'hood', 'جلو پنجره' => 'grille', 'رادیاتور' => 'radiator', 'مه شکن' => 'fog-light', 'مه‌شکن' => 'fog-light',
             'کمک فنر' => 'suspension', 'کمک‌فنر' => 'suspension', 'طبق' => 'suspension', 'جلوبندی' => 'suspension',
             'فیلتر' => 'engine-parts', 'تسمه' => 'engine-parts', 'واتر پمپ' => 'engine-parts', 'کلاچ' => 'engine-parts', 'روغن' => 'engine-parts',
-            'شمع' => 'electric-parts', 'باتری' => 'electric-parts', 'دینام' => 'electric-parts', 'استارت' => 'electric-parts', 'کویل' => 'electric-parts', 'برف پاک کن' => 'body-parts'];
+            'لاستیک' => 'tires', 'روغن موتور' => 'oils-fluids', 'ضدیخ' => 'oils-fluids', 'روغن ترمز' => 'oils-fluids', 'شمع' => 'electric-parts', 'باتری' => 'electric-parts', 'دینام' => 'electric-parts', 'استارت' => 'electric-parts', 'کویل' => 'electric-parts', 'برف پاک کن' => 'body-parts'];
     foreach ($map as $k => $c) if (mb_strpos($t, $k) !== false && !in_array($c, $rel['cats'], true)) $rel['cats'][] = $c;
     if (function_exists('ap_lp_brands')) foreach (ap_lp_brands() as $b) {
         $names = array_filter([mb_strtolower($b['fa']), mb_strtolower(trim(preg_replace('/\s*\(.*$/u', '', $b['label']))), $b['short']]);
@@ -187,7 +191,7 @@ function ap_art_combos() {
         JOIN {$wpdb->term_relationships} tr ON tr.object_id = p.ID
         JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'ap_vehicle'
         WHERE p.post_type = 'ap_product' AND p.post_status = 'publish' ORDER BY p.ID ASC");
-    $parts = array_column(ap_parts_seed_list(), 0);
+    $parts = array_column(function_exists('ap_parts_all_list') ? ap_parts_all_list() : ap_parts_seed_list(), 0);
     $brandRank = [];
     if (function_exists('ap_lp_brands')) foreach (ap_lp_brands() as $i => $b) $brandRank[$b['id']] = $i;
     $out = [];
@@ -214,7 +218,7 @@ function ap_art_generate_one($veh, $ps, $pid, $topic) {
     if (!$vt || is_wp_error($vt)) return false;
     $anc = get_ancestors($veh, 'ap_vehicle');
     $bt = $anc ? get_term((int) end($anc), 'ap_vehicle') : $vt;
-    $list = []; foreach (ap_parts_seed_list() as $p) $list[$p[0]] = $p;
+    $list = []; foreach ((function_exists('ap_parts_all_list') ? ap_parts_all_list() : ap_parts_seed_list()) as $p) $list[$p[0]] = $p;
     if (!isset($list[$ps])) return false;
     [, $pname, $cslug, $cname, , $short, $para] = $list[$ps];
     $enParts = ap_parts_seed_en();
