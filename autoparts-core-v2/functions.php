@@ -4462,6 +4462,24 @@ add_action('wp_loaded', function () {
     exit;
 }, 0);
 
+/* اینماد (enamad.ir) برای cartehran.ir — کد ۱۶۶۶۲۶۴۳؛ تأیید با «فایل در ریشه» و «متاتگ در صفحه‌ی اصلی».
+   فایلِ /16662643.txt هم از طریقِ وردپرس جواب داده می‌شه و هم یک‌بار به‌صورتِ فایلِ واقعی در ریشه‌ی سایت
+   ساخته می‌شه (اگه هاست درخواستِ txt رو به وردپرس نرسونه). پاک نشه؛ اینماد ممکنه دوباره چک کنه. */
+define('AP_ENAMAD_CODE', '16662643');
+add_action('wp_loaded', function () {
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if ($path !== '/' . AP_ENAMAD_CODE . '.txt') return;
+    status_header(200);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo AP_ENAMAD_CODE;
+    exit;
+}, 0);
+add_action('init', function () {
+    if (get_option('ap_enamad_file_v1') === AP_ENAMAD_CODE) return;
+    $f = ABSPATH . AP_ENAMAD_CODE . '.txt';
+    if (is_file($f) || @file_put_contents($f, AP_ENAMAD_CODE) !== false) update_option('ap_enamad_file_v1', AP_ENAMAD_CODE, false);
+});
+
 /* یک‌بار: پالتِ جدید (گرافیت + قرمزِ تیره) — رنگِ نوارِ بالای سایت اگه هنوز قرمزِ قبلی بود گرافیت می‌شه */
 add_action('init', function () {
     if (get_option('ap_palette_graphite_v1')) return;

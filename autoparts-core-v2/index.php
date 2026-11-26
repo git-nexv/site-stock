@@ -799,6 +799,8 @@ if (function_exists('is_front_page') && is_front_page()) {
     if (stripos($seo_head, '"Organization"') === false || stripos($seo_head, '"logo"') === false) $graph[] = $site_schema['@graph'][1];
     if ($graph) $seo_head .= '<script type="application/ld+json">' . wp_json_encode(['@context' => 'https://schema.org', '@graph' => $graph], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
 }
+/* متاتگِ اینماد (تأییدِ مالکیت برای نماد اعتماد الکترونیکی) */
+if (defined('AP_ENAMAD_CODE')) $seo_head = '<meta name="enamad" content="' . AP_ENAMAD_CODE . '" />' . $seo_head;
 $inject = $seo_head . $inject;
 $html = str_replace('<head>', "<head>\n" . $inject, $html);
 
