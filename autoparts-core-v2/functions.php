@@ -3103,7 +3103,9 @@ function ap_static_dock_parts() {
         if (preg_match('/@keyframes ' . $k . '\s*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/', $h, $m)) $kf .= $m[0] . "\n";
     }
     $html = $cut('<div class="ap-dock" id="apDock">', "\n<script>");
-    $js   = $cut('(function initNexvDock(){', "\n})();", true);
+    /* کدِ نوار (همون اسکریپتِ صفحه‌ی اصلی). اسمش در این قالب initApDock هست؛ قبلاً دنبالِ initNexvDock می‌گشت
+       و پیدا نمی‌شد، برای همین نوارِ پایینِ صفحه‌های مقاله/درباره ما/... دیده می‌شد ولی کار نمی‌کرد. */
+    $js   = $cut('(function initApDock(){', "\n})();", true) ?: $cut('(function initNexvDock(){', "\n})();", true);
     $parts = compact('vars', 'dockCss', 'kf', 'html', 'js');
     return $parts;
 }

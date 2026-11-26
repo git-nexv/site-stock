@@ -2040,7 +2040,7 @@ body.landing-view #carPick{margin-top:18px;}
         </button>
       </div>
       <div class="hx-stats hx-in" style="--d:.85s">
-        <div class="hx-stat"><b><span data-count="40">40</span>+</b><small>قطعه‌ی اصل</small></div>
+        <div class="hx-stat"><b>+<span data-count="{{PRODUCT_COUNT}}">{{PRODUCT_COUNT_FA}}</span></b><small>قطعه‌ی یدکی</small></div>
         <i class="hx-sep"></i>
         <div class="hx-stat"><b><span data-count="24">24</span> ساعته</b><small>پشتیبانی</small></div>
         <i class="hx-sep"></i>
@@ -6415,10 +6415,10 @@ if(stage){
       const to = +el.dataset.count, t0 = performance.now(), dur = 1400;
       const step = t => {
         const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 4);
-        el.textContent = Math.round(to * e);
+        el.textContent = Math.round(to * e).toLocaleString('fa-IR');
         if(p < 1) requestAnimationFrame(step);
       };
-      el.textContent = '0';
+      el.textContent = '۰';
       setTimeout(()=> requestAnimationFrame(step), 900);
     });
   }

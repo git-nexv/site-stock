@@ -50,12 +50,14 @@ function ap_art_part_knowledge() {
 }
 
 /* ---------- ۱) مقاله‌های دست‌نویس از seed ---------- */
-add_action('admin_init', function () {
-    if (!current_user_can('manage_options')) return;
+/* با اولین بازدید (نه فقط باز کردنِ پیشخوان) ایمپورت می‌شن */
+add_action('init', function () {
+    if (get_transient('ap_article_seed_lock')) return;
     $done = (array) get_option('ap_article_seed_done', []);
     $files = (array) glob(get_template_directory() . '/seed/articles-*.json');
     $todo = array_filter($files, function ($f) use ($done) { return !in_array(basename($f), $done, true); });
     if (!$todo) return;
+    set_transient('ap_article_seed_lock', 1, 120);
     foreach ($todo as $file) {
         foreach ((array) json_decode((string) file_get_contents($file), true) as $a) {
             $slug = sanitize_title($a['slug'] ?? '');
@@ -70,8 +72,9 @@ add_action('admin_init', function () {
         $done[] = basename($file);
     }
     update_option('ap_article_seed_done', $done, false);
+    delete_transient('ap_article_seed_lock');
     if (function_exists('ap_pub_cache_clear')) ap_pub_cache_clear(['articles']);
-});
+}, 30);
 
 function ap_art_seo_meta($id, $title, $excerpt, $kw = '') {
     $fa = trim(explode('|', $title)[0]);
@@ -310,13 +313,16 @@ add_action('ap_art_daily', function () { ap_art_run_batch(); });
 add_action('shutdown', function () {
     $tz = new DateTimeZone('Asia/Tehran');
     $now = new DateTime('now', $tz);
-    if ((int) $now->format('G') < 16) return;
+    /* شروعِ اولیه: یک‌بار ۶۰ مقاله همون اول (منتظرِ ساعتِ ۱۶ نمی‌مونه) */
+    $boot = !get_option('ap_art_boot_v1');
+    if (!$boot && (int) $now->format('G') < 16) return;
     $last = (array) get_option('ap_art_last', []);
-    if (($last['date'] ?? '') === $now->format('Y-m-d') || get_transient('ap_art_lock') || get_transient('ap_art_tried')) return;
+    if ((!$boot && ($last['date'] ?? '') === $now->format('Y-m-d')) || get_transient('ap_art_lock') || get_transient('ap_art_tried')) return;
     set_transient('ap_art_tried', 1, 600);
     if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
     elseif (function_exists('litespeed_finish_request')) @litespeed_finish_request();
     elseif (!is_admin()) return;
     @ignore_user_abort(true);
-    ap_art_run_batch();
+    if ($boot) { update_option('ap_art_boot_v1', time(), false); ap_art_run_batch(60); }
+    else ap_art_run_batch();
 }, 998);
