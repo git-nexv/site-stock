@@ -611,7 +611,9 @@ footer{border-top:1px solid var(--border); padding:40px 0 22px;}
   .foot-grid{grid-template-columns:1fr 1fr;}
 }
 @media (max-width:520px){
-  body{zoom:0.9;}
+  /* کلِ صفحه ۹۰٪، به‌جز نوارِ پایین و پس‌زمینه: سافاریِ آیفون با zoom مختصاتِ لمس رو اشتباه حساب می‌کرد و
+     نوار (لمس و درگ) کار نمی‌کرد؛ اندازه‌ی ۹۰٪ِ نوار مستقیم در CSSِ خودش تعریف شده */
+  body > :not(.ap-dock):not(#apBg){zoom:0.9;}
   .grid{grid-template-columns:repeat(2,1fr);}
   .feature-strip{gap:8px;}
   .feature{padding:6px; border-radius:11px;}
@@ -1102,11 +1104,18 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 .foot-made{text-align:center; font-family:"Outfit","Vazirmatn",sans-serif; font-weight:600; letter-spacing:.2px; direction:ltr; padding-top:10px; font-size:12.5px; color:var(--text-dim);}
 .foot-tools{display:flex; align-items:center; gap:14px;}
 /* لینک‌های اصلیِ سایت در فوتر (به گوگل کمک می‌کنه زیرلینک‌های سایت رو در نتایج نشون بده) */
-.foot-nav{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:22px; margin:6px 0 26px;}
-.foot-nav h4{font-size:13.5px; font-weight:800; margin:0 0 10px; color:var(--text);}
-.foot-nav ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
-.foot-nav a{font-size:13px; color:var(--text-dim); text-decoration:none; transition:color .2s ease;}
+.foot-nav{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:14px 18px; margin:4px 0 18px;}
+.foot-nav h4{font-size:12.5px; font-weight:800; margin:0 0 6px; color:var(--text);}
+.foot-nav ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;}
+.foot-nav a{font-size:12px; line-height:1.7; color:var(--text-dim); text-decoration:none; transition:color .2s ease;}
 .foot-nav a:hover{color:var(--accent);}
+/* دسته‌ها: یک گروهِ تمام‌عرض با لینک‌های کوچیکِ کنارِ هم */
+.foot-nav .fn-chips{grid-column:1 / -1;}
+.foot-nav .fn-chips ul{flex-direction:row; flex-wrap:wrap; gap:6px;}
+.foot-nav .fn-chips a{display:inline-block; padding:3px 10px; border-radius:999px; background:color-mix(in srgb, var(--text) 6%, transparent); font-size:11.5px;}
+/* نمادِ اینماد در خونه‌ی آخرِ فوتر */
+.foot-nav .fn-seal{display:flex; align-items:center; justify-content:center;}
+.foot-nav .fn-seal img{max-width:110px; height:auto; display:block;}
 .foot-tools a{font-size:14.5px; font-weight:700; color:var(--text);}
 .foot-tools a:hover{color:var(--accent);}
 
@@ -1273,6 +1282,21 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom));}
   .ap-dock{--dock-h:60px; --dock-gap:8px;}
   .dock-item{font-size:10.5px;}
   .dock-item svg{width:23px; height:23px;}
+}
+/* موبایل: همون اندازه‌ای که قبلاً با zoom:.9ِ صفحه دیده می‌شد، ولی بدونِ zoom (لمس در سافاری درست کار کنه) */
+@media (max-width:520px){
+  .ap-dock{--dock-h:58px; --dock-gap:9px; width:min(504px, calc((100vw - 20px) * .9)); bottom:calc(11px + env(safe-area-inset-bottom));}
+  .ap-dock .dock-item{font-size:10px;}
+  .ap-dock .dock-item svg{width:22.5px; height:22.5px;}
+  .ap-dock .dock-mini svg{width:21.6px; height:21.6px;}
+  .ap-dock .dock-search-ic{width:21.6px; height:21.6px;}
+  .ap-dock .dock-close svg{width:18px; height:18px;}
+  .ap-dock.searching{--dock-h:50px;}
+}
+@media (max-width:380px){
+  .ap-dock{--dock-h:54px; --dock-gap:7px;}
+  .ap-dock .dock-item{font-size:9.5px;}
+  .ap-dock .dock-item svg{width:20.7px; height:20.7px;}
 }
 @media (prefers-reduced-motion: reduce){
   .ap-dock, .ap-dock *{transition-duration:.01ms !important; animation-duration:.01ms !important;}
@@ -2226,8 +2250,6 @@ body.landing-view #carPick{margin-top:18px;}
         <p><b>{{SITE_NAME}}</b> (CarTehran) فروشگاه اینترنتی <a href="/spare-parts/">لوازم یدکی خودرو</a> و <a href="/car-parts/">قطعات خودرو</a> در تهرانه؛ <a href="/chinese-car-parts/">قطعات خودروهای چینی</a> و داخلی، اورجینال و درجه یک، با <a href="/parts-price/">قیمت روز</a> و ارسال به سراسر ایران.</p>
         <p>با عشق کنار مشتری‌هامون هستیم؛ از پیدا کردن قطعه‌ی درست تا بعد از خرید، قطعات اورجینال با گارانتی اصالت و پشتیبانی صمیمانه، همیشه در دسترستون.</p>
       </div>
-      <!-- نماد اعتماد الکترونیکی (اینماد) — کد بدونِ تغییر؛ rel="noopener" اضافه نشه -->
-      <div class="enamad-seal" style="display:flex;align-items:center;justify-content:center"><a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0' alt='' style='cursor:pointer' code='EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'></a></div>
     </div>
     <!--AP_FOOT_LINKS-->
     <div class="foot-bottom">

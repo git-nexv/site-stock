@@ -793,28 +793,26 @@ if ($ssr !== '') {
 /* ---------- فوترِ لینک‌دار + اسکیمای WebSite/Organization برای زیرلینک‌های گوگل ---------- */
 $foot = '';
 $groups = [];
-$ap_tops = get_terms(['taxonomy' => 'ap_cat', 'parent' => 0, 'hide_empty' => true]);
-foreach ((is_array($ap_tops) ? $ap_tops : []) as $top) {
-    if (is_wp_error($top)) continue;
-    $kids = get_terms(['taxonomy' => 'ap_cat', 'parent' => $top->term_id, 'hide_empty' => true]);
-    $links = [];
-    if ($kids && !is_wp_error($kids)) foreach ($kids as $k) $links[] = [get_term_link($k), $k->name];
-    if (!$links) $links[] = [get_term_link($top), $top->name];
-    $groups[] = [$top->name, $links];
-}
+/* فوترِ جمع‌وجور: همه‌ی دسته‌ها در یک گروه (لینک‌های کوچیکِ کنارِ هم)، نه یک ستون برای هر دسته */
+$ap_tops = get_terms(['taxonomy' => 'ap_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC', 'number' => 18]);
+$ap_cl = [];
+foreach ((is_array($ap_tops) ? $ap_tops : []) as $top) { if (!is_wp_error($top)) $ap_cl[] = [get_term_link($top), $top->name]; }
+if ($ap_cl) $groups[] = ['دسته‌بندی‌ها', $ap_cl, 'chips'];
 /* صفحه‌های فرودِ سئو و لیستِ قیمتِ برندهای پرمحصول (seo-landing.php) */
 if (function_exists('ap_lp_brands')) {
     $groups[] = ['فروشگاه کار تهران', [[home_url('/spare-parts/'), 'لوازم یدکی خودرو'], [home_url('/car-parts/'), 'قطعات خودرو'], [home_url('/car-parts-tehran/'), 'لوازم یدکی در تهران'], [home_url('/chinese-car-parts/'), 'قطعات خودروهای چینی'], [home_url('/cartehran/'), 'درباره کار تهران']]];
     $lpl = [[home_url('/parts-price/'), 'لیست قیمت قطعات خودرو']];
-    foreach (array_slice(ap_lp_brands(), 0, 7) as $lb) $lpl[] = [home_url('/parts-price/' . $lb['short'] . '/'), 'قیمت قطعات ' . $lb['fa']];
+    foreach (array_slice(ap_lp_brands(), 0, 4) as $lb) $lpl[] = [home_url('/parts-price/' . $lb['short'] . '/'), 'قیمت قطعات ' . $lb['fa']];
     $groups[] = ['قیمت قطعات', $lpl];
 }
 $groups[] = [$ap_site_name, [[get_post_type_archive_link('ap_article') ?: home_url('/blog/'), 'مقالات آموزشی'], [home_url('/about/'), 'درباره ما'], [home_url('/terms/'), 'قوانین و مقررات']]];
 foreach ($groups as $g) {
-    $foot .= '<div><h4>' . esc_html($g[0]) . '</h4><ul>';
+    $foot .= '<div' . (($g[2] ?? '') === 'chips' ? ' class="fn-chips"' : '') . '><h4>' . esc_html($g[0]) . '</h4><ul>';
     foreach ($g[1] as $l) if (!is_wp_error($l[0])) $foot .= '<li><a href="' . esc_url($l[0]) . '">' . esc_html($l[1]) . '</a></li>';
     $foot .= '</ul></div>';
 }
+/* نمادِ اعتمادِ الکترونیکی (اینماد) پایینِ فوتر، در خونه‌ی خالیِ آخر — کدِ اینماد بدونِ تغییر */
+$foot .= '<div class="fn-seal">' . "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8920901&Code=EuRIVed44sfYxXFrXjJkdOuTd6Imycf0' alt='' style='cursor:pointer' code='EuRIVed44sfYxXFrXjJkdOuTd6Imycf0'></a>" . '</div>';
 $html = str_replace('<!--AP_FOOT_LINKS-->', '<nav class="foot-nav" aria-label="لینک‌های اصلی سایت">' . $foot . '</nav>', $html);
 if (function_exists('is_front_page') && is_front_page()) {
     $site_schema = ['@context' => 'https://schema.org', '@graph' => [
